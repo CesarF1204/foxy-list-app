@@ -1,0 +1,284 @@
+/*
+  Foxy List design tokens.
+  DOCU: Tailwind v4 reads its theme from CSS, so every custom colour, font and
+  shadow used across the app is declared here and becomes a utility class
+  (e.g. `--color-paper` gives `bg-paper`).
+*/
+@import "tailwindcss";
+
+@theme {
+  /* Paper-and-ink palette. Warm, low-glare background with near-black text. */
+  --color-paper: #fbf4e9;
+  --color-paper-deep: #f3e7d4;
+  --color-ink: #2b2119;
+  --color-ink-soft: #6b5a4b;
+  --color-ink-faint: #a3907e;
+
+  /* Fox orange, the brand accent lifted from the mascot. */
+  --color-fox-50: #fff4e8;
+  --color-fox-100: #ffe3c7;
+  --color-fox-200: #ffc894;
+  --color-fox-300: #f9a35c;
+  --color-fox-400: #f47b20;
+  --color-fox-500: #e2620d;
+  --color-fox-600: #bd4c07;
+  --color-fox-700: #953909;
+  --color-fox-800: #782f0e;
+  --color-fox-900: #64290f;
+
+  /* Board colours: sky for to-do, amber for ongoing, moss for done. */
+  --color-todo: #4aa8d8;
+  --color-todo-deep: #2b7fa8;
+  --color-ongoing: #e8a33d;
+  --color-ongoing-deep: #b9761a;
+  --color-done: #6bab6a;
+  --color-done-deep: #4a804a;
+
+  --font-display: "Bricolage Grotesque", ui-sans-serif, sans-serif;
+  --font-body: "Nunito", ui-sans-serif, sans-serif;
+
+  /*
+    Chunky offset shadows read as stacked paper cut-outs, which is the core of
+    the "kawaii stationery" look. They are deliberately hard (no blur).
+  */
+  --shadow-pop: 3px 3px 0 0 #2b2119;
+  --shadow-pop-sm: 2px 2px 0 0 #2b2119;
+  --shadow-pop-lg: 5px 5px 0 0 #2b2119;
+  --shadow-card: 2px 2px 0 0 rgb(43 33 25 / 0.16);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    /* The dotted paper grid. Tiled from a data URI so it costs no request. */
+    background-image: radial-gradient(rgb(43 33 25 / 0.09) 1.2px, transparent 1.2px);
+    background-size: 22px 22px;
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  /* Inputs inherit the body font instead of the browser default. */
+  input,
+  textarea,
+  select,
+  button {
+    font-family: inherit;
+  }
+
+  /* One consistent focus ring everywhere, only for keyboard users. */
+  :focus-visible {
+    outline: 3px solid var(--color-fox-400);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* The signature button: solid, hard-shadowed, presses down when clicked. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 2px solid var(--color-ink);
+    border-radius: 0.85rem;
+    padding: 0.6rem 1.15rem;
+    font-weight: 800;
+    box-shadow: var(--shadow-pop-sm);
+    transition:
+      transform 120ms ease,
+      box-shadow 120ms ease,
+      background-color 120ms ease;
+    cursor: pointer;
+  }
+
+  .btn:hover:not(:disabled) {
+    transform: translate(-1px, -1px);
+    box-shadow: var(--shadow-pop);
+  }
+
+  /* Pressing in keeps the offset, so the button looks physically pushed. */
+  .btn:active:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: 0 0 0 0 var(--color-ink);
+  }
+
+  .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  .btn-primary {
+    background-color: var(--color-fox-400);
+    color: white;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--color-fox-500);
+  }
+
+  .btn-neutral {
+    background-color: white;
+    color: var(--color-ink);
+  }
+
+  .btn-neutral:hover:not(:disabled) {
+    background-color: var(--color-fox-50);
+  }
+
+  .btn-danger {
+    background-color: #e04b4b;
+    color: white;
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    background-color: #c93b3b;
+  }
+
+  /* Paper card surface used for every panel and modal. */
+  .surface {
+    border: 2px solid var(--color-ink);
+    border-radius: 1.25rem;
+    background-color: white;
+    box-shadow: var(--shadow-pop);
+  }
+
+  /* Form controls share one shape and focus treatment. */
+  .field {
+    width: 100%;
+    border: 2px solid var(--color-ink);
+    border-radius: 0.85rem;
+    background-color: white;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.95rem;
+    transition:
+      box-shadow 120ms ease,
+      border-color 120ms ease;
+  }
+
+  .field:focus {
+    outline: none;
+    box-shadow: var(--shadow-pop-sm);
+    border-color: var(--color-fox-400);
+  }
+
+  .field[aria-invalid="true"] {
+    border-color: #e04b4b;
+  }
+
+  .field::placeholder {
+    color: var(--color-ink-faint);
+  }
+
+  /* Long unbroken words (URLs, tokens) must not blow out a card's width. */
+  .break-anywhere {
+    overflow-wrap: anywhere;
+  }
+
+  /*
+    The drag surface for one task card.
+
+    The library positions a dragged card by writing an inline
+    `transform: translate3d(...)` on every pointer move, so this element must
+    never own a `transform` through CSS. Two rules follow from that:
+
+      * no entrance animation lives here. A CSS animation outranks inline
+        styles in the cascade, and `animate-rise` ends with `fill-mode: both`,
+        so its retained `translateY(0)` keyframe would permanently override the
+        transform the library sets, and the card would never follow the
+        pointer. The card's entrance animation goes on an inner wrapper.
+      * nothing transitions `transform` here either. The drag state is toggled
+        by [data-dragging], set from the library's drag snapshot, so a drag can
+        never be interpolated or delayed.
+
+    `touch-action: pan-y` keeps vertical page scrolling on touch screens while
+    still letting a horizontal drag move the card.
+  */
+  .task-card {
+    transition-property: color, background-color, border-color, box-shadow, opacity;
+    transition-duration: 150ms;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: grab;
+    touch-action: pan-y;
+  }
+
+  /* The real drag: track the pointer frame for frame, with no animated lag. */
+  .task-card[data-dragging="true"] {
+    transition: none;
+    cursor: grabbing;
+    touch-action: none;
+  }
+
+  /* Interactive bits inside the card keep their own cursor and text editing. */
+  .task-card button,
+  .task-card a {
+    cursor: pointer;
+  }
+
+  .task-card input,
+  .task-card textarea {
+    -webkit-user-select: text;
+    user-select: text;
+    cursor: text;
+  }
+}
+
+@layer utilities {
+  /* Staggered entrance for lists and form rows. */
+  .animate-rise {
+    animation: rise 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .animate-pop-in {
+    animation: pop-in 320ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/*
+  Respect users who ask for less motion: keep state changes, drop the movement.
+*/
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

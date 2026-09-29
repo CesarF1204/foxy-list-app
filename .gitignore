@@ -1,0 +1,46 @@
+# ============================================================================
+# Task Manager - shared ignores for the whole workspace.
+# The per-app web-frontend/.gitignore covers its own build output and tooling.
+# ============================================================================
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+build/
+
+# ---------------------------------------------------------------------------
+# Secrets and environment files.
+#
+# These are ignored here so that EVERY app under this workspace is covered,
+# including web-backend once it exists. .env files hold real credentials, so
+# they must never be committed.
+# ---------------------------------------------------------------------------
+.env
+.env.*
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
