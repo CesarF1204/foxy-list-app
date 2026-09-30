@@ -1,29 +1,19 @@
-/**
- * Every scenario the auth mascot can be in, checked against the real
- * `resolveAuthMood` and the real sprite cells it resolves to. Run with:
- * npm run verify:mascot
- */
+/** Every scenario the auth mascot can be in, checked against the real
+ *  `resolveAuthMood` and the real sprite cells. Run with: npm run verify:mascot */
 
 import {
     resolveAuthMood,
     fieldErrorToast,
+} from "../src/helpers/mascotMood.js";
+import {
     MASCOT_HOLD_MS,
     MASCOT_MOODS,
+    MASCOT_REACTIONS,
     TOAST_MOODS,
-} from "../src/helpers/mascotSheets.js";
+} from "../src/constants/mascot.js";
 
-/** The nine cells of the reactions sheet, in reading order. Mirrors ControlledMascot. */
-const REACTIONS = [
-    "blink",
-    "heart",
-    "sparkle",
-    "surprised",
-    "wink",
-    "bashful",
-    "sleepy",
-    "dizzy",
-    "delighted",
-];
+/* The nine cells of the reactions sheet, in reading order: the real list. */
+const REACTIONS = MASCOT_REACTIONS;
 
 /** The background-position a reaction name resolves to, as the sprite renders it. */
 const cellOf = (name) => {
@@ -33,11 +23,7 @@ const cellOf = (name) => {
 
 let failures = 0;
 
-/**
- * Structural equality, so a check can compare an object or an array.
- * The expected values below are literals, so this only ever has to handle
- * plain JSON-ish data - it is not a general-purpose deep equal.
- */
+/** Structural equality for plain JSON-ish data, enough for the literals below. */
 const same = (actual, expected) => {
     if (actual === expected) return true;
     if (typeof actual !== "object" || typeof expected !== "object") return false;

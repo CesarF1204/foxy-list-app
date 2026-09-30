@@ -15,7 +15,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { AppContextProvider } from "../src/contexts/AppContext";
 import { useTasks } from "../src/hooks/useTasks";
-import { TASKS_KEY } from "../src/queryOptions/tasksQueryOptions";
+import { TASKS_KEY } from "../src/constants/queryKeys";
 
 /* The api-client module is mocked so each test decides what the server does. */
 const moveTask = vi.fn();

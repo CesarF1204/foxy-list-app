@@ -1,20 +1,13 @@
 import { useEffect, useRef } from "react";
 
-/**
- * DOCU: An accessible modal dialog. <br>
- * Handles the pieces every dialog needs: centring, backdrop dismissal, the
- * Escape key, body scroll locking and moving focus into the panel on open.
- */
+/** DOCU: An accessible modal: backdrop dismissal, Escape, scroll locking and
+ *  focus moved into the panel on open. */
 const Modal = ({ isOpen, onClose, title, children, footer }) => {
     const panelRef = useRef(null);
 
-    /*
-      onClose is almost always an inline arrow, so it changes identity on every
-      render of the parent. Keeping it in a ref means the effect below depends
-      only on isOpen. Without this, the effect re-ran on each render and called
-      panelRef.focus(), which stole focus away from whatever the user was typing
-      into (reproduced as "typing one character loses focus").
-    */
+    /** In a ref, so the effect below depends only on isOpen. `onClose` is usually
+     *  an inline arrow with a new identity each render, and re-running would
+     *  refocus the panel and steal focus from whatever the user was typing into. */
     const onCloseRef = useRef(onClose);
     useEffect(() => {
         onCloseRef.current = onClose;
@@ -33,8 +26,7 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
         const previousOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
 
-        /* Move focus into the dialog, preferring the first real control so the
-           user can start typing straight away. */
+        /** Prefer the first real control, so the user can start typing. */
         const firstField = panelRef.current?.querySelector(
             "input:not([type='hidden']), textarea, select, button"
         );

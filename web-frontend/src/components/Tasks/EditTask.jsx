@@ -1,13 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * DOCU: The inline editor for a task. <br>
- * Replaces the card's title and description in place. Saves on the Save button
- * or Cmd/Ctrl+Enter, cancels on Escape, and refuses to save an empty title.
- * @param {object} props
- * @param {object} props.task - the task being edited
+ * DOCU: The inline editor for a task. Saves on the Save button or Cmd/Ctrl
+ * Enter, cancels on Escape, and refuses to save an empty title.
  * @param {Function} props.onSave - called with (title, description)
- * @param {Function} props.onCancel
  */
 const EditTask = ({ task, onSave, onCancel }) => {
     const [title, setTitle] = useState(task.title);
@@ -30,7 +26,7 @@ const EditTask = ({ task, onSave, onCancel }) => {
             event.preventDefault();
             onCancel();
         }
-        /* Cmd/Ctrl + Enter saves, matching the keyboard shortcut on Mac and PC. */
+        /** Cmd/Ctrl + Enter saves, matching the shortcut on Mac and PC. */
         if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
             event.preventDefault();
             commit();

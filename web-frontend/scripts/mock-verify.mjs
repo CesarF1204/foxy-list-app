@@ -3,10 +3,9 @@
  * stubbed localStorage. Delete this file when the mock layer is removed.
  * Run with: npm run verify:mock
  *
- * The app's own modules use extensionless imports, which Vite resolves but
- * plain Node does not. Rather than change the app's conventions, the mock
- * folder is copied to a temp directory with the extensions filled in, and that
- * copy is what gets imported.
+ * The app's modules use extensionless imports, which plain Node cannot resolve.
+ * Rather than change that convention, the mock folder is copied to a temp
+ * directory with the extensions filled in, and that copy is imported.
  */
 import { existsSync } from "node:fs";
 import { mkdtempSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
@@ -17,13 +16,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const here = dirname(fileURLToPath(import.meta.url));
 const mockDir = join(here, "..", "src", "mock");
 
-/**
- * Loads `.env` into `process.env`, because `src/mock/sampleData.js` reads its
- * sample account from the environment and in plain Node that means
- * `process.env` - `import.meta.env` only exists under Vite. Done by hand rather
- * than with a dotenv dependency, and it fails loudly, so a check can never pass
- * against a hardcoded default that is no longer there.
- */
+/** Loads `.env` into `process.env`, since sampleData.js reads its account from
+ *  there under plain Node. Fails loudly, so a check can never pass against a
+ *  hardcoded default. */
 const loadEnvFile = () => {
     const envPath = join(here, "..", ".env");
 

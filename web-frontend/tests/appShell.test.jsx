@@ -1,11 +1,6 @@
 /**
- * Tests for the app shell's footer rule.
- *
- * The rule lives in one place - `AppShell` - because the footer is rendered by
- * the shell rather than by each page. These tests drive the real `AppShell` and
- * the real `Footer` through a memory router at each route and assert on the
- * DOM, which is the only form of the check that would catch a page quietly
- * keeping (or losing) the footer.
+ * Tests for the app shell's footer rule, driving the real `AppShell` and
+ * `Footer` through a memory router at each route and asserting on the DOM.
  */
 
 import { describe, it, expect, afterEach } from "vitest";
@@ -13,7 +8,7 @@ import { render, screen, cleanup } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 import AppShell from "../src/components/AppShell";
-import { FOOTER_PATHS } from "../src/helpers/footerRoutes";
+import { FOOTER_PATHS, ROUTES } from "../src/constants/routes";
 
 /** Mounts the real shell at `path`, with a stand-in for the routed page. */
 const renderAt = (path) =>
@@ -33,11 +28,14 @@ afterEach(() => {
 });
 
 describe("the footer on the guest auth screens", () => {
-    it.each(["/login", "/register", "/recover-password"])("is not rendered on %s", (path) => {
-        renderAt(path);
+    it.each([ROUTES.login, ROUTES.register, ROUTES.recoverPassword])(
+        "is not rendered on %s",
+        (path) => {
+            renderAt(path);
 
-        expect(footer()).not.toBeInTheDocument();
-    });
+            expect(footer()).not.toBeInTheDocument();
+        }
+    );
 
     it("does not treat a lookalike path as the board", () => {
         renderAt("/login-history");
@@ -48,16 +46,13 @@ describe("the footer on the guest auth screens", () => {
 
 describe("the footer on the not-found pages", () => {
     it("is not rendered on the explicit /404 route", () => {
-        renderAt("/404");
+        renderAt(ROUTES.notFound);
 
         expect(footer()).not.toBeInTheDocument();
     });
 
-    /*
-     * The `*` catch-all in App renders the same NotFound page for every URL
-     * that matches no route, so the footer has to be gone on all of them - not
-     * just on the one path someone thought to enumerate.
-     */
+    /** The `*` catch-all renders NotFound for every unmatched URL, so the footer
+     *  has to be gone on all of them, not just the paths someone enumerated. */
     it.each(["/nope", "/some/deep/unknown/path", "/task/999", "/settings/profile"])(
         "is not rendered on the unknown path %s",
         (path) => {
@@ -76,24 +71,24 @@ describe("the footer on the board", () => {
     });
 
     it("keeps the board as the only footer-bearing route", () => {
-        expect(FOOTER_PATHS).toEqual(["/"]);
+        expect(FOOTER_PATHS).toEqual([ROUTES.board]);
     });
 
     it("still shows the footer with a trailing slash, as the router treats it", () => {
-        renderAt("/");
+        renderAt(ROUTES.board);
 
         expect(footer()).toBeInTheDocument();
     });
 
     it("shows the current year, so the notice never goes stale", () => {
-        renderAt("/");
+        renderAt(ROUTES.board);
 
         expect(footer()).toHaveTextContent(`${new Date().getFullYear()} All Rights Reserved.`);
     });
 });
 
 describe("the shell frame", () => {
-    it.each(["/", "/login", "/register", "/recover-password", "/404", "/nope"])(
+    it.each([ROUTES.board, ROUTES.login, ROUTES.register, ROUTES.recoverPassword])(
         "still renders the page itself on %s",
         (path) => {
             renderAt(path);
@@ -103,7 +98,7 @@ describe("the shell frame", () => {
     );
 
     it("keeps the page above the footer on a footer-bearing route", () => {
-        const { container } = renderAt("/");
+        const { container } = renderAt(ROUTES.board);
 
         /* flex-1 on the content wrapper is what pushes the footer to the bottom. */
         const column = container.firstChild;
@@ -112,7 +107,7 @@ describe("the shell frame", () => {
     });
 
     it("leaves no trailing element where the footer would be, on a bare page", () => {
-        const { container } = renderAt("/login");
+        const { container } = renderAt(ROUTES.login);
 
         expect(container.firstChild.lastElementChild.tagName).toBe("P");
     });

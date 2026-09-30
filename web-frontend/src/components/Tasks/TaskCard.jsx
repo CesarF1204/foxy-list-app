@@ -1,5 +1,8 @@
 import { memo, useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
+
+import { CARD_BOARD_META } from "../../constants/boards";
+import { TEMP_ID_PREFIX } from "../../constants/tasks";
 import EditTask from "./EditTask";
 
 /** DOCU: The two actions available on a task: edit and delete. */
@@ -8,11 +11,8 @@ const CardActions = ({ task, onEdit, onDelete }) => {
         "flex h-7 w-7 items-center justify-center rounded-lg text-ink-faint transition " +
         "hover:bg-ink/10 hover:text-ink focus-visible:ring-4 focus-visible:ring-ink/20";
 
-    /*
-      Pressing a button must never start a drag. The pointerdown does not bubble
-      up to the drag handle, so the library never sees the gesture begin and a
-      click on edit/delete cannot be swallowed by a drag.
-    */
+    /** A button press must never start a drag: stopping pointerdown propagation
+     *  means the library never sees the gesture begin. */
     const stopDragStart = (event) => event.stopPropagation();
 
     return (
@@ -59,24 +59,17 @@ const CardActions = ({ task, onEdit, onDelete }) => {
 };
 
 /**
- * DOCU: A single task on the board. <br>
- * The whole card is the drag handle, so there is no separate grip to find. The
- * card is a white paper slip with a coloured spine on the left that identifies
- * its board, and a tick once it reaches Done. <br>
- * Wrapped in `memo` so a drag, or any other board update, only re-renders the
- * cards whose props actually changed.
+ * DOCU: A single task. The whole card is the drag handle, so there is no grip to
+ * find. Wrapped in `memo` so a drag only re-renders the cards whose props
+ * actually changed.
  */
 const TaskCard = ({ task, board, index, onSave, onDelete }) => {
     const [isEditing, setIsEditing] = useState(false);
 
-    const meta = {
-        todo: { spine: "bg-todo", check: null },
-        ongoing: { spine: "bg-ongoing", check: null },
-        done: { spine: "bg-done", check: true },
-    }[board];
+    const meta = CARD_BOARD_META[board];
 
     /* A task created locally has a temporary id until the server replies. */
-    const isPending = task._id.startsWith("temp-");
+    const isPending = task._id.startsWith(TEMP_ID_PREFIX);
 
     return (
         <Draggable draggableId={task._id} index={index} isDragDisabled={isEditing}>
@@ -85,13 +78,9 @@ const TaskCard = ({ task, board, index, onSave, onDelete }) => {
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
                     ref={provided.innerRef}
-                    /*
-                      This element is the one the library transforms on every
-                      pointer move, so it must stay free of any CSS animation or
-                      transitioned transform. The entrance animation therefore
-                      lives on the inner wrapper below, and the drag state is
-                      published as an attribute for .task-card to style.
-                    */
+                    /** The element the library transforms on every pointer move, so
+                     *  it must stay free of any CSS animation or transitioned
+                     *  transform. The entrance animation is on the wrapper below. */
                     data-dragging={snapshot.isDragging ? "true" : "false"}
                     className={`task-card relative rounded-2xl border-2 border-ink bg-white pl-4 pr-9 ${
                         snapshot.isDragging

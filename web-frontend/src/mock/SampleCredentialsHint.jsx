@@ -4,10 +4,7 @@ import { SAMPLE_CREDENTIALS } from "../mock";
  * TEMPORARY - MOCK LAYER ONLY.
  *
  * DOCU: A hint on the sign-in page showing the sample account, plus a button
- * that fills the form in for you. <br>
- * It renders only while MOCK_MODE is on and disappears with the rest of the
- * mock layer, so the real sign-in page is left exactly as it was.
- * @param {object} props
+ * that fills the form in. Renders only while MOCK_MODE is on.
  * @param {Function} props.onFill - called with { email, password }
  */
 const SampleCredentialsHint = ({ onFill }) => (

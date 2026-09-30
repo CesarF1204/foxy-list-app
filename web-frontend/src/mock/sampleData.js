@@ -1,16 +1,12 @@
 /* ============================================================================
  * TEMPORARY - FRONTEND MOCK LAYER (local test data, no backend required)
- * ============================================================================
  *
- * To go back to the real API: delete this whole `src/mock` folder and remove
- * the single `mock` bypass in `src/api-client/client.js`. Nothing else in the
- * app imports from here, so that is a complete, clean undo.
+ * The sample account is read from `.env` (see the frontend README), so no
+ * credential is ever hardcoded. The board is pure data plus helpers relative to
+ * today's date, so it always has overdue, due-today and upcoming work.
  *
- * This module holds the sample account and the sample task board. The account
- * is not defined here: it is read from `.env` (see the frontend README), so no
- * credential is ever hardcoded in the source. The board is pure data plus the
- * small helpers that keep it relative to today's date, so it always has
- * genuinely overdue, due-today and upcoming work.
+ * To undo: delete this `src/mock` folder and the `mock` bypass in
+ * `src/api-client/client.js`.
  * ========================================================================== */
 
 /** The env var backing each field of the sample account. */
@@ -21,44 +17,19 @@ const SAMPLE_CREDENTIAL_VARS = Object.freeze({
     password: "VITE_MOCK_SAMPLE_PASSWORD",
 });
 
-/**
- * DOCU: Reads an env var, tolerating both runtimes this file is loaded in. <br>
- * Vite defines `import.meta.env` in the browser, but `scripts/mock-verify.mjs`
- * imports this very file in plain Node, where it does not exist and the values
- * live on `process.env` instead (the script loads `.env` first). `globalThis`
- * reaches the latter without tripping the linter's no-undef rule for a browser
- * file, and the optional chains keep that second case working instead of
- * throwing, so the mock layer stays testable outside the bundler.
- * @param {string} key
- * @returns {string} the value, or "" when it is not set
- */
+/** Vite defines `import.meta.env` in the browser, but `scripts/mock-verify.mjs`
+ *  imports this file in plain Node, where the values live on `process.env`. */
 const readEnv = (key) => import.meta.env?.[key] ?? globalThis.process?.env?.[key] ?? "";
 
 /**
- * DOCU: The sample account, used by the local mock only. <br>
- * Every field comes from `.env` and there is no in-source fallback, so nothing
- * here can leak into a commit or a bundle built on a machine that never had a
- * `.env`. The values are a throwaway demo login for a browser-only mock - they
- * are not a real credential, they grant access to nothing, and the sign-in
- * page already shows them on screen.
- *
- * Because these are `VITE_` variables they are inlined into the bundle and are
- * therefore NOT secret. That is fine for a mock demo login; it would not be
- * fine for a real one. Never point these at a real account.
- *
- * The values are resolved lazily, per field, rather than once at import time.
- * A missing `.env` therefore cannot white-screen the app at startup; it only
- * fails where the mock account is actually needed, with a message naming the
- * exact variables to set.
- * @type {{readonly firstName: string, readonly lastName: string, readonly email: string, readonly password: string}}
- */
-let cachedCredentials = null;
-
-/**
- * DOCU: Reads and validates the sample account from the environment.
- * @returns {Readonly<{firstName: string, lastName: string, email: string, password: string}>}
+ * DOCU: The sample account. Every field comes from `.env` with no in-source
+ * fallback, and is resolved lazily so a missing `.env` only fails where the
+ * account is actually needed, rather than white-screening the app at startup.
+ * These are `VITE_` values, so they are inlined into the bundle and are NOT
+ * secret. Fine for a mock demo login; never point them at a real account.
  * @throws {Error} when any of the `SAMPLE_CREDENTIAL_VARS` is unset or blank
  */
+let cachedCredentials = null;
 const readSampleCredentials = () => {
     const values = Object.fromEntries(
         Object.entries(SAMPLE_CREDENTIAL_VARS).map(([field, key]) => [
@@ -117,30 +88,21 @@ const daysAgo = (offset) => {
     return date.toISOString();
 };
 
-/**
- * DOCU: The sample user, shaped exactly like the API's user object so nothing
- * downstream (navbar, avatar initials, dashboard greeting) behaves differently.
- * @returns {object}
- */
+/** DOCU: The sample user, shaped like the API's so downstream behaves the same. */
 const buildMockUser = () => ({
     _id: MOCK_USER_ID,
     firstName: SAMPLE_CREDENTIALS.firstName,
     lastName: SAMPLE_CREDENTIALS.lastName,
     email: SAMPLE_CREDENTIALS.email,
-    /* Plain text on purpose: a throwaway local mock, never a real one. */
+    /** Plain text on purpose: a throwaway local mock, never a real one. */
     password: SAMPLE_CREDENTIALS.password,
     createdAt: daysAgo(90),
 });
 
 /**
- * DOCU: Builds one task of a board, filling in the shared fields so the data
- * below only has to describe what makes each task different.
- * @param {string} userId - the mock user these tasks belong to
- * @param {string} status - the board: "todo", "ongoing" or "done"
- * @param {number} order - position within that board
+ * DOCU: Builds one task, filling in the shared fields so the data below only
+ * describes what makes each task different.
  * @param {number|null} dueOffset - days from today, or null for no due date
- * @param {object} task - the task-specific fields
- * @returns {object}
  */
 const makeTask = (userId, status, order, dueOffset, task) => ({
     _id: `mock-task-${userId}-${status}-${order}`,
@@ -153,19 +115,10 @@ const makeTask = (userId, status, order, dueOffset, task) => ({
 });
 
 /**
- * DOCU: The sample board, deliberately varied so every part of the Tasks
- * feature can be exercised:
- *   - all three states (pending / in progress / completed)
- *   - overdue, due-today, upcoming and no due date at all
- *   - every priority, and a mix of short and very long titles and descriptions
- *   - some tasks with an empty description, so the card layout is tested too
- *
- * Fields the current card does not render yet (`priority`, `dueDate`, `labels`)
- * are included on purpose: they mirror the shape the real API is expected to
- * return, so this data doubles as a fixture later. The UI ignores them until
- * those features exist.
- * @param {string} userId - the mock user these tasks belong to
- * @returns {Array<object>}
+ * DOCU: The sample board, deliberately varied: all three states, overdue /
+ * due-today / upcoming / no due date, every priority, and both empty and very
+ * long fields. `priority`, `dueDate` and `labels` mirror the real API's shape so
+ * this data doubles as a fixture; the UI ignores them until those features exist.
  */
 const buildSampleTasks = (userId) => {
     /** Folds a list of task bodies into a board, assigning order and dates. */

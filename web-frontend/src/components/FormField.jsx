@@ -1,8 +1,5 @@
-/**
- * DOCU: A labelled input wired up for react-hook-form. <br>
- * Centralises the label, error message and aria wiring so every form field in
- * the app is announced correctly and styled the same way.
- */
+/** DOCU: A labelled input wired up for react-hook-form, centralising the label,
+ *  error message and aria wiring so every field is announced the same way. */
 const FormField = ({ id, label, type = "text", error, inputClassName = "", ...inputProps }) => {
     /* Accept either a plain string or a react-hook-form error object. */
     const errorText = typeof error === "string" ? error : error?.message;

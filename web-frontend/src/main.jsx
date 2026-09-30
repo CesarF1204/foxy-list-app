@@ -9,7 +9,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      /* A 401 means "not signed in", not a transient failure worth retrying. */
+    /* A 401 means "not signed in", not a transient failure worth retrying. */
       retry: (failureCount, error) => {
         if (error?.status === 401) return false
         return failureCount < 1

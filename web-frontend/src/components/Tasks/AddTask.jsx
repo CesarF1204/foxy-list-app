@@ -1,15 +1,13 @@
 import { useRef, useState } from "react";
 
 /**
- * DOCU: The "add a task" composer at the foot of the To Do column. <br>
- * Collapsed to a single button until it is clicked, then opens a title field
- * with an optional note. Submits on Enter from the title, and on Cmd/Ctrl
- * Enter from the note, and clears itself afterwards.
+ * DOCU: The "add a task" composer at the foot of the To Do column. Collapsed to
+ * a single button until clicked. Submits on Enter from the title and Cmd/Ctrl
+ * Enter from the note, and stays open so several can be added in a row.
  *
- * The fields are mirrored into a ref so a submit can empty them synchronously.
- * React state only settles on the next render, so without this a second submit
- * arriving first (a double click, or Enter followed immediately by a click)
- * would still read the old title and add the same task a second time.
+ * The fields are mirrored into a ref so a submit can empty them synchronously;
+ * state only settles on the next render, and a second submit arriving first
+ * would otherwise re-add the same task.
  */
 const AddTask = ({ onAdd }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -24,7 +22,7 @@ const AddTask = ({ onAdd }) => {
 
         if (!currentTitle.trim()) return;
 
-        /* Clear first: anything that reads the draft from now on sees it empty. */
+        /** Clear first: anything reading the draft from now on sees it empty. */
         draft.current = { title: "", description: "" };
         setTitle("");
         setDescription("");

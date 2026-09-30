@@ -1,13 +1,10 @@
 /**
- * DOCU: An in-browser stand-in for the REST API. <br>
- * The real backend lives in `web-backend` and is not implemented yet, so this
- * module fakes it on top of localStorage. That keeps every screen, query and
- * mutation fully exercisable today, and the app becomes real simply by setting
- * `VITE_API_BASE_URL` - nothing above this file needs to change.
- *
- * The shapes returned here match what a real Express + MongoDB API built in
- * this style would return, so swapping them out later is a no-op.
+ * DOCU: An in-browser stand-in for the REST API, faked on top of localStorage
+ * while the real backend is unimplemented. Returns the shapes a real Express +
+ * MongoDB API would, so swapping them out later is a no-op.
  */
+
+import { BOARDS, DEFAULT_BOARD } from "../constants/boards";
 
 const DB_KEY = "foxylist:db:v1";
 const SESSION_KEY = "foxylist:session:v1";
@@ -28,7 +25,7 @@ const readDb = () => {
         const raw = localStorage.getItem(DB_KEY);
         if (raw) return JSON.parse(raw);
     } catch {
-        /* Corrupted or unavailable storage falls through to a fresh database. */
+        /** Corrupted or unavailable storage falls through to a fresh database. */
     }
     return { users: [], tasks: [] };
 };
@@ -38,11 +35,7 @@ const writeDb = (db) => localStorage.setItem(DB_KEY, JSON.stringify(db));
 /** Generates a sortable, collision-resistant id without a uuid dependency. */
 const makeId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
-/**
- * DOCU: Strips the password before a user object crosses the network boundary. <br>
- * The key is built dynamically so the linter can see the property is used,
- * while the caller still never has to think about it.
- */
+/** DOCU: Strips the password before a user object leaves this module. */
 const publicUser = (user) => Object.fromEntries(
     Object.entries(user).filter(([key]) => key !== "password")
 );
@@ -61,7 +54,7 @@ const starterTasks = (userId) => [
         userId,
         title: "Drag me between the boards",
         description: "Pick me up and drop me into Ongoing, then Done.",
-        status: "todo",
+        status: DEFAULT_BOARD,
         order: 0,
         createdAt: new Date().toISOString(),
     },
@@ -70,17 +63,14 @@ const starterTasks = (userId) => [
         userId,
         title: "Write my first task",
         description: "Use the input at the bottom of the To Do column.",
-        status: "todo",
+        status: DEFAULT_BOARD,
         order: 1,
         createdAt: new Date().toISOString(),
     },
 ];
 
-/**
- * DOCU: Renumbers a board's tasks to a dense 0..n-1 sequence. <br>
- * Called after every move so ordering stays gap-free and two tasks can never
- * share a position, which is what keeps drag and drop deterministic.
- */
+/** DOCU: Renumbers a board's tasks to a dense 0..n-1 sequence, so two tasks can
+ *  never share a position and drag and drop stays deterministic. */
 const normaliseOrder = (tasks, userId, status) =>
     tasks
         .filter((task) => task.userId === userId && task.status === status)
@@ -164,10 +154,8 @@ const handle = async (path, { method = "GET", body } = {}) => {
         const { email } = body ?? {};
         if (!email?.trim()) throw new HttpError(400, "Email is required");
 
-        /*
-          Deliberately the same response whether or not the email exists, so
-          this endpoint cannot be used to discover which addresses are registered.
-        */
+        /** The same response whether or not the email exists, so this endpoint
+         *  cannot be used to discover which addresses are registered. */
         return { message: "If that email exists, a reset link is on its way" };
     }
 
@@ -204,7 +192,7 @@ const handle = async (path, { method = "GET", body } = {}) => {
         if (!title?.trim()) throw new HttpError(400, "Title is required");
 
         const siblings = db.tasks.filter(
-            (task) => task.userId === user._id && task.status === "todo"
+            (task) => task.userId === user._id && task.status === DEFAULT_BOARD
         );
 
         const task = {
@@ -212,7 +200,7 @@ const handle = async (path, { method = "GET", body } = {}) => {
             userId: user._id,
             title: title.trim(),
             description: description?.trim() ?? "",
-            status: "todo",
+            status: DEFAULT_BOARD,
             order: siblings.length,
             createdAt: new Date().toISOString(),
         };
@@ -227,7 +215,7 @@ const handle = async (path, { method = "GET", body } = {}) => {
         const user = requireUser();
         const { taskId, newStatus, newIndex } = body ?? {};
 
-        if (!["todo", "ongoing", "done"].includes(newStatus)) {
+        if (!BOARDS.includes(newStatus)) {
             throw new HttpError(400, "Unknown board");
         }
 
@@ -238,7 +226,7 @@ const handle = async (path, { method = "GET", body } = {}) => {
 
         const previousStatus = task.status;
 
-        /* Take it out of the old board, then insert it at the dropped index. */
+        /** Take it out of the old board, then insert it at the dropped index. */
         const target = db.tasks
             .filter(
                 (candidate) =>
@@ -255,7 +243,7 @@ const handle = async (path, { method = "GET", body } = {}) => {
             candidate.order = index;
         });
 
-        /* The old board now has a hole where the task used to be. */
+        /** The old board now has a hole where the task used to be. */
         if (previousStatus !== newStatus) {
             normaliseOrder(db.tasks, user._id, previousStatus);
         }

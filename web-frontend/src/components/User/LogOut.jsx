@@ -2,12 +2,13 @@ import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { logOut } from "../../api-client/users";
 import { useAppContext } from "../../contexts/useAppContext";
+import { ROUTES } from "../../constants/routes";
+import { TOAST_TYPES } from "../../constants/toast";
 
 /**
- * DOCU: The sign-out entry in the account menu. <br>
- * Even if the request fails, the local session is cleared and the user is sent
- * back to the sign-in page - leaving them on a board they can no longer save to
- * would be worse than ignoring the error.
+ * DOCU: The sign-out entry in the account menu. Even if the request fails the
+ * local session is cleared and the user is sent back to sign-in: leaving them
+ * on a board they can no longer save to would be worse than ignoring the error.
  */
 const LogOut = ({ onDone }) => {
     const { showToast, clearSession } = useAppContext();
@@ -16,17 +17,17 @@ const LogOut = ({ onDone }) => {
     const leave = () => {
         clearSession();
         onDone?.();
-        navigate("/login", { replace: true });
+        navigate(ROUTES.login, { replace: true });
     };
 
     const mutation = useMutation({
         mutationFn: logOut,
         onSuccess: () => {
-            showToast({ message: "Signed out", type: "SUCCESS" });
+            showToast({ message: "Signed out", type: TOAST_TYPES.success });
             leave();
         },
         onError: (error) => {
-            showToast({ message: error.message, type: "ERROR" });
+            showToast({ message: error.message, type: TOAST_TYPES.error });
             leave();
         },
     });

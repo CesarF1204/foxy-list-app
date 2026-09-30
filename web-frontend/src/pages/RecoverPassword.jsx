@@ -5,24 +5,21 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { forgotPassword, resetPassword } from "../api-client/users";
 import { useAppContext } from "../contexts/useAppContext";
+import { ROUTES } from "../constants/routes";
+import { TOAST_TYPES } from "../constants/toast";
+import { MASCOT_HOLD_MS } from "../constants/mascot";
+import { EMAIL_PATTERN, PASSWORD_MIN_LENGTH, VALIDATION_MESSAGES } from "../constants/validation";
 import AuthLayout from "../components/AuthLayout";
 import FormField from "../components/FormField";
 import useAuthMascotMood from "../hooks/useAuthMascotMood";
-import { MASCOT_HOLD_MS, fieldErrorToast } from "../helpers/mascotSheets";
+import { fieldErrorToast } from "../helpers/mascotMood";
 
-/**
- * DOCU: How long the fox celebrates before the page changes. <br>
- * The redirect has to wait, or the success face never reaches the screen. It
- * is the mascot's own success hold rather than a number of its own, so the face
- * is never cut off part way through.
- */
+/** DOCU: How long the fox celebrates before the page changes. */
 const SUCCESS_HOLD_MS = MASCOT_HOLD_MS.success;
 
 /**
- * DOCU: Password recovery, in two steps on one page. <br>
- * Step one asks for the email address. Step two sets a new password for that
- * same address. Keeping both steps here means the address never has to be
- * passed around in the URL or retyped.
+ * DOCU: Password recovery, in two steps on one page, so the address never has to
+ * be passed around in the URL or retyped.
  */
 const RecoverPassword = () => {
     const navigate = useNavigate();
@@ -40,10 +37,8 @@ const RecoverPassword = () => {
         formState: { errors },
     } = formApi;
 
-    /*
-      On a timer, and cleared on unmount: the redirect would otherwise fire after
-      the user had already navigated somewhere else and move them again.
-    */
+    /** Cleared on unmount: the redirect would otherwise move the user again after
+     *  they had already navigated somewhere else. */
     const redirectRef = useRef(null);
     useEffect(
         () => () => {
@@ -60,11 +55,8 @@ const RecoverPassword = () => {
         }, SUCCESS_HOLD_MS);
     };
 
-    /**
-     * Moves to the next step, holding the email across. <br>
-     * The address is read *before* the step changes: after it, the step one
-     * fields are unmounted and their values are no longer the live ones.
-     */
+    /** Moves to the next step, holding the email across. Read before the step
+     *  changes: after it, the step one fields are unmounted. */
     const goToStep = (nextStep) => {
         const email = getValues("email");
         setStep(nextStep);
@@ -74,38 +66,37 @@ const RecoverPassword = () => {
     const forgotMutation = useMutation({
         mutationFn: forgotPassword,
         onSuccess: () => {
-            showToast({ message: "Reset link sent. Check your inbox.", type: "SUCCESS" });
-            /*
-              A short pause so the fox gets to be pleased about it, then on to
-              step two. `replace` is not wanted here: back should skip this step.
-            */
+            showToast({
+                message: "Reset link sent. Check your inbox.",
+                type: TOAST_TYPES.success,
+            });
+            /** A short pause so the fox gets to be pleased, then on to step two.
+             *  `replace` is not wanted: back should skip this step. */
             window.clearTimeout(redirectRef.current);
             redirectRef.current = window.setTimeout(() => goToStep(2), SUCCESS_HOLD_MS);
         },
-        onError: (error) => showToast({ message: error.message, type: "ERROR" }),
+        onError: (error) => showToast({ message: error.message, type: TOAST_TYPES.error }),
     });
 
     const resetMutation = useMutation({
         mutationFn: resetPassword,
         onSuccess: () => {
-            showToast({ message: "Password updated. Please sign in.", type: "SUCCESS" });
-            redirectAfterCelebrating("/login");
+            showToast({
+                message: "Password updated. Please sign in.",
+                type: TOAST_TYPES.success,
+            });
+            redirectAfterCelebrating(ROUTES.login);
         },
         onError: (error) => showToast({ message: error.message, type: "ERROR" }),
     });
 
-    /*
-      Only the request for the step on screen drives the fox. Step one's success
-      must not leave the fox pleased on step two, which it never asked about.
-    */
+    /** Only the request for the step on screen drives the fox. */
     const activeMutation = step === 1 ? forgotMutation : resetMutation;
 
     /**
-     * DOCU: A submit that never left the browser. <br>
-     * `handleSubmit` stops here when validation fails, so no mutation runs and
-     * the only feedback would be the inline field errors. Raising a toast as
-     * well means a rejected form announces itself the same way a rejected
-     * request does - and gives the mascot the same signal to react to.
+     * DOCU: A submit that never left the browser, since `handleSubmit` stops
+     * before the mutation. The toast makes a rejected form announce itself the
+     * same way a rejected request does, and gives the mascot the same signal.
      */
     const reportFieldErrors = (errors) => {
         const toast = fieldErrorToast(errors);
@@ -114,10 +105,8 @@ const RecoverPassword = () => {
         }
     };
 
-    /*
-      Keyed on the step, so moving between them clears the previous step's
-      verdict and form state. The mood rules live in the hook.
-    */
+    /** Keyed on the step, so moving between them clears the previous step's
+     *  verdict and form state. */
     const mascotReaction = useAuthMascotMood(formApi, activeMutation, step);
 
     return (
@@ -170,10 +159,10 @@ const RecoverPassword = () => {
                         placeholder="you@example.com"
                         error={errors.email}
                         {...register("email", {
-                            required: "Email is required",
+                            required: VALIDATION_MESSAGES.email.required,
                             pattern: {
-                                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                                message: "Enter a valid email address",
+                                value: EMAIL_PATTERN,
+                                message: VALIDATION_MESSAGES.email.pattern,
                             },
                         })}
                     />
@@ -207,8 +196,11 @@ const RecoverPassword = () => {
                         placeholder="At least 6 characters"
                         error={errors.password}
                         {...register("password", {
-                            required: "Password is required",
-                            minLength: { value: 6, message: "Must be at least 6 characters" },
+                            required: VALIDATION_MESSAGES.password.required,
+                            minLength: {
+                                value: PASSWORD_MIN_LENGTH,
+                                message: VALIDATION_MESSAGES.passwordTooShort,
+                            },
                         })}
                     />
 
@@ -220,7 +212,7 @@ const RecoverPassword = () => {
                         placeholder="Re-enter your new password"
                         error={errors.confirmPassword}
                         {...register("confirmPassword", {
-                            required: "Please confirm your password",
+                            required: VALIDATION_MESSAGES.confirmPassword.required,
                             validate: (value) =>
                                 value === watch("password") || "Passwords do not match",
                         })}

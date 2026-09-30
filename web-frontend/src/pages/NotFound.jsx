@@ -1,14 +1,12 @@
 import { Link } from "react-router-dom";
 import { Mascot } from "page-mascot";
 import { useAppContext } from "../contexts/useAppContext";
-import { BUILDER_SHEETS, BUILDER_LABEL } from "../helpers/mascotSheets";
+import { BUILDER_SHEETS, BUILDER_LABEL } from "../constants/mascot";
+import { ROUTES } from "../constants/routes";
 
 /**
- * DOCU: Shown for any URL that does not match a route. <br>
- * The builder stands in rather than the app's own fox: a hard hat suits a page
- * about something not being built, and it keeps a dead end from looking like
- * part of the product. The call to action points somewhere sensible whether or
- * not the visitor is signed in.
+ * DOCU: Shown for any URL that does not match a route. The builder stands in
+ * rather than the app's own fox, so a dead end does not look like the product.
  */
 const NotFound = () => {
     const { isAuthenticated } = useAppContext();
@@ -26,7 +24,7 @@ const NotFound = () => {
                 </p>
             </div>
 
-            <Link to={isAuthenticated ? "/" : "/login"} className="btn btn-primary">
+            <Link to={isAuthenticated ? ROUTES.board : ROUTES.login} className="btn btn-primary">
                 {isAuthenticated ? "Back to my board" : "Go to sign in"}
             </Link>
         </div>

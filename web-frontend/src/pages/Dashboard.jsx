@@ -4,10 +4,8 @@ import Navbar from "../components/User/Navbar";
 import Task from "../components/Tasks/Task";
 
 /**
- * DOCU: The signed-in home page and the app's default route. <br>
- * Renders the account navbar, a short greeting, and the three-board task list.
- * The board owns its own loading and error states, so this page only supplies
- * the surrounding chrome.
+ * DOCU: The signed-in home page and the app's default route. The board owns its
+ * own loading and error states, so this page only supplies the surrounding chrome.
  */
 const Dashboard = () => {
     const { user } = useAppContext();

@@ -10,7 +10,8 @@
  * twice for a single change.
  */
 
-import { statusMoveToast, taskActionToast, TOAST_TITLE_LIMIT } from "../src/helpers/taskToasts.js";
+import { statusMoveToast, taskActionToast } from "../src/helpers/taskToasts.js";
+import { TOAST_TITLE_LIMIT } from "../src/constants/toast.js";
 
 let failures = 0;
 
@@ -126,13 +127,9 @@ check(
 
 console.log("\nOne move, one toast:");
 
-/*
-  What the mutation layer actually does: `onMutate` reads the card off the
-  board, `onSuccess` builds the toast from that and the requested destination.
-  Running a move through both callbacks, then a second move of the same card,
-  reproduces the flow without a browser - including the case that used to
-  matter, where the second move's origin is the first move's destination.
-*/
+/** What the mutation layer does: onMutate reads the card off the board, onSuccess
+ *  builds the toast from that and the requested destination. Running two moves of
+ *  the same card covers the case where the second origin is the first target. */
 const runMove = (board, { taskId, newStatus }, serverSucceeds) => {
     const context = board.tasks.find((task) => task._id === taskId);
     const before = { fromStatus: context?.status, title: context?.title };

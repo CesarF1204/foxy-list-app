@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { validateToken } from "../api-client/auth";
-import { VALIDATE_TOKEN_KEY } from "./authQuery";
+import { VALIDATE_TOKEN_KEY } from "../constants/queryKeys";
 import { AppContext } from "./appContextObject";
 import Toast from "../components/Toast";
 
@@ -39,14 +39,9 @@ const AppContextProvider = ({ children }) => {
         <AppContext.Provider
             value={{
                 showToast,
-                /*
-                  The toast currently on screen, or undefined. Exposed so that
-                  anything reacting to app state - the auth mascot, which has to
-                  agree with the message the user is reading - can read the same
-                  single source rather than each screen re-deriving it. It is
-                  `undefined` between toasts, so consumers treat it as a
-                  snapshot of right now, not a log.
-                */
+                /** The toast on screen, or undefined. Exposed so anything reacting
+                 *  to app state (the auth mascot) reads one source rather than
+                 *  re-deriving it. A snapshot of right now, not a log. */
                 toast,
                 user: data?.user,
                 isAuthenticated,

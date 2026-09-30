@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { getTasksQueryOptions } from "../../queryOptions/tasksQueryOptions";
 import { useTasks, getBoardTasks } from "../../hooks/useTasks";
+import { DEFAULT_BOARD } from "../../constants/boards";
 
 import TaskCard from "./TaskCard";
 import AddTask from "./AddTask";
@@ -19,10 +20,8 @@ const TaskBoard = () => {
         data?.tasks
     );
 
-    /*
-      One stable save/delete handler for every card, so the memo on TaskCard is
-      not broken by a fresh closure per row. The card passes its own task in.
-    */
+    /** One stable handler for every card, so the memo on TaskCard is not broken
+     *  by a fresh closure per row. The card passes its own task in. */
     const handleSave = useCallback(
         (task, title, description) => renameTask(task, title, description),
         [renameTask]
@@ -30,11 +29,8 @@ const TaskBoard = () => {
 
     const handleDelete = useCallback((task) => setPendingDelete(task), []);
 
-    /*
-      Stable identity matters here: every board slice is memoised on `tasks`, so
-      dragging one card does not hand every other card a new array and defeat
-      the memo on TaskCard.
-    */
+    /** Stable identity matters: every board slice is memoised on `tasks`, so
+     *  dragging one card must not hand every other card a new array. */
     const boardTasks = useMemo(
         () => Object.fromEntries(boards.map((board) => [board, getBoardTasks(tasks, board)])),
         [boards, tasks]
@@ -109,18 +105,15 @@ const TaskBoard = () => {
                                             </span>
                                         </header>
 
-                                        {/*
-                                          The hint is copy about a card waiting to be
-                                          grabbed, so it only makes sense while the
-                                          board actually holds a card.
-                                        */}
-                                        {!(board === "todo" && tasksOnBoard.length === 0) && (
+                                        {/* The hint talks about a card waiting to be
+                                            grabbed, so it needs a card to talk about. */}
+                                        {!(board === DEFAULT_BOARD && tasksOnBoard.length === 0) && (
                                             <p className="mb-3 px-1 text-[0.7rem] font-bold text-ink-faint">
                                                 {meta.hint}
                                             </p>
                                         )}
 
-                                        {board === "todo" && tasksOnBoard.length === 0 && (
+                                        {board === DEFAULT_BOARD && tasksOnBoard.length === 0 && (
                                             <p
                                                 className="mb-3 rounded-2xl border-2 border-dashed border-ink-faint/60 bg-paper/60 px-3 py-4 text-center text-xs font-bold text-ink-soft"
                                                 role="status"
@@ -144,14 +137,14 @@ const TaskBoard = () => {
                                             {/* The gap the card will drop into. */}
                                             {provided.placeholder}
 
-                                            {tasksOnBoard.length === 0 && board !== "todo" && (
+                                            {tasksOnBoard.length === 0 && board !== DEFAULT_BOARD && (
                                                 <EmptyState
                                                     title={`Nothing in ${meta.label.toLowerCase()}`}
                                                     description="Drag a card here when you start or finish it."
                                                 />
                                             )}
 
-                                            {board === "todo" && <AddTask onAdd={addTask} />}
+                                            {board === DEFAULT_BOARD && <AddTask onAdd={addTask} />}
                                         </div>
                                     </section>
                                 )}
@@ -175,11 +168,8 @@ const TaskBoard = () => {
     );
 };
 
-/**
- * DOCU: Entry point for the task board. <br>
- * The query lives in a child component so the drag and drop context is not
- * torn down and rebuilt every time the data refreshes.
- */
+/** DOCU: Entry point for the task board. The query lives in a child so the drag
+ *  and drop context is not torn down every time the data refreshes. */
 const Task = (props) => (
     <Suspense fallback={<InlineLoader label="Loading your tasks..." />}>
         <TaskBoard {...props} />

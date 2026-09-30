@@ -5,29 +5,32 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { signIn, registerUser } from "../api-client/users";
 import { useAppContext } from "../contexts/useAppContext";
-import { VALIDATE_TOKEN_KEY } from "../contexts/authQuery";
+import { VALIDATE_TOKEN_KEY } from "../constants/queryKeys";
+import { ROUTES } from "../constants/routes";
+import { TOAST_TYPES } from "../constants/toast";
+import { MASCOT_HOLD_MS } from "../constants/mascot";
+import {
+    EMAIL_PATTERN,
+    NAME_PATTERN,
+    PASSWORD_MIN_LENGTH,
+    VALIDATION_MESSAGES,
+} from "../constants/validation";
 import AuthLayout from "../components/AuthLayout";
 import FormField from "../components/FormField";
 import useAuthMascotMood from "../hooks/useAuthMascotMood";
-import { MASCOT_HOLD_MS, fieldErrorToast } from "../helpers/mascotSheets";
+import { fieldErrorToast } from "../helpers/mascotMood";
 
 /* TEMPORARY - mock layer only. See src/mock/index.js for how to remove it. */
 import { MOCK_MODE } from "../mock";
 import SampleCredentialsHint from "../mock/SampleCredentialsHint";
 
-/**
- * DOCU: How long the fox gets to look pleased before the page changes. <br>
- * Without this the redirect happens in the same tick as the success and the
- * reaction never reaches the screen. It is the mascot's own success hold rather
- * than a number of its own, so the face is never cut off part way through.
- */
+/** DOCU: How long the fox gets to look pleased before the page changes, so the
+ *  success face is never cut off. */
 const SUCCESS_HOLD_MS = MASCOT_HOLD_MS.success;
 
 /**
- * DOCU: The combined sign-in and register screen. <br>
- * Both live in one page and one component: the mode is decided by the current
- * route (`/login` or `/register`), so switching modes swaps the fields and the
- * URL together, and each mode is individually linkable and reloadable.
+ * DOCU: The combined sign-in and register screen. The mode is decided by the
+ * route (`/login` or `/register`), so each mode is linkable and reloadable.
  */
 const Auth = () => {
     const location = useLocation();
@@ -35,7 +38,7 @@ const Auth = () => {
     const { showToast } = useAppContext();
     const queryClient = useQueryClient();
 
-    const isRegisterMode = location.pathname === "/register";
+    const isRegisterMode = location.pathname === ROUTES.register;
 
     const formApi = useForm();
 
@@ -48,19 +51,12 @@ const Auth = () => {
         formState: { errors },
     } = formApi;
 
-    /*
-      Each mode gets its own form instance. Keying on the mode makes React
-      remount the form when the user switches, so values, validation errors and
-      focus are all cleared automatically - far more reliable than trying to
-      unregister the fields that are no longer on screen.
-    */
+    /** Keying on the mode remounts the form when the user switches, so values,
+     *  errors and focus all clear - more reliable than unregistering fields. */
     const formKey = isRegisterMode ? "register" : "login";
 
-    /*
-      Held in a ref rather than state: the redirect below runs on a timer, and a
-      timer that fires after the user has navigated on would move them out of
-      whatever page they are now looking at.
-    */
+    /** In a ref, because the redirect runs on a timer that must not fire after
+     *  the user has navigated on. */
     const redirectRef = useRef(null);
     useEffect(
         () => () => {
@@ -80,34 +76,34 @@ const Auth = () => {
     const signInMutation = useMutation({
         mutationFn: signIn,
         onSuccess: () => {
-            showToast({ message: "Signed in. Welcome back!", type: "SUCCESS" });
+            showToast({
+                message: "Signed in. Welcome back!",
+                type: TOAST_TYPES.success,
+            });
             /* Refetch the session so the board renders with the new user. */
             queryClient.removeQueries({ queryKey: VALIDATE_TOKEN_KEY, exact: true });
-            redirectAfterCelebrating("/");
+            redirectAfterCelebrating(ROUTES.board);
         },
-        onError: (error) => showToast({ message: error.message, type: "ERROR" }),
+        onError: (error) => showToast({ message: error.message, type: TOAST_TYPES.error }),
     });
 
     const registerMutation = useMutation({
         mutationFn: registerUser,
         onSuccess: () => {
-            showToast({ message: "Account created. Please sign in.", type: "SUCCESS" });
-            redirectAfterCelebrating("/login");
+            showToast({
+                message: "Account created. Please sign in.",
+                type: TOAST_TYPES.success,
+            });
+            redirectAfterCelebrating(ROUTES.login);
         },
-        onError: (error) => showToast({ message: error.message, type: "ERROR" }),
+        onError: (error) => showToast({ message: error.message, type: TOAST_TYPES.error }),
     });
 
-    /*
-      Only the request for the mode on screen may drive the fox. Handing it the
-      other one would leave it showing the previous screen's result - a stale
-      success, for instance, after a failed sign-in attempt.
-    */
+    /** Only the request for the mode on screen may drive the fox, or it shows the
+     *  previous screen's result. */
     const activeMutation = isRegisterMode ? registerMutation : signInMutation;
 
-    /*
-      Keyed on the mode so switching clears the old form and the old request.
-      The hook owns the mood rules; see useAuthMascotMood.
-    */
+    /** Keyed on the mode so switching clears the old form and request. */
     const mascotReaction = useAuthMascotMood(
         formApi,
         activeMutation,
@@ -119,17 +115,15 @@ const Auth = () => {
         event.preventDefault();
         window.clearTimeout(redirectRef.current);
         reset();
-        navigate(isRegisterMode ? "/login" : "/register");
+        navigate(isRegisterMode ? ROUTES.login : ROUTES.register);
     };
 
     const isSubmitting = signInMutation.isPending || registerMutation.isPending;
 
     /**
-     * DOCU: A submit that never left the browser. <br>
-     * `handleSubmit` stops here when validation fails, so no mutation runs and
-     * the only feedback would be the inline field errors. Raising a toast as
-     * well means a rejected form announces itself the same way a rejected
-     * request does - and gives the mascot the same signal to react to.
+     * DOCU: A submit that never left the browser, since `handleSubmit` stops
+     * before the mutation. The toast makes a rejected form announce itself the
+     * same way a rejected request does, and gives the mascot the same signal.
      */
     const reportFieldErrors = (errors) => {
         const toast = fieldErrorToast(errors);
@@ -174,8 +168,11 @@ const Auth = () => {
                             placeholder="Jane"
                             error={errors.firstName}
                             {...register("firstName", {
-                                required: "Required",
-                                pattern: { value: /^[A-Za-z\s]+$/, message: "Letters only" },
+                                required: VALIDATION_MESSAGES.firstName.required,
+                                pattern: {
+                                    value: NAME_PATTERN,
+                                    message: VALIDATION_MESSAGES.firstName.pattern,
+                                },
                             })}
                         />
                         <FormField
@@ -185,8 +182,11 @@ const Auth = () => {
                             placeholder="Doe"
                             error={errors.lastName}
                             {...register("lastName", {
-                                required: "Required",
-                                pattern: { value: /^[A-Za-z\s]+$/, message: "Letters only" },
+                                required: VALIDATION_MESSAGES.lastName.required,
+                                pattern: {
+                                    value: NAME_PATTERN,
+                                    message: VALIDATION_MESSAGES.lastName.pattern,
+                                },
                             })}
                         />
                     </div>
@@ -200,10 +200,10 @@ const Auth = () => {
                     placeholder="you@example.com"
                     error={errors.email}
                     {...register("email", {
-                        required: "Email is required",
+                        required: VALIDATION_MESSAGES.email.required,
                         pattern: {
-                            value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                            message: "Enter a valid email address",
+                            value: EMAIL_PATTERN,
+                            message: VALIDATION_MESSAGES.email.pattern,
                         },
                     })}
                 />
@@ -216,8 +216,11 @@ const Auth = () => {
                     placeholder="At least 6 characters"
                     error={errors.password}
                     {...register("password", {
-                        required: "Password is required",
-                        minLength: { value: 6, message: "Must be at least 6 characters" },
+                        required: VALIDATION_MESSAGES.password.required,
+                        minLength: {
+                            value: PASSWORD_MIN_LENGTH,
+                            message: VALIDATION_MESSAGES.passwordTooShort,
+                        },
                     })}
                 />
 
@@ -271,7 +274,7 @@ const Auth = () => {
 
                 <p className="-mt-2 text-center text-sm font-semibold text-ink-soft">
                     <Link
-                        to="/recover-password"
+                        to={ROUTES.recoverPassword}
                         className="font-extrabold text-ink-faint underline decoration-2 underline-offset-2 transition hover:text-ink"
                     >
                         Forgot your password?

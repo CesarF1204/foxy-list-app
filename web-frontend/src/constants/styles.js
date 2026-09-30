@@ -1,9 +1,6 @@
 /**
- * DOCU: Shared control styles for the app navbar. <br>
- * The navbar mixes an avatar, text blocks and buttons that all sit on one row.
- * Previously each control carried its own padding, which produced several
- * different heights and a visibly ragged row. Fixing the box model here keeps
- * every navbar control exactly the same size.
+ * Shared control styles for the app navbar: fixing the box model in one place
+ * keeps every navbar control the same size.
  */
 
 /** The common shape of every navbar control. */

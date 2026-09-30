@@ -1,16 +1,7 @@
 /**
- * DOCU: The app footer. <br>
- * Rendered by the shell in `AppShell`, so it stays in place without each screen
- * having to place it, and the shell decides which pages get one at all. Only
- * the board does: the sign-in, register, password recovery and not-found screens
- * are deliberately bare.
- * The year is read from the clock at
- * render time rather than written into the markup, so the notice rolls over on
- * its own on 1 January. <br>
- * Deliberately quiet: a single centered line, sized and coloured to match the
- * small secondary text used across the app. The 2px ink rule matches the
- * navbar's own bottom border, so the top and bottom of the page are framed the
- * same way.
+ * DOCU: The app footer. Rendered by `AppShell`, which also decides which pages
+ * get one: only the board does. The year is read at render time so the notice
+ * rolls over on its own.
  */
 const Footer = () => {
     const year = new Date().getFullYear();

@@ -1,13 +1,11 @@
 /**
  * A check of the task creation flow, in particular that one create action
- * leaves exactly one task on the board. <br>
- * The pure helpers live in src/hooks/useTasks.js; they are reproduced here so
- * the optimistic add -> confirm (or fail) lifecycle can be exercised in Node,
- * without a browser or a bundler. Run with: npm run verify:tasks
+ * leaves exactly one task on the board. The pure helpers live in
+ * src/hooks/useTasks.js and are reproduced here. Run with: npm run verify:tasks
  *
  * The bug this guards against: the optimistic placeholder was written into the
- * cache on add and never taken out again when the server's task came back, so
- * a single submission rendered two cards.
+ * cache on add and never removed when the server's task came back, so a single
+ * submission rendered two cards.
  */
 
 const BOARDS = ["todo", "ongoing", "done"];
@@ -308,11 +306,8 @@ console.log("\nTasks already on the board:");
     check("the new task is on the todo board", render(board).includes("Brand new"));
     check("orders are dense", dense(ordersOf(board, "todo")));
 
-    /*
-      Editing and completing a freshly created task has to work, which means
-      the card must be reachable by the id the server gave it - not the
-      temporary one.
-    */
+    /** Editing and completing a new task means the card must be reachable by the
+     *  id the server gave it, not the temporary one. */
     const created = board.tasks.find((task) => task.title === "Brand new");
     board.tasks = board.tasks.map((task) =>
         task._id === created._id ? { ...task, title: "Edited", status: "done", order: 0 } : task
@@ -337,14 +332,9 @@ console.log("\nEmpty input:");
 
 console.log("\nHow the create mutation is wired to React Query:");
 {
-    /*
-      React Query calls the callbacks as (data, variables, context), where
-      `context` is only ever what `onMutate` returned. This create has no
-      onMutate, so `context` is undefined - reading the placeholder id from
-      there throws, the placeholder is never replaced, and the card stays on
-      the board marked as pending (faded) for good. These checks model that
-      contract, so reintroducing the mistake fails here rather than in the UI.
-    */
+    /** `context` is only ever what `onMutate` returned, and this create has no
+     *  onMutate, so reading the placeholder id from it throws and the placeholder
+     *  is never replaced. These checks model that contract. */
     const wiring = (board, api, { onMutate } = {}) => {
         let sent = null;
 

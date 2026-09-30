@@ -1,15 +1,11 @@
 /* ============================================================================
  * TEMPORARY - FRONTEND MOCK LAYER (in-memory store, no network)
- * ============================================================================
  *
- * A tiny stand-in for the REST API, holding everything in localStorage so
- * changes survive a reload while you test. It implements the same paths,
- * verbs, return shapes and 4xx errors as the real backend, so the app's
+ * A stand-in for the REST API holding everything in localStorage. It implements
+ * the same paths, verbs, return shapes and 4xx errors as the real backend, so
  * queries and mutations are written exactly as they would be against it.
  *
- * This file is only reached through the single bypass in
- * `src/api-client/client.js`. Delete the `src/mock` folder and that bypass and
- * the real API is back, untouched.
+ * Delete this folder and the bypass in `src/api-client/client.js` to undo it.
  * ========================================================================== */
 
 import {
@@ -33,13 +29,8 @@ class HttpError extends Error {
 /** An empty database, the shape every read falls back to. */
 const emptyDb = () => ({ users: [], tasks: [] });
 
-/**
- * DOCU: The database, seeded with the sample account and board the first time. <br>
- * Seeding is idempotent: the sample user is only added when absent, so deleting
- * a sample task does not bring it back on the next reload. The sample board is
- * regenerated fresh whenever the seed version changes.
- * @returns {object}
- */
+/** DOCU: The database, seeded on first read. Seeding is idempotent, so a deleted
+ *  sample task does not come back on the next reload. */
 const readDb = () => {
     let db = emptyDb();
 
@@ -47,7 +38,7 @@ const readDb = () => {
         const raw = localStorage.getItem(MOCK_DB_KEY);
         if (raw) db = { ...emptyDb(), ...JSON.parse(raw) };
     } catch {
-        /* Corrupted or unavailable storage falls through to a fresh seed. */
+        /** Corrupted or unavailable storage falls through to a fresh seed. */
     }
 
     if (!db.users.some((user) => user._id === buildMockUser()._id)) {
@@ -65,11 +56,7 @@ const writeDb = (db) => localStorage.setItem(MOCK_DB_KEY, JSON.stringify(db));
 /** Generates a sortable, collision-resistant id without a uuid dependency. */
 const makeId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
-/**
- * DOCU: Strips the password before a user object crosses into the app. <br>
- * The key is built dynamically so the linter can see the property is used,
- * while the caller never has to think about it.
- */
+/** DOCU: Strips the password before a user object leaves this module. */
 const publicUser = (user) =>
     Object.fromEntries(Object.entries(user).filter(([key]) => key !== "password"));
 
@@ -81,11 +68,8 @@ const requireUser = () => {
     return user;
 };
 
-/**
- * DOCU: Renumbers a board's tasks to a dense 0..n-1 sequence. <br>
- * Called after every move so ordering stays gap-free and two tasks can never
- * share a position, which is what keeps drag and drop deterministic.
- */
+/** DOCU: Renumbers a board's tasks to a dense 0..n-1 sequence, so two tasks can
+ *  never share a position and drag and drop stays deterministic. */
 const normaliseOrder = (tasks, userId, status) =>
     tasks
         .filter((task) => task.userId === userId && task.status === status)
@@ -119,12 +103,10 @@ const starterTasks = (userId) => [
 ];
 
 /**
- * DOCU: Routes a request to the matching mock endpoint. <br>
- * Mirrors the real API's paths, verbs and error codes, so the calling code
- * needs no knowledge that this is a mock.
+ * DOCU: Routes a request to the matching mock endpoint, mirroring the real
+ * API's paths, verbs and error codes.
  * @param {string} path - e.g. "/api/tasks/move"
  * @param {object} options - { method, body }
- * @returns {Promise<object>} the response body
  * @throws {HttpError} on any 4xx
  */
 const handle = async (path, { method = "GET", body } = {}) => {
@@ -192,10 +174,8 @@ const handle = async (path, { method = "GET", body } = {}) => {
         const { email } = body ?? {};
         if (!email?.trim()) throw new HttpError(400, "Email is required");
 
-        /*
-          Deliberately the same response whether or not the email exists, so
-          this endpoint cannot be used to discover which addresses are registered.
-        */
+        /** The same response whether or not the email exists, so this endpoint
+         *  cannot be used to discover which addresses are registered. */
         return { message: "If that email exists, a reset link is on its way" };
     }
 
@@ -268,7 +248,7 @@ const handle = async (path, { method = "GET", body } = {}) => {
 
         const previousStatus = task.status;
 
-        /* Take it out of the old board, then insert it at the dropped index. */
+        /** Take it out of the old board, then insert it at the dropped index. */
         const target = db.tasks
             .filter(
                 (candidate) =>
@@ -285,7 +265,7 @@ const handle = async (path, { method = "GET", body } = {}) => {
             candidate.order = index;
         });
 
-        /* The old board now has a hole where the task used to be. */
+        /** The old board now has a hole where the task used to be. */
         if (previousStatus !== newStatus) {
             normaliseOrder(db.tasks, user._id, previousStatus);
         }
@@ -334,12 +314,7 @@ const handle = async (path, { method = "GET", body } = {}) => {
 
 export { handle as handleMockRequest, HttpError, readDb, writeDb };
 
-/**
- * DOCU: Wipes the mock database and session, so the next read re-seeds the
- * sample account and a fresh sample board. Useful when testing has left the
- * board in a messy state.
- * @returns {void}
- */
+/** DOCU: Wipes the mock database and session, so the next read re-seeds. */
 const resetMockData = () => {
     localStorage.removeItem(MOCK_DB_KEY);
     localStorage.removeItem(MOCK_SESSION_KEY);

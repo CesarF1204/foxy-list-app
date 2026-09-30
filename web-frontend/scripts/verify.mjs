@@ -1,8 +1,7 @@
 /**
- * A check of the board's ordering arithmetic. <br>
- * The same helpers live in src/hooks/useTasks.js and src/api-client/localApi.js;
- * they are reproduced here so the drag-and-drop maths can be exercised in Node,
- * without a browser or a bundler. Run with: npm run verify
+ * A check of the board's ordering arithmetic. The same helpers live in
+ * src/hooks/useTasks.js and src/api-client/localApi.js, reproduced here so the
+ * drag-and-drop maths can be exercised in Node. Run with: npm run verify
  */
 
 const BOARDS = ["todo", "ongoing", "done"];
@@ -29,12 +28,8 @@ const applyMove = (tasks, taskId, newStatus, newIndex) => {
     const moving = tasks.find((task) => task._id === taskId);
     if (!moving) return tasks;
 
-    /*
-      The destination board is rebuilt from scratch: every card already on it,
-      plus the moved card at the dropped index. The other boards are carried
-      over untouched. Note that `offBoard` must exclude the destination board's
-      cards as well, otherwise they would end up in the list twice.
-    */
+    /** The destination board is rebuilt from scratch. `offBoard` must exclude its
+     *  cards too, or they would end up in the list twice. */
     const offBoard = tasks.filter(
         (task) => task._id !== taskId && task.status !== newStatus
     );

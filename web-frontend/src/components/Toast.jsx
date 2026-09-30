@@ -1,50 +1,44 @@
 import { useEffect } from "react";
 
-/* Shared visual styles per toast type. */
-const TOAST_STYLES = {
-    SUCCESS: "bg-done-deep",
-    ERROR: "bg-red-600",
-    INFO: "bg-ink",
-};
-
-const ICONS = {
-    SUCCESS: "✓",
-    ERROR: "!",
-    INFO: "i",
-};
+import {
+    TOAST_DEFAULT_TYPE,
+    TOAST_DURATIONS_MS,
+    TOAST_ICONS,
+    TOAST_STYLES,
+    TOAST_TYPES,
+} from "../constants/toast";
 
 /**
- * DOCU: A transient notification. <br>
- * The API returns validation errors as an array of strings, so the message is
- * normalised to text before rendering. <br>
- * Errors stay on screen longer than successes because they usually need to be
- * read and acted on.
+ * DOCU: A transient notification. The API returns validation errors as an array
+ * of strings, so the message is normalised to text. Errors stay on screen longer
+ * than successes; durations, styles and icons live in `src/constants/toast.js`.
  */
-const Toast = ({ message, type = "INFO", onClose }) => {
+const Toast = ({ message, type = TOAST_DEFAULT_TYPE, onClose }) => {
+    const isError = type === TOAST_TYPES.error;
+
     useEffect(() => {
-        const timer = setTimeout(onClose, type === "ERROR" ? 6000 : 3000);
+        const timer = setTimeout(
+            onClose,
+            isError ? TOAST_DURATIONS_MS.ERROR : TOAST_DURATIONS_MS.DEFAULT
+        );
         return () => clearTimeout(timer);
-    }, [onClose, type, message]);
+    }, [onClose, type, isError, message]);
 
     const text = Array.isArray(message) ? message.join(". ") : message;
     if (!text) return null;
 
     return (
         <div
-            /*
-               Anchored to the bottom of the viewport. The header is the busiest
-               region of the app and a top-right toast sat on top of the navbar
-               controls, hiding the very action it refers to.
-               pointer-events-none keeps the toast from swallowing clicks on
-               whatever sits underneath it; only the close button takes clicks.
-            */
-            className={`animate-pop-in pointer-events-none fixed bottom-4 left-4 right-4 z-50 flex items-start gap-3 rounded-xl border-2 border-ink px-4 py-3 text-sm font-bold text-white shadow-pop sm:left-auto sm:max-w-sm ${TOAST_STYLES[type] ?? TOAST_STYLES.INFO}`}
+            /** Anchored to the bottom: a top-right toast sat on top of the navbar
+             *  controls, hiding the action it referred to. pointer-events-none
+             *  keeps it from swallowing clicks underneath. */
+            className={`animate-pop-in pointer-events-none fixed bottom-4 left-4 right-4 z-50 flex items-start gap-3 rounded-xl border-2 border-ink px-4 py-3 text-sm font-bold text-white shadow-pop sm:left-auto sm:max-w-sm ${TOAST_STYLES[type] ?? TOAST_STYLES[TOAST_DEFAULT_TYPE]}`}
             /* Errors interrupt, confirmations are announced politely. */
-            role={type === "ERROR" ? "alert" : "status"}
-            aria-live={type === "ERROR" ? "assertive" : "polite"}
+            role={isError ? "alert" : "status"}
+            aria-live={isError ? "assertive" : "polite"}
         >
             <span aria-hidden="true" className="leading-5">
-                {ICONS[type] ?? ICONS.INFO}
+                {TOAST_ICONS[type] ?? TOAST_ICONS[TOAST_DEFAULT_TYPE]}
             </span>
             <p className="flex-1 leading-5">{text}</p>
             <button
