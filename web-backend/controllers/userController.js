@@ -1,3 +1,12 @@
+/**
+ *
+ * Retrieves the profile of the currently authenticated user.
+ *
+ * The authenticated user is provided by the authentication middleware
+ * through `req.user`. If the user is not found, a 404 response is returned.
+ * On success, the user's basic profile information is returned.
+ *
+ */
 export const getProfile = async (req, res) => {
   try {
     const user = req.user;
