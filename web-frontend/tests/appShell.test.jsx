@@ -70,8 +70,8 @@ describe("the footer on the board", () => {
         expect(footer()).toBeInTheDocument();
     });
 
-    it("keeps the board as the only footer-bearing route", () => {
-        expect(FOOTER_PATHS).toEqual([ROUTES.board]);
+    it("keeps the signed-in pages as the only footer-bearing routes", () => {
+        expect(FOOTER_PATHS).toEqual([ROUTES.board, ROUTES.adminOverview, ROUTES.adminUsers]);
     });
 
     it("still shows the footer with a trailing slash, as the router treats it", () => {

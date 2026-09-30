@@ -11,9 +11,15 @@
 import {
     MOCK_DB_KEY,
     MOCK_SESSION_KEY,
+    MOCK_ADMIN_USER_ID,
     buildMockUser,
+    buildMockAdminUser,
     buildSampleTasks,
+    buildSampleUsers,
+    buildExtraUserTasks,
 } from "./sampleData";
+import { ADMIN_PREFIX, handleAdminRequest, parseQuery } from "../api-client/adminApi";
+import { DEFAULT_ROLE, DEFAULT_ACCOUNT_STATUS } from "../constants/roles";
 
 /** A small delay, so loading states behave as they will with a real API. */
 const delay = (ms = 260) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -29,6 +35,38 @@ class HttpError extends Error {
 /** An empty database, the shape every read falls back to. */
 const emptyDb = () => ({ users: [], tasks: [] });
 
+/**
+ * DOCU: Brings a database seeded by an older version of the mock up to date.
+ *
+ * The role and account-status fields were added after the first release of the
+ * mock, so a browser that has been running since before then holds a sample
+ * account with neither field. `isAdmin` fails closed on a missing role - which is
+ * correct - so that account would be refused by `/admin` with no obvious reason.
+ *
+ * The migration fills in only fields that are *absent*. A value that is present is
+ * left exactly as it is, so a role or status deliberately changed through the
+ * admin dashboard is never undone by a reload.
+ *
+ * @param {object} db - the database, mutated in place
+ * @returns {boolean} whether anything changed, i.e. whether to persist
+ */
+const migrateSeedData = (db) => {
+    let changed = false;
+
+    for (const user of db.users) {
+        if (user.role === undefined) {
+            user.role = DEFAULT_ROLE;
+            changed = true;
+        }
+        if (user.status === undefined) {
+            user.status = DEFAULT_ACCOUNT_STATUS;
+            changed = true;
+        }
+    }
+
+    return changed;
+};
+
 /** DOCU: The database, seeded on first read. Seeding is idempotent, so a deleted
  *  sample task does not come back on the next reload. */
 const readDb = () => {
@@ -41,10 +79,36 @@ const readDb = () => {
         /** Corrupted or unavailable storage falls through to a fresh seed. */
     }
 
+    /* Before anything is added: an existing database is brought up to date, so a
+     * browser seeded by an older build can reach the admin area. */
+    if (migrateSeedData(db)) writeDb(db);
+
     if (!db.users.some((user) => user._id === buildMockUser()._id)) {
         const user = buildMockUser();
         db.users.push(user);
         db.tasks.push(...buildSampleTasks(user._id));
+        writeDb(db);
+    }
+
+    /* The sample administrator. Seeded on the same idempotent terms as the
+     * others, and re-added if it goes missing so there is always a way to sign in
+     * as an admin - including after a test that deleted it. */
+    if (!db.users.some((user) => user._id === MOCK_ADMIN_USER_ID)) {
+        const admin = buildMockAdminUser();
+        db.users.push(admin);
+        db.tasks.push(...buildExtraUserTasks(admin));
+        writeDb(db);
+    }
+
+    /* The extra accounts, seeded as one group. The check is "none of them are
+     * here", not "each of them is here": an admin deleting a seeded user must
+     * not have them reappear on the next read, so the group is seeded once and
+     * afterwards only ever shrinks. */
+    const extraUsers = buildSampleUsers();
+
+    if (!extraUsers.some((candidate) => db.users.some((user) => user._id === candidate._id))) {
+        db.users.push(...extraUsers);
+        for (const extra of extraUsers) db.tasks.push(...buildExtraUserTasks(extra));
         writeDb(db);
     }
 
@@ -60,11 +124,18 @@ const makeId = () => `${Date.now().toString(36)}${Math.random().toString(36).sli
 const publicUser = (user) =>
     Object.fromEntries(Object.entries(user).filter(([key]) => key !== "password"));
 
-/** DOCU: The signed-in mock user, or a 401 if there is no session. */
+/**
+ * DOCU: The signed-in mock user, or a 401 if there is no session. A blocked
+ * account is refused with a 403 here rather than only at sign-in, so an admin
+ * blocking someone takes effect on their next request, not their next login.
+ */
 const requireUser = () => {
     const userId = localStorage.getItem(MOCK_SESSION_KEY);
     const user = readDb().users.find((candidate) => candidate._id === userId);
     if (!user) throw new HttpError(401, "Not authenticated");
+    if ((user.status ?? DEFAULT_ACCOUNT_STATUS) !== "active") {
+        throw new HttpError(403, "This account has been blocked");
+    }
     return user;
 };
 
@@ -105,15 +176,51 @@ const starterTasks = (userId) => [
 /**
  * DOCU: Routes a request to the matching mock endpoint, mirroring the real
  * API's paths, verbs and error codes.
- * @param {string} path - e.g. "/api/tasks/move"
+ * @param {string} path - e.g. "/api/tasks/move", or a path with a query string
  * @param {object} options - { method, body }
  * @throws {HttpError} on any 4xx
  */
-const handle = async (path, { method = "GET", body } = {}) => {
+const handle = async (requestPath, { method = "GET", body } = {}) => {
     await delay();
+
+    /* Split off the query string once, so every handler compares a clean path
+     * and the admin list can read its filters out of the same string a browser
+     * would send. */
+    const [path, search = ""] = requestPath.split("?");
 
     const db = readDb();
     const persist = () => writeDb(db);
+
+    /* ------------------------------- admin ------------------------------ */
+
+    if (path.startsWith(ADMIN_PREFIX)) {
+        /** DOCU: Reads the session without the blocked-account check, because a
+         *  blocked admin's session has to reach `requireAdmin` to be told why it
+         *  was refused rather than looking signed out. */
+        const currentUser = () => {
+            const userId = localStorage.getItem(MOCK_SESSION_KEY);
+            return db.users.find((candidate) => candidate._id === userId) ?? null;
+        };
+
+        const result = handleAdminRequest({
+            path: path.slice(ADMIN_PREFIX.length),
+            query: parseQuery(search),
+            method,
+            body,
+            users: db.users,
+            tasks: db.tasks,
+            currentUser,
+            fail: (status, message) => {
+                throw new HttpError(status, message);
+            },
+            persist,
+        });
+
+        /** An unknown admin path must not fall through to the task routes below,
+         *  or `/api/admin/../api/tasks` style confusion could reach them. */
+        if (result === null) throw new HttpError(404, `No mock handler for ${method} ${path}`);
+        return result;
+    }
 
     /* ------------------------------- auth ------------------------------ */
 
@@ -129,7 +236,9 @@ const handle = async (path, { method = "GET", body } = {}) => {
         }
         if (errors.length) throw new HttpError(400, errors);
 
-        if (db.users.some((user) => user.email === email)) {
+        /* Compared case-insensitively, so the same mailbox cannot be registered
+         * twice with different capitalisation. */
+        if (db.users.some((user) => user.email?.toLowerCase() === email.toLowerCase())) {
             throw new HttpError(409, "That email is already registered");
         }
 
@@ -139,6 +248,11 @@ const handle = async (path, { method = "GET", body } = {}) => {
             lastName: lastName.trim(),
             email,
             password,
+            /* Self-registration can only ever produce a plain user. A role is
+             * something an admin grants, never something a request body asks
+             * for, so privilege escalation through the signup form is impossible. */
+            role: DEFAULT_ROLE,
+            status: DEFAULT_ACCOUNT_STATUS,
             createdAt: new Date().toISOString(),
         };
 
@@ -153,8 +267,14 @@ const handle = async (path, { method = "GET", body } = {}) => {
         const { email, password } = body ?? {};
         const user = db.users.find((candidate) => candidate.email === email);
 
+        /* One message for a wrong password and an unknown email, so the sign-in
+         * form cannot be used to discover which addresses are registered. */
         if (!user || user.password !== password) {
             throw new HttpError(401, "Incorrect email or password");
+        }
+
+        if ((user.status ?? DEFAULT_ACCOUNT_STATUS) !== "active") {
+            throw new HttpError(403, "This account has been blocked. Contact an administrator.");
         }
 
         localStorage.setItem(MOCK_SESSION_KEY, user._id);
@@ -320,4 +440,4 @@ const resetMockData = () => {
     localStorage.removeItem(MOCK_SESSION_KEY);
 };
 
-export { resetMockData };
+export { resetMockData, migrateSeedData };
