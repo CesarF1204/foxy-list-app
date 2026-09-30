@@ -19,7 +19,6 @@ build/
 # they must never be committed.
 # ---------------------------------------------------------------------------
 .env
-.env.*
 
 # Logs
 logs
