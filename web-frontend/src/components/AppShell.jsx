@@ -8,7 +8,8 @@ import { showsFooter } from "../helpers/footerRoutes";
  * when a page is taller than the screen. <br>
  * The footer is rendered here rather than by each page so it stays in place
  * without every screen having to place it, and the decision of whether to show
- * it at all is made once, from the location - see `footerRoutes`. <br>
+ * it at all is made once, from the location - see `footerRoutes`, where the
+ * board is the only page that keeps one. <br>
  * It sits *outside* the error boundary, so a crashed page keeps the footer too:
  * the boundary is passed in as `children`.
  */

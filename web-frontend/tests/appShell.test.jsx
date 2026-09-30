@@ -13,7 +13,7 @@ import { render, screen, cleanup } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 import AppShell from "../src/components/AppShell";
-import { FOOTERLESS_PATHS } from "../src/helpers/footerRoutes";
+import { FOOTER_PATHS } from "../src/helpers/footerRoutes";
 
 /** Mounts the real shell at `path`, with a stand-in for the routed page. */
 const renderAt = (path) =>
@@ -33,26 +33,54 @@ afterEach(() => {
 });
 
 describe("the footer on the guest auth screens", () => {
-    it.each(FOOTERLESS_PATHS)("is not rendered on %s", (path) => {
+    it.each(["/login", "/register", "/recover-password"])("is not rendered on %s", (path) => {
         renderAt(path);
 
         expect(footer()).not.toBeInTheDocument();
     });
 
-    it("covers exactly the three auth routes, not any others", () => {
-        expect(FOOTERLESS_PATHS).toEqual(["/login", "/register", "/recover-password"]);
-    });
-
-    it("does not treat a lookalike path as an auth route", () => {
+    it("does not treat a lookalike path as the board", () => {
         renderAt("/login-history");
 
-        expect(footer()).toBeInTheDocument();
+        expect(footer()).not.toBeInTheDocument();
     });
 });
 
-describe("the footer everywhere else", () => {
-    it.each(["/", "/404", "/some/unknown/path"])("is rendered on %s", (path) => {
+describe("the footer on the not-found pages", () => {
+    it("is not rendered on the explicit /404 route", () => {
+        renderAt("/404");
+
+        expect(footer()).not.toBeInTheDocument();
+    });
+
+    /*
+     * The `*` catch-all in App renders the same NotFound page for every URL
+     * that matches no route, so the footer has to be gone on all of them - not
+     * just on the one path someone thought to enumerate.
+     */
+    it.each(["/nope", "/some/deep/unknown/path", "/task/999", "/settings/profile"])(
+        "is not rendered on the unknown path %s",
+        (path) => {
+            renderAt(path);
+
+            expect(footer()).not.toBeInTheDocument();
+        }
+    );
+});
+
+describe("the footer on the board", () => {
+    it.each(FOOTER_PATHS)("is rendered on %s", (path) => {
         renderAt(path);
+
+        expect(footer()).toBeInTheDocument();
+    });
+
+    it("keeps the board as the only footer-bearing route", () => {
+        expect(FOOTER_PATHS).toEqual(["/"]);
+    });
+
+    it("still shows the footer with a trailing slash, as the router treats it", () => {
+        renderAt("/");
 
         expect(footer()).toBeInTheDocument();
     });
@@ -65,11 +93,14 @@ describe("the footer everywhere else", () => {
 });
 
 describe("the shell frame", () => {
-    it.each([...FOOTERLESS_PATHS, "/"])("still renders the page itself on %s", (path) => {
-        renderAt(path);
+    it.each(["/", "/login", "/register", "/recover-password", "/404", "/nope"])(
+        "still renders the page itself on %s",
+        (path) => {
+            renderAt(path);
 
-        expect(screen.getByText("Page content")).toBeInTheDocument();
-    });
+            expect(screen.getByText("Page content")).toBeInTheDocument();
+        }
+    );
 
     it("keeps the page above the footer on a footer-bearing route", () => {
         const { container } = renderAt("/");
@@ -78,5 +109,11 @@ describe("the shell frame", () => {
         const column = container.firstChild;
         expect(column).toHaveClass("min-h-screen", "flex-col");
         expect(column.lastElementChild.tagName).toBe("FOOTER");
+    });
+
+    it("leaves no trailing element where the footer would be, on a bare page", () => {
+        const { container } = renderAt("/login");
+
+        expect(container.firstChild.lastElementChild.tagName).toBe("P");
     });
 });

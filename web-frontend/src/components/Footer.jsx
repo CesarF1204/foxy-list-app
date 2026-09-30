@@ -1,8 +1,9 @@
 /**
  * DOCU: The app footer. <br>
- * Rendered by the shell in `AppShell`, so it stays in place on every page
- * without each screen having to place it, and the shell decides which pages
- * get one at all - the sign-in, register and password recovery screens do not.
+ * Rendered by the shell in `AppShell`, so it stays in place without each screen
+ * having to place it, and the shell decides which pages get one at all. Only
+ * the board does: the sign-in, register, password recovery and not-found screens
+ * are deliberately bare.
  * The year is read from the clock at
  * render time rather than written into the markup, so the notice rolls over on
  * its own on 1 January. <br>
