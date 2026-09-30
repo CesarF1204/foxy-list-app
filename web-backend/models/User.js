@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 /**
  * User Schema
  * Represents a user account in the Todo application.
@@ -44,6 +46,7 @@
  * * createdAt: Date when the user was created
  * * updatedAt: Date when the user was last updated
  */
+
 
 const userSchema = new mongoose.Schema(
     {
