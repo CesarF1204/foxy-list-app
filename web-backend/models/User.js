@@ -47,45 +47,45 @@ import mongoose from "mongoose";
  * * updatedAt: Date when the user was last updated
  */
 
-
 const userSchema = new mongoose.Schema(
-    {
-        email: {
-            type: String,
-            required: true,
-            unique: true,
-            lowercase: true,
-            trim: true,
-        },
-        password: {
-            type: String,
-            required: true,
-        },
-        firstName: {
-            type: String,
-            required: true,
-            trim: true,
-        },
-        lastName: {
-            type: String,
-            required: true,
-            trim: true,
-        },
-        photo: {
-            type: String,
-            required: false,
-            trim: true,
-        },
-        role: {
-            type: String,
-            enum: [ 'USER', 'ADMIN' ],
-            default: 'USER',
-            trim: true,
-        },
+  {
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
     },
-    {
-        timestamps: true,
+    password: {
+      type: String,
+      required: true,
+      select: false,
     },
+    firstName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    lastName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    photo: {
+      type: String,
+      required: false,
+      trim: true,
+    },
+    role: {
+      type: String,
+      enum: ["USER", "ADMIN"],
+      default: "USER",
+      trim: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
 );
 
-export default mongoose.model( 'User', userSchema );
+export default mongoose.model("User", userSchema);
