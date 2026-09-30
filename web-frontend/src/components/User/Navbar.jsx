@@ -57,10 +57,15 @@ const Navbar = ({ user }) => {
 
     return (
         <header className="sticky top-0 z-30 border-b-2 border-ink bg-paper/95 backdrop-blur">
-            <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+            {/* `ml-auto` on the account block, rather than `justify-between`
+                across three children, keeps the section links parked beside
+                the brand on the left and pushes the date and avatar to the far
+                right - `justify-between` would float the links into the middle
+                of the bar instead. */}
+            <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
                 {/* The mascot is a button of its own: nesting one inside an anchor
                     is invalid HTML and confuses screen readers and keyboards. */}
-                <div className="flex shrink-0 items-center gap-2.5">
+                <div className="flex shrink-0 items-center gap-2.5 pr-2">
                     <Mascot {...MASCOT_SHEETS} label={MASCOT_LABEL} size={40} />
                     <Link
                         to={ROUTES.board}
@@ -105,7 +110,7 @@ const Navbar = ({ user }) => {
                 )}
 
                 {user ? (
-                    <div className="flex items-center gap-3">
+                    <div className="ml-auto flex items-center gap-3">
                         {/* Hidden on the narrowest screens to protect the avatar. */}
                         <p className="hidden text-sm font-bold text-ink-soft md:block">
                             {getTodayLabel()}
@@ -205,7 +210,7 @@ const Navbar = ({ user }) => {
                         </div>
                     </div>
                 ) : (
-                    <Link to={ROUTES.login} className={`${CONTROL_ICON} text-ink!`} aria-label="Sign in">
+                    <Link to={ROUTES.login} className={`${CONTROL_ICON} ml-auto text-ink!`} aria-label="Sign in">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                             <path
                                 d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"
