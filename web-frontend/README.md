@@ -22,6 +22,10 @@ which one it needs instead of silently falling back to a default.
 | `VITE_MOCK_SAMPLE_LAST_NAME` | `src/mock/sampleData.js` | yes, for the mock |
 | `VITE_MOCK_SAMPLE_EMAIL` | `src/mock/sampleData.js` | yes, for the mock |
 | `VITE_MOCK_SAMPLE_PASSWORD` | `src/mock/sampleData.js` | yes, for the mock |
+| `VITE_MOCK_SAMPLE_ADMIN_FIRST_NAME` | `src/mock/sampleData.js` | yes, to reach `/admin` |
+| `VITE_MOCK_SAMPLE_ADMIN_LAST_NAME` | `src/mock/sampleData.js` | yes, to reach `/admin` |
+| `VITE_MOCK_SAMPLE_ADMIN_EMAIL` | `src/mock/sampleData.js` | yes, to reach `/admin` |
+| `VITE_MOCK_SAMPLE_ADMIN_PASSWORD` | `src/mock/sampleData.js` | yes, to reach `/admin` |
 | `VITE_API_BASE_URL` | `src/api-client/client.js` | only when `MOCK_MODE` is off |
 
 ### Never put a secret in a `VITE_` variable
@@ -46,13 +50,28 @@ npm run dev
 
 No backend is needed. The app runs on local mock data out of the box.
 
-### Sample login
+### Sample logins
 
-The mock's sample account is defined entirely in `.env` via the
-`VITE_MOCK_SAMPLE_*` variables above, so check your own `.env` for the values.
-The sign-in page displays them on screen, with a button to fill them in, so
-there is nothing to memorise. Invent a throwaway local account - never point
-these at a real one.
+The mock seeds two accounts, and the sign-in page shows both with a button that
+fills the form in. Their values come from `.env` via the `VITE_MOCK_SAMPLE_*` and
+`VITE_MOCK_SAMPLE_ADMIN_*` variables above, so check your own `.env` for them.
+Invent throwaway local accounts - never point these at real ones.
+
+| Account | Role | Reaches |
+| --- | --- | --- |
+| **Sample admin** | `admin` | The board **and** `/admin` |
+| **Sample user** | `user` | The board only |
+
+The administrator is seeded rather than registered, because the register endpoint
+gives every new account the `user` role - exactly as a real deployment would need
+a migration or a bootstrap step to create its first admin. It has a few tasks of
+its own, so its row in the users table is not all zeroes.
+
+If `/admin` refuses you while signed in as the sample admin, the browser is
+holding a mock database seeded before roles existed. That is handled: the mock
+fills in the missing `role` and `status` fields on the next load. To start over
+instead, run `resetMockData()` from the console, or clear the
+`foxylist:mock:*` keys in localStorage.
 
 ## The mock layer (temporary)
 
@@ -89,6 +108,84 @@ That is all. Nothing else changes: `api-client`, the queries, the mutations and
 every component already talk to the real API contract. Deleting `src/mock/`
 outright, plus its one import in `client.js` and the two imports in
 `src/pages/Auth.jsx`, works too.
+
+## Routes
+
+| Path | Screen |
+| --- | --- |
+| `/` | The site entry point; redirects to `/dashboard` |
+| `/dashboard` | The signed-in task board |
+| `/admin` | The admin area's index; redirects to `/admin/overview` |
+| `/admin/overview` | Totals for registered, active and blocked users; totals and a distribution chart for the three boards |
+| `/admin/users` | The users table with search, filters, sorting and paging, and every management action |
+
+From the `md` breakpoint up the navbar itself carries the Dashboard, and the
+admin screens, which it only offers to an administrator, so a desktop reaches
+both directly. Below that breakpoint the same two links move into the account
+menu behind the avatar, keeping a phone's navbar to the brand alone - never
+both at once, and never neither. The Dashboard sits above Admin Overview
+wherever the pair appears.
+Signing in with the mock's **sample admin** account does so - see
+[Sample logins](#sample-logins).
+
+### Managing a user
+
+Opening a row shows a drawer with the account's details and its task counts, and
+every change is a confirmed action on its own endpoint:
+
+| Action | Endpoint |
+| --- | --- |
+| Edit first name, last name, email | `PATCH /api/admin/users/:id` |
+| Change role | `PUT /api/admin/users/:id/role` |
+| Block or unblock | `PUT /api/admin/users/:id/status` |
+| Set a new password | `PUT /api/admin/users/:id/password` |
+| Delete the account and its tasks | `DELETE /api/admin/users/:id` |
+
+They are separate endpoints on purpose, so a rename can never carry a privilege
+change with it.
+
+### Where the authorization lives
+
+`RequireAdmin` in `src/components/RouteGuards.jsx` keeps the routes and the navbar
+link tidy, and **the API is the boundary that holds**: `src/api-client/adminApi.js`
+defines the rules once, and both fake API layers call into it.
+
+- Every admin request re-checks the caller's role and account status. A missing
+  session is a `401`, a signed-in non-admin is a `403`, and a blocked account is
+  refused on its very next request rather than at its next sign-in.
+- Roles and statuses are validated against the supported lists, so a crafted
+  request cannot invent a role or grant itself one.
+- An email must be well formed and unique, case-insensitively.
+- An admin cannot demote, block or delete their own account.
+- Passwords are never returned by any endpoint, and the mock stores its
+  throwaway plaintext copy only because a browser stand-in has no hashing to do.
+  A real API hashes there and stores nothing else.
+
+The task counts are computed from the real task records on every request, and
+only the three real boards are counted, so `total = todo + ongoing + done` always
+holds.
+
+### Searching, filtering, paging
+
+All three happen in the API: the browser sends a query string and receives one
+page of rows, so the table behaves the same with ten users and with ten thousand.
+The search box is debounced; changing a filter returns to page 1.
+
+Every one of those triggers - the debounced search, either filter, a sort and a
+page change - shows the same circular indicator *inside* the table while its
+request is in flight. The rows, the filters and the pager stay on screen and stay
+put, dimmed under the overlay, because the table is updating rather than the page
+loading. Each filter state is its own query key, so a slow earlier response can
+never land on top of a newer one, and React Query aborts the request that has
+been superseded.
+
+### The mock data
+
+The mock seeds a sample admin and a sample user, plus twelve extra accounts, with
+a mix of roles, one blocked account and a few tasks each, so the table, the
+filters, the pager and the statistics have something real to act on.
+`npm run verify:mock` exercises all of it end to end, including the refusals above
+and the migration that upgrades a database seeded before roles existed.
 
 ## Scripts
 

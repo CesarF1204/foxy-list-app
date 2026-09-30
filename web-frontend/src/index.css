@@ -34,6 +34,14 @@
   --color-done: #6bab6a;
   --color-done-deep: #4a804a;
 
+  /*
+    Row highlight. A cool blue, deliberately off the warm paper-and-fox palette:
+    on hover it should read as "this row", not as another surface of the app.
+    Light enough that the ink text on top still passes contrast, and it takes the
+    `todo` sky as its hue so it still feels like one system.
+  */
+  --color-row-hover: #cfe6f4;
+
   --font-display: "Bricolage Grotesque", ui-sans-serif, sans-serif;
   --font-body: "Nunito", ui-sans-serif, sans-serif;
 
