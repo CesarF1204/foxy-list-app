@@ -79,7 +79,7 @@ const AddTask = ({ onAdd }) => {
                         submit();
                     }
                 }}
-                className="field !py-2"
+                className="field py-2!"
             />
 
             <textarea
@@ -94,7 +94,7 @@ const AddTask = ({ onAdd }) => {
                         submit();
                     }
                 }}
-                className="field resize-none !py-2 text-sm"
+                className="field resize-none py-2! text-sm"
             />
 
             <div className="flex gap-2">
@@ -102,14 +102,14 @@ const AddTask = ({ onAdd }) => {
                     type="button"
                     onClick={submit}
                     disabled={!title.trim()}
-                    className="btn btn-primary flex-1 !py-2 !text-sm"
+                    className="btn btn-primary flex-1 py-2! text-sm!"
                 >
                     Add task
                 </button>
                 <button
                     type="button"
                     onClick={close}
-                    className="btn btn-neutral !py-2 !text-sm"
+                    className="btn btn-neutral py-2! text-sm!"
                 >
                     Close
                 </button>

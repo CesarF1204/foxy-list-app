@@ -63,14 +63,14 @@ const EditTask = ({ task, onSave, onCancel }) => {
                     type="button"
                     onClick={commit}
                     disabled={!title.trim()}
-                    className="btn btn-primary !px-3 !py-1 !text-xs"
+                    className="btn btn-primary px-3! py-1! text-xs!"
                 >
                     Save
                 </button>
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="btn btn-neutral !px-3 !py-1 !text-xs"
+                    className="btn btn-neutral px-3! py-1! text-xs!"
                 >
                     Cancel
                 </button>
