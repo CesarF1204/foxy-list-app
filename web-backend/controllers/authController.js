@@ -175,3 +175,20 @@ export const login = async (req, res) => {
     });
   }
 };
+
+// Log out an existing user
+export const logout = async (req, res) => {
+    try {
+        // Clear the session cookie
+        res.clearCookie("session", {
+            httpOnly: true,
+            secure: false,
+            sameSite: "lax",
+        });
+
+        return res.json({ message: "Signed out" });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Server error" });
+    }
+};

@@ -1,5 +1,5 @@
 import express from "express";
-import { login, register, validateToken } from "../controllers/authController.js";
+import { login, logout, register, validateToken } from "../controllers/authController.js";
 
 const router = express.Router();
 
@@ -14,5 +14,8 @@ router.post("/users/sign_in", login);
 // It reads the JWT stored in the `session` cookie and returns the user's profile if valid.
 // If the cookie is missing, invalid, or expired, the controller responds with 401.
 router.get("/auth/validate_token", validateToken);
+
+// Logout an existing user
+router.post("/users/logout", logout);
 
 export default router;
