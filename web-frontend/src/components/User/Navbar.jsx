@@ -114,7 +114,7 @@ const Navbar = ({ user }) => {
                         </div>
                     </div>
                 ) : (
-                    <Link to={ROUTES.login} className={`${CONTROL_ICON} !text-ink`} aria-label="Sign in">
+                    <Link to={ROUTES.login} className={`${CONTROL_ICON} text-ink!`} aria-label="Sign in">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                             <path
                                 d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"

@@ -24,7 +24,7 @@ const InlineLoader = ({ label = "Loading..." }) => (
 const EmptyState = ({ title, description, action }) => (
     <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink-faint/60 bg-paper/60 px-4 py-8 text-center">
         <p className="text-sm font-extrabold text-ink">{title}</p>
-        {description && <p className="max-w-[15rem] text-xs font-semibold text-ink-soft">{description}</p>}
+        {description && <p className="max-w-60 text-xs font-semibold text-ink-soft">{description}</p>}
         {action}
     </div>
 );
@@ -38,7 +38,7 @@ const ErrorState = ({ title = "Something went wrong", message, onRetry }) => (
         <p className="text-sm font-extrabold text-red-800">{title}</p>
         {message && <p className="max-w-xs text-xs font-semibold text-red-600">{message}</p>}
         {onRetry && (
-            <button type="button" onClick={onRetry} className="btn btn-neutral !py-1.5 !text-xs">
+            <button type="button" onClick={onRetry} className="btn btn-neutral py-1.5! text-xs!">
                 Try again
             </button>
         )}

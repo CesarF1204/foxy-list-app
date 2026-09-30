@@ -82,7 +82,7 @@ const TaskBoard = () => {
                                         {...provided.droppableProps}
                                         ref={provided.innerRef}
                                         aria-label={meta.label}
-                                        className={`flex min-h-[18rem] flex-col rounded-3xl border-2 border-ink p-3 ${
+                                        className={`flex min-h-72 flex-col rounded-3xl border-2 border-ink p-3 ${
                                             snapshot.isDraggingOver
                                                 ? "border-fox-400 bg-fox-50"
                                                 : "bg-white/70"
