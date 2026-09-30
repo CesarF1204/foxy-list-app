@@ -4,9 +4,10 @@
  *
  * These drive the real components and assert on the DOM - the semantics a screen
  * reader reads and a keyboard user navigates, plus the counts an admin scans for.
- * The API's own rules are covered separately in `adminApi.test.js`; what is
- * checked here is that the screens hold up their end of the contract and never
- * contradict what the API would refuse.
+ * The API endpoints are stubbed so each test decides what the server answers;
+ * what the API itself refuses is covered by the backend's own test suite, and
+ * what is checked here is that the screens hold up their end of the contract and
+ * never contradict it.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -30,8 +31,8 @@ vi.mock("../src/api-client/auth", () => ({
     validateToken: () => validateToken(),
 }));
 
-/* The admin endpoints are mocked so each test decides what the server does; the
- * rules those endpoints enforce are covered in `adminApi.test.js`. */
+/* The admin endpoints are stubbed so each test decides what the server answers;
+   the rules those endpoints enforce are the API's, covered by its own suite. */
 const getAdminUsers = vi.fn();
 const getAdminUser = vi.fn();
 const getAdminStats = vi.fn();

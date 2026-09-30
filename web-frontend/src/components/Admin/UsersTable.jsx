@@ -347,7 +347,7 @@ const UsersTable = ({ rows, sortBy, sortDir, onSort, onView, onToggleStatus, onD
         role="region"
         aria-label="Registered users"
     >
-        <table className="w-full min-w-[44rem] border-collapse text-sm">
+        <table className="w-full min-w-176 border-collapse text-sm">
             <caption className="sr-only">
                 Registered users with their role, account status and task counts. The Tasks column
                 shows the To Do, Ongoing and Done counts as coloured pills, followed by

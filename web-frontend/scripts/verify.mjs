@@ -1,7 +1,7 @@
 /**
  * A check of the board's ordering arithmetic. The same helpers live in
- * src/hooks/useTasks.js and src/api-client/localApi.js, reproduced here so the
- * drag-and-drop maths can be exercised in Node. Run with: npm run verify
+ * src/hooks/useTasks.js, reproduced here so the drag-and-drop maths can be
+ * exercised in Node. Run with: npm run verify
  */
 
 const BOARDS = ["todo", "ongoing", "done"];
@@ -53,7 +53,7 @@ const applyMove = (tasks, taskId, newStatus, newIndex) => {
     );
 };
 
-/** The mock API's own move, so both sides of the round trip can be compared. */
+/** The backend's own move, so both sides of the round trip can be compared. */
 const serverMove = (tasks, userId, { taskId, newStatus, newIndex }) => {
     const previousStatus = tasks.find((t) => t._id === taskId)?.status;
 

@@ -73,8 +73,6 @@ export {
     TOAST_TITLE_LIMIT,
 } from "./toast";
 export {
-    DEMO_AVATAR_URL,
-    DEMO_USER_ID_PREFIX,
     DISPLAY_NAME_FALLBACK,
     INITIALS_FALLBACK,
 } from "./user";

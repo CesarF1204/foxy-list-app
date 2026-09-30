@@ -20,10 +20,6 @@ import FormField from "../components/FormField";
 import useAuthMascotMood from "../hooks/useAuthMascotMood";
 import { fieldErrorToast } from "../helpers/mascotMood";
 
-/* TEMPORARY - mock layer only. See src/mock/index.js for how to remove it. */
-import { MOCK_MODE } from "../mock";
-import SampleCredentialsHint from "../mock/SampleCredentialsHint";
-
 /** DOCU: How long the fox gets to look pleased before the page changes, so the
  *  success face is never cut off. */
 const SUCCESS_HOLD_MS = MASCOT_HOLD_MS.success;
@@ -46,7 +42,6 @@ const Auth = () => {
         register,
         handleSubmit,
         reset,
-        setValue,
         watch,
         formState: { errors },
     } = formApi;
@@ -238,15 +233,6 @@ const Auth = () => {
                             validate: (value) =>
                                 value === watch("password") || "Passwords do not match",
                         })}
-                    />
-                )}
-
-                {MOCK_MODE && !isRegisterMode && (
-                    <SampleCredentialsHint
-                        onFill={(values) => {
-                            setValue("email", values.email, { shouldValidate: true });
-                            setValue("password", values.password, { shouldValidate: true });
-                        }}
                     />
                 )}
 

@@ -43,6 +43,10 @@ const AppContextProvider = ({ children }) => {
                  *  to app state (the auth mascot) reads one source rather than
                  *  re-deriving it. A snapshot of right now, not a log. */
                 toast,
+                /** Dismisses the toast. The auth screens need this: they clear the
+                 *  previous attempt's toast as soon as the user edits the form, so
+                 *  it stops reporting a verdict about values already being fixed. */
+                closeToast,
                 user: data?.user,
                 isAuthenticated,
                 isAuthLoading: isLoading,

@@ -5,9 +5,9 @@ import { apiRequest } from "./client";
  * `src/api-client/tasks.js` and `users.js` in shape: a path, a verb and a body.
  *
  * Nothing here decides whether the caller is allowed to call. Authorization
- * lives in the API layer (see `adminApi.js`), so these functions are safe to
- * call from anywhere - a crafted request from the console is refused by exactly
- * the same code path that refuses a normal user's request.
+ * lives in the API layer, so these functions are safe to call from anywhere -
+ * a crafted request from the console is refused by exactly the same code path
+ * that refuses a normal user's request.
  */
 
 /** DOCU: Serialises the table's filter state into a query string, skipping the

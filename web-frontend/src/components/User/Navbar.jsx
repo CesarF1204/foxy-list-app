@@ -4,7 +4,6 @@ import { Mascot } from "page-mascot";
 import {
     getFullName,
     getInitials,
-    getAvatarImage,
     getTodayLabel,
 } from "../../helpers/globalHelper";
 import { MASCOT_SHEETS, MASCOT_LABEL } from "../../constants/mascot";
@@ -28,12 +27,6 @@ const navClass = (isActive) =>
 const Navbar = ({ user }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const containerRef = useRef(null);
-    /** The failed URL rather than a flag, so a new user no longer matching it
-     *  retries the image with nothing to reset. */
-    const [failedImage, setFailedImage] = useState("");
-    /* Demo accounts get a picture; everyone else falls back to the initials. */
-    const candidateImage = getAvatarImage(user);
-    const avatarImage = candidateImage && candidateImage !== failedImage ? candidateImage : "";
 
     /* Close the menu on an outside click or Escape. */
     useEffect(() => {
@@ -123,22 +116,9 @@ const Navbar = ({ user }) => {
                                 aria-haspopup="menu"
                                 aria-expanded={isMenuOpen}
                                 aria-label="Open account menu"
-                                className={`flex h-10 w-10 cursor-pointer shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-ink text-sm font-extrabold text-white transition ${
-                                    /** The image covers the box, so only the
-                                     *  initials fallback needs a coloured fill. */
-                                    avatarImage ? "bg-transparent" : "bg-fox-400 hover:bg-fox-500"
-                                }`}
+                                className="flex h-10 w-10 cursor-pointer shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-ink bg-fox-400 text-sm font-extrabold text-white transition hover:bg-fox-500"
                             >
-                                {avatarImage ? (
-                                    <img
-                                        src={avatarImage}
-                                        alt={getFullName(user)}
-                                        onError={() => setFailedImage(avatarImage)}
-                                        className="h-full w-full object-cover"
-                                    />
-                                ) : (
-                                    getInitials(user)
-                                )}
+                                {getInitials(user)}
                             </button>
 
                             {isMenuOpen && (
