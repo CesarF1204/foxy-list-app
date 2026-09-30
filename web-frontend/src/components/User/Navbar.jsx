@@ -82,7 +82,7 @@ const Navbar = ({ user }) => {
                                 aria-haspopup="menu"
                                 aria-expanded={isMenuOpen}
                                 aria-label="Open account menu"
-                                className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-ink text-sm font-extrabold text-white transition ${
+                                className={`flex h-10 w-10 cursor-pointer shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-ink text-sm font-extrabold text-white transition ${
                                     /* The image covers the box, so only the
                                        initials fallback needs a coloured fill. */
                                     avatarImage ? "bg-transparent" : "bg-fox-400 hover:bg-fox-500"
