@@ -28,6 +28,7 @@ const BOARD_META = {
         accent: "bg-todo",
         heading: "text-todo-deep",
         count: "bg-todo/15 text-todo-deep border-todo/40",
+        pill: "border-todo text-todo-deep",
     },
     ongoing: {
         label: "Ongoing",
@@ -35,6 +36,7 @@ const BOARD_META = {
         accent: "bg-ongoing",
         heading: "text-ongoing-deep",
         count: "bg-ongoing/15 text-ongoing-deep border-ongoing/40",
+        pill: "border-ongoing text-ongoing-deep",
     },
     done: {
         label: "Done",
@@ -42,6 +44,7 @@ const BOARD_META = {
         accent: "bg-done",
         heading: "text-done-deep",
         count: "bg-done/15 text-done-deep border-done/40",
+        pill: "border-done text-done-deep",
     },
 };
 

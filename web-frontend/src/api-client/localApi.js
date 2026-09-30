@@ -5,6 +5,8 @@
  */
 
 import { BOARDS, DEFAULT_BOARD } from "../constants/boards";
+import { ADMIN_PREFIX, handleAdminRequest, parseQuery } from "./adminApi";
+import { DEFAULT_ROLE, DEFAULT_ACCOUNT_STATUS } from "../constants/roles";
 
 const DB_KEY = "foxylist:db:v1";
 const SESSION_KEY = "foxylist:session:v1";
@@ -40,11 +42,26 @@ const publicUser = (user) => Object.fromEntries(
     Object.entries(user).filter(([key]) => key !== "password")
 );
 
+/**
+ * DOCU: The signed-in user, or a 401 if there is no session. A blocked account
+ * is refused with a 403 here, not only at sign-in, so blocking takes effect on
+ * the blocked user's next request.
+ */
 const requireUser = () => {
     const userId = localStorage.getItem(SESSION_KEY);
     const user = readDb().users.find((candidate) => candidate._id === userId);
     if (!user) throw new HttpError(401, "Not authenticated");
+    if ((user.status ?? DEFAULT_ACCOUNT_STATUS) !== "active") {
+        throw new HttpError(403, "This account has been blocked");
+    }
     return user;
+};
+
+/** DOCU: The raw session lookup, without the blocked check, for the admin
+ *  routes: a blocked admin needs to reach `requireAdmin` to be told why. */
+const findSessionUser = () => {
+    const userId = localStorage.getItem(SESSION_KEY);
+    return readDb().users.find((candidate) => candidate._id === userId) ?? null;
 };
 
 /** Seeds a couple of starter tasks so a brand new board is not empty. */
@@ -88,11 +105,36 @@ const normaliseOrder = (tasks, userId, status) =>
  * @returns {Promise<object>} the response body
  * @throws {HttpError} on any 4xx
  */
-const handle = async (path, { method = "GET", body } = {}) => {
+const handle = async (requestPath, { method = "GET", body } = {}) => {
     await delay();
+
+    /* Split off the query string once, so the admin list can read its filters
+     * from the same string a browser would send. */
+    const [path, search = ""] = requestPath.split("?");
 
     const db = readDb();
     const persist = () => writeDb(db);
+
+    /* ------------------------------- admin ------------------------------ */
+
+    if (path.startsWith(ADMIN_PREFIX)) {
+        const result = handleAdminRequest({
+            path: path.slice(ADMIN_PREFIX.length),
+            query: parseQuery(search),
+            method,
+            body,
+            users: db.users,
+            tasks: db.tasks,
+            currentUser: findSessionUser,
+            fail: (status, message) => {
+                throw new HttpError(status, message);
+            },
+            persist,
+        });
+
+        if (result === null) throw new HttpError(404, `No local handler for ${method} ${path}`);
+        return result;
+    }
 
     /* ------------------------------- auth ------------------------------ */
 
@@ -108,7 +150,7 @@ const handle = async (path, { method = "GET", body } = {}) => {
         }
         if (errors.length) throw new HttpError(400, errors);
 
-        if (db.users.some((user) => user.email === email)) {
+        if (db.users.some((user) => user.email?.toLowerCase() === email.toLowerCase())) {
             throw new HttpError(409, "That email is already registered");
         }
 
@@ -119,6 +161,10 @@ const handle = async (path, { method = "GET", body } = {}) => {
             email,
             /* Plain text only because this is a throwaway local mock. */
             password,
+            /* Never anything but a plain user: a role is granted by an admin,
+             * not requested by the signup form. */
+            role: DEFAULT_ROLE,
+            status: DEFAULT_ACCOUNT_STATUS,
             createdAt: new Date().toISOString(),
         };
 
@@ -135,6 +181,10 @@ const handle = async (path, { method = "GET", body } = {}) => {
 
         if (!user || user.password !== password) {
             throw new HttpError(401, "Incorrect email or password");
+        }
+
+        if ((user.status ?? DEFAULT_ACCOUNT_STATUS) !== "active") {
+            throw new HttpError(403, "This account has been blocked. Contact an administrator.");
         }
 
         localStorage.setItem(SESSION_KEY, user._id);

@@ -23,11 +23,18 @@ const toErrorMessage = (body, status) => {
 /**
  * DOCU: Performs a JSON request. Auth is cookie based, so credentials are always
  * included and no token header is needed.
+ *
+ * `signal` is the caller's chance to abandon a request that is no longer wanted.
+ * React Query hands one to every query function and aborts it when the key
+ * changes or the component unmounts, so a superseded search stops costing
+ * bandwidth instead of finishing into a cache entry nobody reads.
+ *
  * @param {string} path - the API path, e.g. "/api/tasks"
+ * @param {object} [options] - { method, body, signal }
  * @returns {Promise<object>} the parsed response body
  * @throws {Error} when the response is not ok
  */
-const apiRequest = async (path, { method = "GET", body } = {}) => {
+const apiRequest = async (path, { method = "GET", body, signal } = {}) => {
     if (MOCK_MODE) return handleMockRequest(path, { method, body });
     if (isMocked) return handleLocalRequest(path, { method, body });
 
@@ -43,10 +50,19 @@ const apiRequest = async (path, { method = "GET", body } = {}) => {
                 Accept: "application/json",
             },
             body: body === undefined ? undefined : JSON.stringify(body),
+            signal,
         });
-    } catch {
-        /* Network level failure: server down, blocked by CORS, etc. */
-        throw new Error("Unable to reach the server. Please check your connection.");
+    } catch (error) {
+        /* A cancelled request is deliberate, not a failure. It must stay an abort
+         * so React Query discards it quietly instead of counting it as an error
+         * and putting an "Unable to reach the server" message on the screen. */
+        if (error?.name === "AbortError") throw error;
+
+        /* Network level failure: server down, blocked by CORS, etc. The original
+         * is kept as the cause so the console still says what actually failed. */
+        throw new Error("Unable to reach the server. Please check your connection.", {
+            cause: error,
+        });
     }
 
     const contentType = response.headers.get("content-type") || "";
