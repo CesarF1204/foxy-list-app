@@ -5,7 +5,7 @@ import { getInitials, getFullName } from "../../helpers/globalHelper";
 import { USER_COLUMNS, SORT_DIRECTIONS } from "../../constants/admin";
 import { BOARD_META, BOARDS, BOARD_LABELS } from "../../constants/boards";
 import { RoleBadge, StatusBadge } from "./Badges";
-import Icon from "../icons/Icon";
+import { Icon, KebabButton } from "../icons";
 
 /** DOCU: A date as a short value, with the full timestamp available on hover. */
 const formatDate = (value) => {
@@ -251,26 +251,20 @@ const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
 
     return (
         <div className="relative" ref={containerRef}>
-            <button
+            {/* The shared kebab: one circular control, one ReIcon mark, for every
+                table that needs a row menu. The circle, its resting ring and its
+                hover, active and disabled states all live in `KebabButton`, so a
+                table here never re-decides them. Behaviour is unchanged - it
+                toggles the menu, which still closes on an outside click, on
+                Escape and on picking an entry. */}
+            <KebabButton
                 ref={triggerRef}
-                type="button"
                 onClick={() => setIsMenuOpen((open) => !open)}
                 aria-haspopup="menu"
                 aria-expanded={isMenuOpen}
-                aria-label={`Actions for ${name}`}
+                label={`Actions for ${name}`}
                 title="Row actions"
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-ink-faint transition ${
-                    /* A border ring on hover rather than a shadow: an outline reads as
-                     * "this row's menu" and stays flat, where a lift would compete
-                     * with the row's own hover tint underneath it. */
-                    "cursor-pointer border-2 border-transparent hover:border-ink hover:bg-white hover:text-ink"
-                }`}
-            >
-                {/* Three stacked dots: the kebab. The rotation lives in the shared
-                    icon registry, so this control and every other overflow menu
-                    in the app are the same mark. */}
-                <Icon name="rowActions" size={16} />
-            </button>
+            />
 
             {/* Portalled to the body so the table's scroll container cannot clip
                 it; `position` is null only on the frame before measurement. */}

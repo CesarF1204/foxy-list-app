@@ -472,12 +472,88 @@ describe("the users table", () => {
         rows.forEach((row) => expect(row).toHaveClass("hover:bg-row-hover"));
     });
 
-    it("draws the kebab as a circle ringed with a border on hover", () => {
+    /* The kebab is a circle in every state, not only under the pointer: the
+     * ring is drawn at rest because a touch screen never sends a hover, so a
+     * trigger that appears only on hover is simply absent there. Asserting the
+     * shape on the rendered class list is what catches a regression to a bare
+     * icon or a rounded square - the CSS itself is not evaluated here. */
+    it("draws the kebab as a circle that is ringed even at rest", () => {
         renderTable();
 
         const trigger = screen.getByRole("button", { name: "Actions for Ada Lovelace" });
-        expect(trigger).toHaveClass("rounded-full", "hover:border-ink", "cursor-pointer");
+        expect(trigger).toHaveClass("rounded-full", "cursor-pointer");
+
+        /* A resting ring, plus a full-ink one on hover: two borders, not a
+         * border that only exists in one of them. */
+        expect(trigger).toHaveClass("border-2", "border-ink/15", "hover:border-ink");
+
+        /* Circular by construction: one fixed dimension, so `rounded-full`
+         * resolves to a true circle rather than a rounded rectangle. */
+        expect(trigger).toHaveClass("h-9", "w-9");
+
+        /* No lift: the ring is the whole response, so a shadow here would
+         * compete with the row's own hover tint underneath it. */
         expect(trigger.className).not.toMatch(/shadow/);
+    });
+
+    it("keeps the kebab a circle in its active and disabled states too", () => {
+        renderTable();
+
+        const trigger = screen.getByRole("button", { name: "Actions for Ada Lovelace" });
+        expect(trigger).toHaveClass("active:border-ink", "active:bg-fox-100");
+        expect(trigger).toHaveClass("disabled:opacity-50", "disabled:cursor-not-allowed");
+
+        /* Only colours move between states - the shape never does. Every
+         * state variant above sits on the same always-present `rounded-full`. */
+        const shapeVariants = ["hover:", "active:", "disabled:", "focus-visible:"];
+        shapeVariants.forEach((variant) => {
+            const override = trigger.className
+                .split(" ")
+                .filter((name) => name.startsWith(variant));
+            expect(override.join(" ")).not.toMatch(/rounded-(?!full)/);
+        });
+    });
+
+    it("names the kebab for a screen reader and tells it it opens a menu", () => {
+        renderTable();
+
+        const trigger = screen.getByRole("button", { name: "Actions for Ada Lovelace" });
+        expect(trigger).toHaveAttribute("aria-haspopup", "menu");
+        expect(trigger).toHaveAttribute("title", "Row actions");
+        expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+        /* The dots are decoration: the button's own label is the name, so the
+         * icon is hidden rather than announced a second time. */
+        const icon = trigger.querySelector("svg");
+        expect(icon).toHaveAttribute("aria-hidden", "true");
+    });
+
+    it("draws the kebab from the shared ReIcon entry, rotated into a vertical kebab", () => {
+        renderTable();
+
+        const icon = screen
+            .getByRole("button", { name: "Actions for Ada Lovelace" })
+            .querySelector("svg");
+
+        /* ReIcon draws its `More` across, and the shared registry turns it a
+         * quarter turn - the rotation belongs to the icon, not to this table. */
+        expect(icon).toHaveClass("rotate-90");
+        expect(icon).not.toHaveAttribute("width", "0");
+    });
+
+    it("still opens the menu, so the new design costs no behaviour", () => {
+        renderTable();
+
+        const trigger = screen.getByRole("button", { name: "Actions for Ada Lovelace" });
+        fireEvent.click(trigger);
+
+        expect(trigger).toHaveAttribute("aria-expanded", "true");
+        expect(screen.getByRole("menuitem", { name: "View user" })).toBeInTheDocument();
+
+        fireEvent.click(trigger);
+
+        expect(trigger).toHaveAttribute("aria-expanded", "false");
+        expect(screen.queryByRole("menu")).not.toBeInTheDocument();
     });
 
     it("never renders a password, even if one were on the row", () => {
