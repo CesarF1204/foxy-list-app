@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 /**
  * DOCU: Reads an environment variable the process cannot start without.
@@ -25,7 +25,7 @@ const requireEnv = (name) => {
  * Last Updated Date: October 1, 2026
  * @function connectDB
  * @returns {Promise<import('mongoose').Connection>} The open connection
- * @author Cesar
+ * @author Kate, Updated by: Cesar
  */
 const connectDB = async () => {
     try {
