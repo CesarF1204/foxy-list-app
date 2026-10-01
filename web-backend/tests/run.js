@@ -1,7 +1,7 @@
 import { state, createAndSignIn } from './helpers.js';
 import { promote } from './seed-admin.js';
 import { connectDB, disconnectDB } from '../config/db.js';
-import { run as auth, recovery } from './api-auth.test.js';
+import { run as auth, recovery, selfService } from './api-auth.test.js';
 import { crud, board } from './api-tasks.test.js';
 import {
     authorization,
@@ -54,6 +54,10 @@ const main = async () => {
     const contract = await integration();
     await adminContract();
     await errorContract(contract);
+
+    /* After everything else, and on its own account: it renames and re-passwords
+     * a session, so any suite that ran later would be holding a stale one. */
+    await selfService();
 
     console.log(
         `\n===== ${state.checks - state.failures}/${state.checks} checks passed, ${state.failures} failed =====`

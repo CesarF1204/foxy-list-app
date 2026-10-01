@@ -11,6 +11,7 @@ import {
     INVALID_CREDENTIALS_MESSAGE,
     ACCOUNT_GONE_MESSAGE,
     PASSWORD_UPDATED_MESSAGE,
+    DUPLICATE_EMAIL_MESSAGE,
 } from '../constants/messages.js';
 
 /** The cost factor, configurable so tests can run cheaper than production. */
@@ -201,6 +202,64 @@ const resetPassword = async (data) => {
     return PASSWORD_UPDATED_MESSAGE;
 };
 
+/**
+ * DOCU: Updates the signed-in user's own profile fields.
+ *
+ * Self-service, so it takes no id: the account is the one behind the verified
+ * session, never one named in the body or the path. A caller cannot reach
+ * another account here, which is the whole difference between this and
+ * `adminService.updateUserProfile`.
+ *
+ * `role` and `status` are still refused by `updateUserProfileSchema`, so a
+ * crafted body cannot promote this account even though the endpoint is the
+ * account's own.
+ *
+ * Last Updated Date: October 1, 2026
+ * @function updateOwnProfile
+ * @param {object} actor - The signed-in user, from authMiddleware
+ * @param {object} data - The validated profile fields
+ * @returns {Promise<object>} The updated user, without a password
+ * @author Cesar
+ */
+const updateOwnProfile = async (actor, data) => {
+    /* The same duplicate-address check the admin path performs: the collision
+     * is always about the email, and the message is shared so it reads the
+     * same whoever triggers it. */
+    const clash = await userModel.findByEmail(data.email);
+
+    if (clash && String(clash._id) !== String(actor._id)) {
+        throw conflict(DUPLICATE_EMAIL_MESSAGE);
+    }
+
+    const updated = await userModel.updateUser(actor._id, {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+    });
+
+    return toPublicUser(updated);
+};
+
+/**
+ * DOCU: Sets a new password on the signed-in user's own account.
+ *
+ * Like the profile update this takes no id, and it reuses the admin
+ * password schema so both paths refuse exactly the same values. The value is
+ * hashed and never returned; only a message comes back.
+ *
+ * Last Updated Date: October 1, 2026
+ * @function setOwnPassword
+ * @param {object} actor - The signed-in user, from authMiddleware
+ * @param {object} data - The validated { password }
+ * @returns {Promise<string>} The confirmation message
+ * @author Cesar
+ */
+const setOwnPassword = async (actor, data) => {
+    await userModel.updatePassword(actor._id, await hashPassword(data.password));
+
+    return PASSWORD_UPDATED_MESSAGE;
+};
+
 export {
     SALT_ROUNDS,
     hashPassword,
@@ -213,4 +272,6 @@ export {
     clearSessionCookie,
     forgotPassword,
     resetPassword,
+    updateOwnProfile,
+    setOwnPassword,
 };

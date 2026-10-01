@@ -11,6 +11,7 @@ import { CONTROL_ICON } from "../../constants/styles";
 import { ROUTES } from "../../constants/routes";
 import { isAdmin } from "../../constants/roles";
 import LogOut from "./LogOut";
+import ProfileDrawer from "./ProfileDrawer";
 
 /**
  * The two states of a navigation entry, so the navbar and the account menu
@@ -26,6 +27,11 @@ const navClass = (isActive) =>
  */
 const Navbar = ({ user }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    /* The profile drawer is the same component the admin table opens, driven
+     * read-only. It is owned here rather than inside the account menu so it
+     * outlives the menu: clicking "View Profile" closes the menu, and the
+     * drawer has to survive that. */
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
     const containerRef = useRef(null);
 
     /* Close the menu on an outside click or Escape. */
@@ -48,14 +54,21 @@ const Navbar = ({ user }) => {
         };
     }, [isMenuOpen]);
 
+    /* A fragment, not a bare `<header>`: the header carries `backdrop-blur`,
+     * which makes it a containing block for `position: fixed` descendants. The
+     * drawer overlay is `fixed inset-0`, so rendered inside the header it would
+     * be confined to the 4rem-tall bar instead of covering the page. As a
+     * sibling it escapes that, and the admin drawer - mounted in a page with no
+     * such ancestor - behaves identically. */
     return (
-        <header className="sticky top-0 z-30 border-b-2 border-ink bg-paper/95 backdrop-blur">
-            {/* `ml-auto` on the account block, rather than `justify-between`
-                across three children, keeps the section links parked beside
-                the brand on the left and pushes the date and avatar to the far
-                right - `justify-between` would float the links into the middle
-                of the bar instead. */}
-            <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
+        <>
+            <header className="sticky top-0 z-30 border-b-2 border-ink bg-paper/95 backdrop-blur">
+                {/* `ml-auto` on the account block, rather than `justify-between`
+                    across three children, keeps the section links parked beside
+                    the brand on the left and pushes the date and avatar to the far
+                    right - `justify-between` would float the links into the middle
+                    of the bar instead. */}
+                <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
                 {/* The mascot is a button of its own: nesting one inside an anchor
                     is invalid HTML and confuses screen readers and keyboards. */}
                 <div className="flex shrink-0 items-center gap-2.5 pr-2">
@@ -133,6 +146,36 @@ const Navbar = ({ user }) => {
                                         <p className="truncate text-xs font-semibold text-ink-soft">
                                             {user.email}
                                         </p>
+                                        {/* Not a link: it opens the shared user
+                                            drawer over the page rather than
+                                            navigating, so it is a button and it
+                                            carries `aria-haspopup="dialog"`.
+                                            The menu is closed on the way, so the
+                                            drawer is not left sitting on top of
+                                            an open menu.
+
+                                            It wears the name's size and weight,
+                                            underlined and in `text-fox-600` the
+                                            way the second reference shot shows -
+                                            the same fox orange the "Register
+                                            now" action on the auth page wears,
+                                            so every underlined action in the app
+                                            reads as the same kind of thing.
+                                            `w-fit` keeps the underline and the
+                                            hit area on the words instead of the
+                                            whole row. */}
+                                        <button
+                                            type="button"
+                                            role="menuitem"
+                                            aria-haspopup="dialog"
+                                            onClick={() => {
+                                                setIsMenuOpen(false);
+                                                setIsProfileOpen(true);
+                                            }}
+                                            className="mt-1 w-fit cursor-pointer truncate text-sm font-extrabold text-fox-600 underline decoration-2 underline-offset-2 transition hover:text-fox-700"
+                                        >
+                                            View Profile
+                                        </button>
                                     </div>
                                     <ul className="py-1.5 text-sm font-bold">
                                         {/* The Dashboard mirrors the navbar's own
@@ -209,8 +252,20 @@ const Navbar = ({ user }) => {
                         </svg>
                     </Link>
                 )}
-            </div>
-        </header>
+                </div>
+            </header>
+
+            {/* A sibling of the header rather than a child of it, so the
+                drawer's `fixed inset-0` overlay is not trapped by the header's
+                `backdrop-blur` containing block - see the note at the return.
+                It is only mounted while open, so an untouched navbar renders
+                nothing here. */}
+            <ProfileDrawer
+                user={user}
+                isOpen={isProfileOpen}
+                onClose={() => setIsProfileOpen(false)}
+            />
+        </>
     );
 };
 

@@ -5,6 +5,8 @@ import {
     signInSchema,
     forgotPasswordSchema,
     resetPasswordSchema,
+    updateUserProfileSchema,
+    updateUserPasswordSchema,
 } from '../utils/validationSchemas.js';
 import { HTTP_STATUS } from '../constants/http.js';
 
@@ -94,6 +96,39 @@ export const forgotPassword = async (req, res) => {
  * @returns {Promise<void>} Responds with { message }
  * @author Cesar
  */
+/**
+ * DOCU: Updates the signed-in user's own profile fields.
+ *
+ * The account comes from the verified session, never from the request, so
+ * there is nothing in the body or the path that could name a different user.
+ * Last Updated Date: October 1, 2026
+ * @function updateProfile
+ * @param {object} req - Request, already carrying the user
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { user }
+ * @author Cesar
+ */
+export const updateProfile = async (req, res) => {
+    const data = parseBody(req.body, updateUserProfileSchema);
+
+    res.status(HTTP_STATUS.OK).json({ user: await authService.updateOwnProfile(req.user, data) });
+};
+
+/**
+ * DOCU: Sets a new password on the signed-in user's own account.
+ * Last Updated Date: October 1, 2026
+ * @function updatePassword
+ * @param {object} req - Request, already carrying the user
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { message }
+ * @author Cesar
+ */
+export const updatePassword = async (req, res) => {
+    const data = parseBody(req.body, updateUserPasswordSchema);
+
+    res.status(HTTP_STATUS.OK).json({ message: await authService.setOwnPassword(req.user, data) });
+};
+
 export const resetPassword = async (req, res) => {
     const data = parseBody(req.body, resetPasswordSchema);
 

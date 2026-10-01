@@ -4,6 +4,7 @@
     checkStatus,
     uniqueEmail,
     clearCookie,
+    createAndSignIn,
     state,
     VALID_PASSWORD,
 } from './helpers.js';
@@ -203,7 +204,7 @@ const run = async () => {
     return { email };
 };
 
-export { run };
+export { run, selfService };
 
 /**
  * DOCU: Tests password recovery and the unknown route fallback.
@@ -299,6 +300,198 @@ export const recovery = async () => {
 
     console.log('\n--- UNKNOWN ROUTES ---');
     await checkStatus('an unknown route -> 404', 'GET', '/api/nope', undefined, 404, { auth: false });
+};
+
+/**
+ * DOCU: Checks the self-service profile routes, the ones the View Profile
+ * drawer's Edit name and email and Set new password buttons call.
+ *
+ * The point of the pair is that a plain user is a legitimate caller - so the
+ * interesting checks are the limits. Neither route takes an id, a session
+ * cannot reach another account through them, and neither can carry a role or a
+ * status change in its body even though the caller owns the account.
+ *
+ * It creates its own account rather than borrowing the suite-wide `plain`: the
+ * admin suite deletes that one, and a deleted session answers 401 to
+ * everything, which would make every check here fail for the wrong reason.
+ * Last Updated Date: October 1, 2026
+ * @function selfService
+ * @returns {Promise<{email: string}>} The account that was edited
+ * @author Cesar
+ */
+const selfService = async () => {
+    console.log('\n--- SELF-SERVICE PROFILE ---');
+
+    const plain = await createAndSignIn('self', 'selfjar');
+    const { jar, id } = plain;
+    const fresh = uniqueEmail('self');
+
+    await checkStatus(
+        'edit your own profile with no session -> 401',
+        'PATCH',
+        '/api/users/profile',
+        { firstName: 'No', lastName: 'Session', email: fresh },
+        401,
+        { auth: false }
+    );
+
+    await checkStatus(
+        'set your own password with no session -> 401',
+        'PUT',
+        '/api/users/password',
+        { password: 'newsecret1' },
+        401,
+        { auth: false }
+    );
+
+    const renamed = await checkStatus(
+        'edit your own profile -> 200',
+        'PATCH',
+        '/api/users/profile',
+        { firstName: 'Renamed', lastName: 'Person', email: fresh },
+        200,
+        { jar }
+    );
+    check('the edit returns the new name', renamed.data?.user?.firstName, 'Renamed');
+    check('the edit returns the new email', renamed.data?.user?.email, fresh);
+    check('the edit never returns a password', renamed.data?.user?.password, undefined);
+    check('the edit does not change the role', renamed.data?.user?.role, 'user');
+
+    /* The session must now report the change, or the navbar would keep showing
+     * the old name until a reload. */
+    const reread = await checkStatus(
+        'the session reports the new name',
+        'GET',
+        '/api/auth/validate_token',
+        undefined,
+        200,
+        { jar }
+    );
+    check('the session email follows the edit', reread.data?.user?.email, fresh);
+
+    /* The body carries no id at all, so there is nothing to point elsewhere. */
+    const withId = await checkStatus(
+        'an edit carrying somebody else\'s id -> 200',
+        'PATCH',
+        '/api/users/profile',
+        { _id: '0123456789abcdef01234567', userId: '0123456789abcdef01234567', firstName: 'Renamed', lastName: 'Person', email: fresh },
+        200,
+        { jar }
+    );
+    check('the foreign id is ignored, the caller is still edited', withId.data?.user?.email, fresh);
+    check('the caller is still themselves', withId.data?.user?._id, id);
+
+    /* Owning the account is not the same as being allowed to promote it. */
+    const escalate = await checkStatus(
+        'edit your own profile asking for the admin role -> 400',
+        'PATCH',
+        '/api/users/profile',
+        { firstName: 'Sneaky', lastName: 'Person', email: uniqueEmail('sneaky'), role: 'admin' },
+        400,
+        { jar }
+    );
+    check(
+        'the refusal names the field that was not allowed',
+        String(escalate.data?.message).toLowerCase().includes('role'),
+        true
+    );
+
+    await checkStatus(
+        'edit your own profile asking for a status -> 400',
+        'PATCH',
+        '/api/users/profile',
+        { firstName: 'Sneaky', lastName: 'Person', email: uniqueEmail('sneaky2'), status: 'blocked' },
+        400,
+        { jar }
+    );
+
+    /* A second account, so the collision is with somebody else's address. The
+     * caller's own old address was freed by the rename above, and reusing it
+     * would test the "same account" branch rather than the conflict. */
+    const other = await createAndSignIn('other', 'otherjar');
+
+    await checkStatus(
+        'edit your own profile onto an existing email -> 409',
+        'PATCH',
+        '/api/users/profile',
+        { firstName: 'Taken', lastName: 'Address', email: other.email },
+        409,
+        { jar }
+    );
+
+    await checkStatus(
+        'edit your own profile with a short password field is not a route -> 404',
+        'PUT',
+        '/api/users/profile',
+        undefined,
+        404,
+        { jar }
+    );
+
+    /* Re-read after the refusals: none of them may have changed anything. */
+    const unchanged = await checkStatus(
+        'the role is still plain after every attempt',
+        'GET',
+        '/api/auth/validate_token',
+        undefined,
+        200,
+        { jar }
+    );
+    check('still a plain user', unchanged.data?.user?.role, 'user');
+    check('still the edited name', unchanged.data?.user?.firstName, 'Renamed');
+
+    console.log('\n--- SELF-SERVICE PASSWORD ---');
+
+    await checkStatus(
+        'set your own password with a short value -> 400',
+        'PUT',
+        '/api/users/password',
+        { password: 'abc' },
+        400,
+        { jar }
+    );
+
+    const changed = await checkStatus(
+        'set your own password -> 200',
+        'PUT',
+        '/api/users/password',
+        { password: 'newsecret1' },
+        200,
+        { jar }
+    );
+    check('the password endpoint returns no user at all', changed.data?.user, undefined);
+    check('the password endpoint returns a message', typeof changed.data?.message, 'string');
+
+    await checkStatus(
+        'the old password no longer signs in',
+        'POST',
+        '/api/users/sign_in',
+        { email: fresh, password: VALID_PASSWORD },
+        401,
+        { auth: false }
+    );
+    await checkStatus(
+        'the new password signs in',
+        'POST',
+        '/api/users/sign_in',
+        { email: fresh, password: 'newsecret1' },
+        200,
+        { auth: false }
+    );
+
+    /* A plain user still cannot reach the administrative writes, and the role
+     * one specifically: this is the call the hidden Change role button would
+     * have made. */
+    await checkStatus(
+        'a plain user changing their own role -> 403',
+        'PUT',
+        `/api/admin/users/${id}/role`,
+        { role: 'admin' },
+        403,
+        { jar }
+    );
+
+    return { email: fresh };
 };
 
 /* Allow the file to be run on its own, not only through tests/run.js */
