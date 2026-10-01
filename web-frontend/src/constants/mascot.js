@@ -20,6 +20,18 @@ const BUILDER_SHEETS = {
 const BUILDER_LABEL = "builder";
 
 /**
+ * The CRT, a screen-faced character on the developer documentation page. Same shape as the two
+ * above, so every mascot in the app is described the same way and the sheets stay swappable.
+ */
+const CRT_SHEETS = {
+    directions: "/mascots/crt-directions.webp",
+    reactions: "/mascots/crt-reactions.webp",
+};
+
+/** The character name a screen reader announces for the CRT. */
+const CRT_LABEL = "CRT";
+
+/**
  * How each form mood reads on the expressions sheet. The sheet is a 3x3 grid in reading order,
  * and the names match the `page-mascot` library's own list.
  */
@@ -116,6 +128,8 @@ export {
     MASCOT_LABEL,
     BUILDER_SHEETS,
     BUILDER_LABEL,
+    CRT_SHEETS,
+    CRT_LABEL,
     MASCOT_MOODS,
     MASCOT_HOLD_MS,
     TOAST_MOODS,

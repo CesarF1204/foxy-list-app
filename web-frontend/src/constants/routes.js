@@ -9,6 +9,7 @@ const ROUTES = {
     login: "/login",
     register: "/register",
     recoverPassword: "/recover-password",
+    apiDocs: "/api-docs",
     admin: "/admin",
     adminOverview: "/admin/overview",
     adminUsers: "/admin/users",
@@ -20,6 +21,6 @@ const ROUTES = {
  * catch-all (which renders the 404 page) is covered for free, and a route added later comes up
  * bare rather than unexpectedly carrying one.
  */
-const FOOTER_PATHS = [ROUTES.board, ROUTES.adminOverview, ROUTES.adminUsers];
+const FOOTER_PATHS = [ROUTES.board, ROUTES.adminOverview, ROUTES.adminUsers, ROUTES.apiDocs];
 
 export { ROUTES, FOOTER_PATHS };

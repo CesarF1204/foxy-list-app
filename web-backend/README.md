@@ -40,6 +40,63 @@ npm run seed:admin someone@example.com
 | `npm run test:tasks` | Task CRUD, board ordering, ownership, refusals |
 | `npm run test:admin` | Admin authorization, the users table, every action |
 | `npm run test:integration` | The exact contract `web-frontend` reads |
+| `npm run test:docs` | The OpenAPI spec, and that it still matches the routes |
+
+## API documentation
+
+The API documents itself. With the server running:
+
+| URL | What it is |
+| --- | --- |
+| `http://localhost:5000/api-docs` | Swagger UI, for a developer reading or trying the API |
+| `http://localhost:5000/openapi.json` | The OpenAPI 3.0.3 document itself |
+| `/api-docs` in `web-frontend` | The same document, rendered inside the app |
+
+None of the three needs a session. Documentation that requires a session is
+documentation nobody can read while setting a session up, and the document
+describes shapes rather than data - so `/openapi.json` sits behind the same CORS
+allowlist as every other route, which is what lets the frontend fetch it from its
+own origin. Swagger UI's assets are served from this origin too, so the page works
+with no outbound internet.
+
+The document is **generated from the code and served, never a file on disk**.
+There is nothing to keep in sync by hand and nothing to forget to commit; the one
+thing that can drift is a route changing without its documentation changing, and
+`npm run test:docs` exists to catch exactly that. It probes every documented
+operation against the running server and fails if a route stops requiring a
+session, or starts accepting a request the spec says it refuses.
+
+### Where it lives
+
+```
+swagger/
+├── openapi.js           assembles the document: info, servers, tags, security, paths
+├── swaggerRoutes.js     mounts /openapi.json and the Swagger UI at /api-docs
+├── schemas/             reusable component schemas, split by direction and resource
+│   ├── commonSchemas.js     Error, Message, ObjectId, enums, PageMeta
+│   ├── userSchemas.js       User, AdminUser, TaskCounts, the auth envelopes
+│   ├── requestSchemas.js    one per Zod schema in utils/validationSchemas.js
+│   └── responseSchemas.js   Task, the task and admin envelopes
+└── paths/               one module per router, plus shared response blocks
+    ├── authPaths.js     routes/userRoutes.js and routes/authRoutes.js
+    ├── taskPaths.js     routes/taskRoutes.js
+    ├── adminPaths.js    routes/adminRoutes.js
+    ├── systemPaths.js   the liveness probe and the two documentation routes
+    └── responses.js     the 400/401/403/404 blocks every operation shares
+```
+
+`paths/` mirrors `routes/` file for file, so a route and its documentation sit
+side by side and a new route has an obvious home for its own entry.
+
+### Adding an endpoint
+
+1. Add the route in `routes/`, as usual.
+2. Add its path to the matching file in `swagger/paths/`, with a summary, a
+   description that says *why* it exists, its parameters, its request body, and
+   every status it can answer with - including the 401 and 403 the middleware
+   raises, which `authResponses()` writes for you.
+3. Run `npm run test:docs`. It fails until the two agree.
+
 
 ## Architecture
 
@@ -55,7 +112,8 @@ routes/                api.routes.js mounts auth, users, tasks, admin
 middleware/            authMiddleware, adminMiddleware, errorMiddleware
 helpers/               errorHelper, validationHelper, queryHelper
 utils/                 validationSchemas.js - all Zod request schemas
-tests/                 helpers, four suites, seed-admin
+swagger/               openapi.js, swaggerRoutes.js, schemas/, paths/ - the OpenAPI document
+tests/                 helpers, four suites, a docs suite, seed-admin
 ```
 
 A request flows **route → controller → service → model → database**, and each

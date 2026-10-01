@@ -1,5 +1,5 @@
 const PAGE_SIZE_OPTIONS = [5, 10, 25];
-const DEFAULT_PAGE_SIZE = 5;
+const DEFAULT_PAGE_SIZE = 10;
 
 /**
  * The columns the users table can be sorted by, mapped to the field the API sorts on. The API

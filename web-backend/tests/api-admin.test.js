@@ -98,7 +98,7 @@ export const usersTable = async ({ admin, plain }) => {
     check('the table returns rows', Array.isArray(users?.rows), true);
     check('the table reports its total', typeof users?.total, 'number');
     check('the table reports a page count', typeof users?.pageCount, 'number');
-    check('the table defaults to 5 per page', users?.pageSize, 5);
+    check('the table defaults to 10 per page', users?.pageSize, 10);
     check('the table starts on page 1', users?.page, 1);
     check(
         'the default sort is newest first',
