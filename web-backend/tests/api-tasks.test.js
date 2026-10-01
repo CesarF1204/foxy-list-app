@@ -2,13 +2,7 @@
 
 /** The suite must be run with the server already listening. */
 
-/**
- * DOCU: Tests task creation, listing, ownership and bad ids.
- * Last Updated Date: October 1, 2026
- * @function crud
- * @returns {Promise<object>} The fixtures the board suite needs
- * @author Cesar
- */
+/** Tests task creation, listing, ownership and bad ids. */
 export const crud = async () => {
     console.log('\n--- TASK CRUD ---');
 
@@ -69,7 +63,7 @@ export const crud = async () => {
         { jar: owner.jar }
     );
 
-    /* A new task always lands on todo, so a client cannot break the ordering rule. */
+    /** A new task always lands on todo, so a client cannot break the ordering rule. */
     await checkStatus(
         'create a task naming its own board -> 400',
         'POST',
@@ -127,7 +121,7 @@ export const crud = async () => {
         { jar: other.jar }
     );
 
-    /* The refusals above must not have changed anything. */
+    /** The refusals above must not have changed anything. */
     const stillThere = await req('GET', '/api/tasks', undefined, { jar: owner.jar });
     check('the task survived every attempt to touch it', stillThere.data?.tasks?.length, 2);
 
@@ -178,14 +172,7 @@ export const crud = async () => {
     return { owner, other, taskId, secondId: second.data?.task?._id };
 };
 
-/**
- * DOCU: Tests moving between boards, deleting, and the no-session refusals.
- * Last Updated Date: October 1, 2026
- * @function board
- * @param {object} context - The fixtures returned by crud
- * @returns {Promise<void>} Resolves once the checks have run
- * @author Cesar
- */
+/** Tests moving between boards, deleting, and the no-session refusals. */
 export const board = async ({ owner, taskId, secondId }) => {
     console.log('\n--- MOVING BETWEEN BOARDS ---');
 
@@ -199,7 +186,7 @@ export const board = async ({ owner, taskId, secondId }) => {
     );
     check('the task is on the ongoing board', moved.data?.task?.status, 'ongoing');
 
-    /* The board it left must be renumbered, leaving no hole at order 0. */
+    /** The board it left must be renumbered, leaving no hole at order 0. */
     const afterMove = await req('GET', '/api/tasks', undefined, { jar: owner.jar });
     const todoOrders = afterMove.data.tasks
         .filter((task) => task.status === 'todo')
@@ -233,7 +220,7 @@ export const board = async ({ owner, taskId, secondId }) => {
         { jar: owner.jar }
     );
 
-    /* A position past the end must clamp, not leave a gap. */
+    /** A position past the end must clamp, not leave a gap. */
     await checkStatus(
         'move a task far past the end -> 200',
         'PUT',
@@ -295,7 +282,7 @@ export const board = async ({ owner, taskId, secondId }) => {
     );
 };
 
-/* Allow the file to be run on its own, not only through tests/run.js */
+/** Allow the file to be run on its own, not only through tests/run.js */
 if (process.argv[1]?.endsWith('api-tasks.test.js')) {
     crud()
         .then(board)

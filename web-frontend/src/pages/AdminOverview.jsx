@@ -11,17 +11,15 @@ import AdminLayout from "../components/Admin/AdminLayout";
 import { StatCard, StatCardSkeleton } from "../components/Admin/StatCard";
 import TaskStatusChart from "../components/Admin/TaskStatusChart";
 
-/** DOCU: Reads a dotted path out of the stats object, so a card is described by
- *  data rather than by a chain of conditionals. */
+/**
+ * Reads a dotted path out of the stats object, so a card is described by data rather than by a
+ * chain of conditionals.
+ */
 const readStat = (stats, path) => path.split(".").reduce((value, key) => value?.[key], stats) ?? 0;
 
 /**
- * DOCU: The admin overview: how many accounts exist, how many can use them, and
- * how the tasks are spread across the three boards.
- *
- * Every number comes from the API's own totals, computed from the real user and
- * task records on each request. Nothing here counts anything itself, so the cards
- * and the users table cannot disagree with each other.
+ * The admin overview: how many accounts exist, how many can use them, and how the tasks are
+ * spread across the three boards.
  */
 const AdminOverview = () => {
     const { user } = useAppContext();

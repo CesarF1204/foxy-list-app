@@ -6,27 +6,13 @@ import { OBJECT_ID_PATTERN } from '../constants/validation.js';
 
 dotenv.config();
 
-/**
- * DOCU: Looks an account up by id or by email.
- * Last Updated Date: October 1, 2026
- * @function identify
- * @param {string} value - An email address or a user id
- * @returns {Promise<object|null>} The account, or null
- * @author Cesar
- */
+/** Looks an account up by id or by email. */
 const identify = async (value) =>
     OBJECT_ID_PATTERN.test(value)
         ? await userModel.findById(value)
         : await userModel.findByEmail(value);
 
-/**
- * DOCU: Promotes one account to administrator.
- * Last Updated Date: October 1, 2026
- * @function promote
- * @param {string} value - An email address or a user id
- * @returns {Promise<object|null>} The promoted account, or null if not found
- * @author Cesar
- */
+/** Promotes one account to administrator. */
 const promote = async (value) => {
     const user = await identify(value);
 
@@ -46,7 +32,7 @@ const promote = async (value) => {
     return updated;
 };
 
-/* Only do the work when run directly, not when imported by the test runner. */
+/** Only do the work when run directly, not when imported by the test runner. */
 if (process.argv[1]?.endsWith('seed-admin.js')) {
     const target = process.argv[2];
 

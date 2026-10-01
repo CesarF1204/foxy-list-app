@@ -1,15 +1,3 @@
-/**
- * Tests for the app navbar's section links.
- *
- * The Dashboard link is responsive: it sits in the navbar from the `md`
- * breakpoint up and drops into the account menu below it. The admin link
- * splits the same way and is gated on the role. jsdom applies no stylesheet,
- * so both copies exist in these tests and the `md:` utilities cannot be
- * observed directly. What the tests can check - and what would actually
- * break - is that each link is rendered once, in one of the two places,
- * gated on the role, and never duplicated.
- */
-
 import { describe, it, expect, afterEach } from "vitest";
 import { render, screen, cleanup, fireEvent, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
@@ -22,8 +10,10 @@ import { ROUTES } from "../src/constants/routes";
 import { BOARDS, BOARD_LABELS } from "../src/constants/boards";
 import { TASKS_KEY } from "../src/constants/queryKeys";
 
-/* `role` and `status` are on every user the API returns (`toPublicUser`), so
- * the fixtures carry them: the drawer's badges and detail rows read both. */
+/**
+ * `role` and `status` are on every user the API returns (`toPublicUser`), so the fixtures carry
+ * them: the drawer's badges and detail rows read both.
+ */
 const USER = {
     _id: "u1",
     firstName: "Ada",
@@ -41,14 +31,7 @@ const ADMIN = {
     role: "admin",
 };
 
-/**
- * Mounts the real navbar at `path`, signed in as `user` (or signed out).
- *
- * `tasks` seeds the board's own cache entry with the shape the API really
- * returns - the `{ tasks: [...] }` envelope, not a bare array. `getTasksQueryOptions`
- * stores whatever `getAllTasks` resolves to, and `getAllTasks` returns that
- * envelope, so seeding a bare array here would test a shape the app never has.
- */
+/** Mounts the real navbar at `path`, signed in as `user` (or signed out). */
 const renderNavbar = (path, user, tasks) => {
     const queryClient = new QueryClient();
     if (tasks !== undefined) queryClient.setQueryData(TASKS_KEY, tasks);
@@ -65,10 +48,9 @@ const renderNavbar = (path, user, tasks) => {
 };
 
 /**
- * The primary navigation, or null when the navbar carries none - a guest gets
- * no section links at all. Scoped by landmark rather than by name: the same
- * links are also carried in the account menu on narrow screens, which is the
- * whole point of the responsive split.
+ * The primary navigation, or null when the navbar carries none - a guest gets no section links
+ * at all. Scoped by landmark rather than by name: the same links are also carried in the
+ * account menu on narrow screens, which is the whole point of the responsive split.
  */
 const mainNav = () => {
     const nav = screen.queryByRole("navigation", { name: "Main" });
@@ -201,9 +183,9 @@ describe("the section links in the account menu", () => {
     });
 
     /**
-     * Sign out is a menu entry rather than one of the `.btn` buttons, so it does
-     * not inherit that class's `cursor: pointer` and has to ask for it. Without
-     * it the pointer stays an I-beam over a row that is entirely clickable.
+     * Sign out is a menu entry rather than one of the `.btn` buttons, so it does not inherit
+     * that class's `cursor: pointer` and has to ask for it. Without it the pointer stays an
+     * I-beam over a row that is entirely clickable.
      */
     it("shows a pointer cursor over Sign out", () => {
         renderNavbar(ROUTES.board, ADMIN);
@@ -217,8 +199,10 @@ describe("the section links in the account menu", () => {
         renderNavbar(ROUTES.board, ADMIN);
         const signOut = within(openAccountMenu()).getByRole("button", { name: "Sign out" });
 
-        /* The pointer is added, not swapped in: the styling that was already there
-         * is untouched, and the disabled state still refuses the click. */
+        /**
+         * The pointer is added, not swapped in: the styling that was already there is
+         * untouched, and the disabled state still refuses the click.
+         */
         expect(signOut).toHaveClass("hover:bg-red-50", "disabled:cursor-not-allowed");
     });
 
@@ -288,8 +272,10 @@ describe("the section links in the account menu", () => {
 });
 
 describe("View Profile in the account menu", () => {
-    /* The same drawer the admin table opens, so these check reuse: the title,
-     * the detail rows, the badges and the counts all come from `UserDrawer`. */
+    /**
+     * The same drawer the admin table opens, so these check reuse: the title, the detail rows,
+     * the badges and the counts all come from `UserDrawer`.
+     */
     const openProfile = (user) => {
         renderNavbar(ROUTES.board, user);
         fireEvent.click(within(openAccountMenu()).getByRole("menuitem", { name: "View Profile" }));
@@ -336,24 +322,30 @@ describe("View Profile in the account menu", () => {
     });
 
     it("takes Set new password away while the profile form is open, and gives it back", () => {
-        /* Two ways of editing the same account side by side invites the wrong one,
-         * so the password button is absent rather than disabled - there is nothing
-         * to click or reach by keyboard while the form is open. */
+        /**
+         * Two ways of editing the same account side by side invites the wrong one, so the
+         * password button is absent rather than disabled - there is nothing to click or reach
+         * by keyboard while the form is open.
+         */
         const drawer = openProfile(USER);
 
         fireEvent.click(within(drawer).getByRole("button", { name: "Edit name and email" }));
         expect(within(drawer).queryByRole("button", { name: "Set new password" })).toBeNull();
 
-        /* Cancelling leaves the form and restores the button, and the drawer still
-         * has the same identity - it swapped a form in, it did not navigate. */
+        /**
+         * Cancelling leaves the form and restores the button, and the drawer still has the same
+         * identity - it swapped a form in, it did not navigate.
+         */
         fireEvent.click(within(drawer).getByRole("button", { name: "Cancel" }));
         expect(within(drawer).getByRole("button", { name: "Edit name and email" })).toBeInTheDocument();
         expect(within(drawer).getByRole("button", { name: "Set new password" })).toBeInTheDocument();
     });
 
     it("does not render Change role for a regular user", () => {
-        /* Not merely hidden behind a disabled attribute: it is absent from the
-         * tree, so there is nothing to click or to reach by keyboard. */
+        /**
+         * Not merely hidden behind a disabled attribute: it is absent from the tree, so there
+         * is nothing to click or to reach by keyboard.
+         */
         expect(
             within(openProfile(USER)).queryByRole("button", { name: "Change role" })
         ).toBeNull();
@@ -366,8 +358,10 @@ describe("View Profile in the account menu", () => {
     });
 
     it("offers a regular user no way to block or delete anybody", () => {
-        /* The subject is always the viewer here, and block and delete are
-         * administrative writes against somebody, so neither role gets them. */
+        /**
+         * The subject is always the viewer here, and block and delete are administrative writes
+         * against somebody, so neither role gets them.
+         */
         const drawer = openProfile(USER);
 
         expect(within(drawer).queryByRole("button", { name: "Block user" })).toBeNull();
@@ -394,8 +388,10 @@ describe("View Profile in the account menu", () => {
     it("opens no role dialog for a regular user, because there is no button for it", () => {
         const drawer = openProfile(USER);
 
-        /* Nothing to click, so nothing can be opened: the capability gate on the
-         * dialog is unreachable rather than merely unused. */
+        /**
+         * Nothing to click, so nothing can be opened: the capability gate on the dialog is
+         * unreachable rather than merely unused.
+         */
         expect(within(drawer).queryByRole("button", { name: "Change role" })).toBeNull();
     });
 
@@ -424,14 +420,13 @@ describe("View Profile in the account menu", () => {
         expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
 
-    /* The counts are read off the board's cache, which holds the whole
-     * `{ tasks: [...] }` envelope the API returns. Treating that envelope as
-     * the list crashed the drawer with "forEach is not a function", so these
-     * pin the shape the cache really has. */
+    /** The counts are read off the board's cache, which holds the whole */
     describe("the task counts", () => {
         const openWithTasks = (tasks) => {
-            /* `undefined` means "do not seed", so the cache entry is absent
-             * entirely - the state before the board has ever been visited. */
+            /**
+             * `undefined` means "do not seed", so the cache entry is absent entirely - the
+             * state before the board has ever been visited.
+             */
             renderNavbar(ROUTES.board, USER, tasks === undefined ? undefined : { tasks });
             fireEvent.click(
                 within(openAccountMenu()).getByRole("menuitem", { name: "View Profile" })
@@ -447,8 +442,9 @@ describe("View Profile in the account menu", () => {
                 { _id: "t4", status: "done" },
             ]);
 
-            /* The total sits beside its own label; each board number sits
-             * beside that board's. */
+            /**
+             * The total sits beside its own label; each board number sits beside that board's.
+             */
             const total = drawer.getByText("Total").closest("li");
             const todo = drawer.getByText(BOARD_LABELS.todo).closest("li");
             const ongoing = drawer.getByText(BOARD_LABELS.ongoing).closest("li");
@@ -469,15 +465,17 @@ describe("View Profile in the account menu", () => {
         });
 
         it("survives an absent cache entry, before the board has loaded", () => {
-            /* The drawer opens with zeroes rather than throwing. */
+            /** The drawer opens with zeroes rather than throwing. */
             const drawer = openWithTasks(undefined);
 
             expect(drawer.getByText("Total").closest("li")).toHaveTextContent("0");
         });
 
         it("survives a malformed envelope, rather than throwing on it", () => {
-            /* A failed request can leave anything in the cache; the counts must
-             * not be the thing that breaks the drawer. */
+            /**
+             * A failed request can leave anything in the cache; the counts must not be the
+             * thing that breaks the drawer.
+             */
             renderNavbar(ROUTES.board, USER, { tasks: null });
             fireEvent.click(
                 within(openAccountMenu()).getByRole("menuitem", { name: "View Profile" })

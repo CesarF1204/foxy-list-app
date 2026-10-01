@@ -1,15 +1,6 @@
-/**
- * DOCU: The roles a user can hold, and how each one is labelled. The API is the
- * authority: it stores `role` and validates every incoming value against
- * `USER_ROLES`, so a request cannot invent a role. The UI reads the same list
- * to build its selects, so the two cannot drift.
- */
+
 const USER_ROLES = ["user", "admin"];
-
-/** DOCU: The role that unlocks `/admin`. */
 const ADMIN_ROLE = "admin";
-
-/** DOCU: The role given to a self-registered account. */
 const DEFAULT_ROLE = "user";
 
 /** Per-role copy and badge styling, keyed to the tokens in index.css. */
@@ -27,16 +18,13 @@ const ROLE_META = {
     },
 };
 
-/**
- * DOCU: Whether an account can use the app. `blocked` is set by an admin and
- * ends the account's access at the API layer, not just in the UI.
- */
 const ACCOUNT_STATUSES = ["active", "blocked"];
-
 const DEFAULT_ACCOUNT_STATUS = "active";
 
-/** Per-status copy and badge styling. Every status carries a label and a
- *  distinct shape, so the state never depends on colour alone. */
+/**
+ * Per-status copy and badge styling. Every status carries a label and a distinct shape, so the
+ * state never depends on colour alone.
+ */
 const ACCOUNT_STATUS_META = {
     active: {
         label: "Active",
@@ -53,8 +41,10 @@ const ACCOUNT_STATUS_META = {
     },
 };
 
-/** DOCU: Whether a user may reach the admin area. Unknown roles are never
- *  admins, so a missing or malformed `role` fails closed. */
+/**
+ * Whether a user may reach the admin area. Unknown roles are never admins, so a missing or
+ * malformed `role` fails closed.
+ */
 const isAdmin = (user) => user?.role === ADMIN_ROLE;
 
 export {

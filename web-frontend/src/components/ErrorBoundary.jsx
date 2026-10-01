@@ -1,7 +1,7 @@
 import { Component } from "react";
 import { ErrorState } from "./Feedback";
 
-/** DOCU: Catches render-time errors so one broken component cannot blank the app. */
+/** Catches render-time errors so one broken component cannot blank the app. */
 class ErrorBoundary extends Component {
     constructor(props) {
         super(props);

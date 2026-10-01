@@ -1,17 +1,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-/**
- * DOCU: Raised when the API answers with an error. <br>
- * Carries the HTTP status alongside the message, so a caller can tell "you are
- * signed out" (401) from "not allowed" (403) from "that is not right" (400)
- * without parsing the message text. `client.js` is the only place this class is
- * defined, so every failure in the app arrives in one shape.
- */
+/** Raised when the API answers with an error. */
 class ApiRequestError extends Error {
-    /**
-     * @param {string} message - a message safe to show the user
-     * @param {number} status - the HTTP status code
-     */
     constructor(message, status) {
         super(message);
         this.name = "ApiRequestError";
@@ -19,37 +9,22 @@ class ApiRequestError extends Error {
     }
 }
 
-/** DOCU: Collapses an error body into one readable message. */
+/** Collapses an error body into one readable message. */
 const toErrorMessage = (body, status) => {
     const { message } = body ?? {};
 
-    /* A validation failure arrives as a list, one entry per field. */
+    /** A validation failure arrives as a list, one entry per field. */
     if (Array.isArray(message)) return message.join(". ");
     if (typeof message === "string" && message.trim()) return message;
 
     return `Request failed (${status})`;
 };
 
-/**
- * DOCU: Performs a JSON request against the real backend. <br>
- * Auth is cookie based, so credentials are always included and no token header
- * is needed; the browser attaches the httpOnly session cookie itself.
- *
- * `signal` is the caller's chance to abandon a request that is no longer wanted.
- * React Query hands one to every query function and aborts it when the key
- * changes or the component unmounts, so a superseded search stops costing
- * bandwidth instead of finishing into a cache entry nobody reads.
- *
- * @param {string} path - the API path, e.g. "/api/tasks"
- * @param {object} [options] - { method, body, signal }
- * @returns {Promise<object>} the parsed response body
- * @throws {ApiRequestError} when the response is not ok
- */
+/** Performs a JSON request against the real backend. */
 const apiRequest = async (path, { method = "GET", body, signal } = {}) => {
     /**
-     * DOCU: Fail loudly when the app has no backend to talk to. <br>
-     * Silently answering with fake data here would hide a missing environment
-     * variable behind a screen that looks like it works.
+     * Fail loudly when the app has no backend to talk to. Silently answering with fake data
+     * here would hide a missing environment variable behind a screen that looks like it works.
      */
     if (!API_BASE_URL) {
         throw new ApiRequestError(
@@ -72,13 +47,17 @@ const apiRequest = async (path, { method = "GET", body, signal } = {}) => {
             signal,
         });
     } catch (error) {
-        /* A cancelled request is deliberate, not a failure. It must stay an abort
-         * so React Query discards it quietly instead of counting it as an error
-         * and putting an "Unable to reach the server" message on the screen. */
+        /**
+         * A cancelled request is deliberate, not a failure. It must stay an abort so React
+         * Query discards it quietly instead of counting it as an error and putting an "Unable
+         * to reach the server" message on the screen.
+         */
         if (error?.name === "AbortError") throw error;
 
-        /* Network level failure: server down, blocked by CORS, etc. The original
-         * is kept as the cause so the console still says what actually failed. */
+        /**
+         * Network level failure: server down, blocked by CORS, etc. The original is kept as the
+         * cause so the console still says what actually failed.
+         */
         throw new ApiRequestError(
             "Unable to reach the server. Please check your connection.",
             0
@@ -91,8 +70,10 @@ const apiRequest = async (path, { method = "GET", body, signal } = {}) => {
         : await response.text();
 
     if (!response.ok) {
-        /* The API already sends a message written for the user; a stack trace or
-         * a database error never reaches here, because it never leaves the API. */
+        /**
+         * The API already sends a message written for the user; a stack trace or a database
+         * error never reaches here, because it never leaves the API.
+         */
         throw new ApiRequestError(toErrorMessage(data, response.status), response.status);
     }
 

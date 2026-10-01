@@ -7,7 +7,7 @@ export default defineConfig({
         environment: "jsdom",
         globals: true,
         include: ["tests/**/*.test.{js,jsx}"],
-        /* Adds the DOM matchers (toHaveTextContent and friends) to expect(). */
+        /** Adds the DOM matchers (toHaveTextContent and friends) to expect(). */
         setupFiles: ["./tests/setup.js"],
     },
 });

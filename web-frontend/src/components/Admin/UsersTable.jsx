@@ -7,7 +7,7 @@ import { BOARD_META, BOARDS, BOARD_LABELS } from "../../constants/boards";
 import { RoleBadge, StatusBadge } from "./Badges";
 import { Icon, KebabButton } from "../icons";
 
-/** DOCU: A date as a short value, with the full timestamp available on hover. */
+/** A date as a short value, with the full timestamp available on hover. */
 const formatDate = (value) => {
     if (!value) return "Unknown";
 
@@ -17,8 +17,10 @@ const formatDate = (value) => {
     return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 };
 
-/** DOCU: The avatar: the same initials the navbar uses, so a row and the account
- *  menu look like the same person. Decorative, since the name is beside it. */
+/**
+ * The avatar: the same initials the navbar uses, so a row and the account menu look like the
+ * same person. Decorative, since the name is beside it.
+ */
 const UserAvatar = ({ user }) => (
     <span
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-ink bg-fox-400 text-xs font-extrabold text-white"
@@ -29,11 +31,11 @@ const UserAvatar = ({ user }) => (
 );
 
 /**
- * DOCU: One board task count as an outlined pill. The border and text colours
- * come from `BOARD_META`, so a board count looks the same here as on the board
- * itself. The board is named twice over: the `title` for a pointer, and a
- * screen-reader only label for anyone who cannot use colour, so a row reads
- * "4 To Do, 3 Ongoing, 2 Done" rather than three bare numbers. */
+ * One board task count as an outlined pill. The border and text colours come from `BOARD_META`,
+ * so a board count looks the same here as on the board itself. The board is named twice over:
+ * the `title` for a pointer, and a screen-reader only label for anyone who cannot use colour,
+ * so a row reads "4 To Do, 3 Ongoing, 2 Done" rather than three bare numbers.
+ */
 const TaskCountPill = ({ board, value }) => (
     <span
         className={`rounded-lg border-2 bg-white px-1.5 py-0.5 text-xs font-extrabold tabular-nums ${BOARD_META[board].pill}`}
@@ -45,8 +47,8 @@ const TaskCountPill = ({ board, value }) => (
 );
 
 /**
- * DOCU: The whole tasks cell: the three board counts in board order, then the
- * total as plain bold text, so the total is the number the eye lands on.
+ * The whole tasks cell: the three board counts in board order, then the total as plain bold
+ * text, so the total is the number the eye lands on.
  */
 const TaskCountsCell = ({ counts }) => (
     <span className="flex items-center justify-start gap-1.5">
@@ -58,42 +60,30 @@ const TaskCountsCell = ({ counts }) => (
 );
 
 /**
- * DOCU: The sort state of a column header, as one of the app's standard icons
- * rather than a character.
- *
- * The header is `text-xs` uppercase, and a text glyph at a fraction of that
- * landed at roughly 8px - at that size the arrows are a hairline, and `↕`
- * (U+2195) is missing outright in plenty of system font stacks, so on a wide
- * screen the control that says "you can sort this" is the one thing you cannot
- * see. Drawn at a fixed 16px in the same 24-unit grid as every other icon in the
- * app, it stays legible at any table width and any zoom level.
- *
- * Three states, each distinguishable without colour: two arrows when the column
- * is unsorted, one filled chevron pointing the way the column is sorted when it
- * is the active one. The icon is decorative - `aria-sort` on the `<th>` is what
- * actually carries the order to a screen reader - but the button names the
- * state in its `title` so it is also a pointer user can read.
+ * The sort state of a column header, as one of the app's standard icons rather than a
+ * character.
  */
 const SortIndicator = ({ isActive, isAscending }) =>
     isActive ? (
         <Icon
             name={isAscending ? "sortAscending" : "sortDescending"}
             size={16}
-            /* The active column is the one the eye should land on first. */
+            /** The active column is the one the eye should land on first. */
             className="text-fox-500"
         />
     ) : (
         <Icon
             name="sortNone"
             size={16}
-            /* Faint, because an unsorted column is an offer, not the state. */
+            /** Faint, because an unsorted column is an offer, not the state. */
             className="text-ink-faint"
         />
     );
 
-/** DOCU: A sortable column header. Only the columns the API can sort are
- *  buttons, and the header cell carries `aria-sort`, so the table's order is
- *  announced rather than only seen. */
+/**
+ * A sortable column header. Only the columns the API can sort are buttons, and the header cell
+ * carries `aria-sort`, so the table's order is announced rather than only seen.
+ */
 const SortHeader = ({ column, sortBy, sortDir, onSort }) => {
     if (!column.sort) {
         return (
@@ -107,8 +97,10 @@ const SortHeader = ({ column, sortBy, sortDir, onSort }) => {
     const isAscending = sortDir === SORT_DIRECTIONS.asc;
     const ariaSort = isActive ? (isAscending ? "ascending" : "descending") : "none";
 
-    /* Named for a pointer hover as well, and kept out of the text so the header
-     * still reads as just the column's name. */
+    /**
+     * Named for a pointer hover as well, and kept out of the text so the header still reads as
+     * just the column's name.
+     */
     const stateLabel = isActive
         ? `, sorted ${isAscending ? "ascending" : "descending"}`
         : ", not sorted. Activate to sort";
@@ -124,10 +116,6 @@ const SortHeader = ({ column, sortBy, sortDir, onSort }) => {
                 onClick={() => onSort(column.sort)}
                 title={`${column.label}${stateLabel}`}
                 aria-label={`${column.label}${stateLabel}`}
-                /* Not a `.btn`, so it does not inherit that class's `cursor: pointer`
-                 * - the same explicit opt-in the kebab trigger and the navbar
-                 * avatar make. The header cell itself is left unclickable so the
-                 * pointer only promises a sort on the label and its icon. */
                 className="group inline-flex cursor-pointer items-center gap-1.5 rounded-lg border-2 border-transparent px-1.5 py-1 text-ink-soft transition hover:border-ink/15 hover:bg-white hover:text-ink"
             >
                 {column.label}
@@ -137,30 +125,16 @@ const SortHeader = ({ column, sortBy, sortDir, onSort }) => {
     );
 };
 
-/**
- * DOCU: The kebab menu's own measurements, kept out of the component so the
- * positioning maths reads as arithmetic. `MENU_ITEMS` is the most the menu ever
- * holds; a row that cannot be managed shows fewer, which only makes it shorter,
- * so measuring for the tallest case never clips.
- */
 const MENU_WIDTH = 192;
 const MENU_ITEM_HEIGHT = 40;
 const MENU_ITEMS = 3;
 const MENU_HEIGHT = MENU_ITEM_HEIGHT * MENU_ITEMS;
-/** The gap between the trigger and the menu, in pixels. */
 const GAP = 4;
 
 /**
- * DOCU: The row's actions, collapsed into a kebab menu. Three icon buttons per
- * row crowded the table and left a destructive Delete one mis-click from Block,
- * so only the kebab shows until an admin asks for the menu.
- *
- * It behaves like the navbar's account menu, deliberately: the trigger carries
- * `aria-haspopup`/`aria-expanded`, Escape and an outside click close it, and
- * picking an entry closes it. Each entry names the account in its accessible
- * name - "Actions for Ada Lovelace" - so a screen reader never announces a row
- * of identical buttons. `canManage` is false for the signed-in admin's own row,
- * which hides the destructive entries; the API refuses those changes too.
+ * The row's actions, collapsed into a kebab menu. Three icon buttons per row crowded the table
+ * and left a destructive Delete one mis-click from Block, so only the kebab shows until an
+ * admin asks for the menu.
  */
 const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -168,25 +142,17 @@ const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
     const [position, setPosition] = useState(null);
     const containerRef = useRef(null);
     const triggerRef = useRef(null);
-    /* The menu is portalled to the body, so it is not inside `containerRef`.
-     * Both are checked, otherwise pressing an entry would count as an outside
-     * click and unmount the menu before its own click ever fired. */
+
     const menuRef = useRef(null);
     const name = getFullName(user);
     const isBlocked = user.status === "blocked";
 
     /**
-     * DOCU: The menu is portalled to the document body and positioned from the
-     * trigger's own rectangle, because the table sits inside a horizontally
-     * scrollable container: an absolutely positioned menu would be clipped by it,
-     * and widening the table so a dropdown fits is a bad trade. `position: fixed`
-     * escapes both that container and the card's `overflow-hidden` above it.
-     *
-     * Measured in a layout effect so the menu never paints in the wrong spot for
-     * a frame, and re-measured on scroll and resize so it follows its row rather
-     * than pointing at where the trigger used to be. It opens below the trigger,
-     * flipping above when the viewport is too short - otherwise the menu on the
-     * last row would be cut off by the bottom of the screen.
+     * The menu is portalled to the document body and positioned from the trigger's own
+     * rectangle, because the table sits inside a horizontally scrollable container: an
+     * absolutely positioned menu would be clipped by it, and widening the table so a dropdown
+     * fits is a bad trade. `position: fixed` escapes both that container and the card's
+     * `overflow-hidden` above it.
      */
     useLayoutEffect(() => {
         if (!isMenuOpen) return undefined;
@@ -200,8 +166,6 @@ const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
 
             setPosition({
                 top: fitsBelow ? rect.bottom + GAP : Math.max(GAP, rect.top - GAP - MENU_HEIGHT),
-                /* Clamped to the right edge so a menu near the edge of a wide
-                 * screen stays fully on screen. */
                 left: Math.min(rect.left, window.innerWidth - MENU_WIDTH - GAP),
             });
         };
@@ -217,8 +181,10 @@ const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
         };
     }, [isMenuOpen]);
 
-    /* Close on an outside click or Escape, the same two ways the account menu
-     * closes, so both menus in the app behave identically. */
+    /**
+     * Close on an outside click or Escape, the same two ways the account menu closes, so both
+     * menus in the app behave identically.
+     */
     useEffect(() => {
         if (!isMenuOpen) return undefined;
 
@@ -242,8 +208,10 @@ const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
         };
     }, [isMenuOpen]);
 
-    /* Runs an action and closes the menu, so it never hangs open behind the
-     * dialog or drawer the action opens. */
+    /**
+     * Runs an action and closes the menu, so it never hangs open behind the dialog or drawer
+     * the action opens.
+     */
     const choose = (action) => {
         setIsMenuOpen(false);
         action(user);
@@ -251,12 +219,6 @@ const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
 
     return (
         <div className="relative" ref={containerRef}>
-            {/* The shared kebab: one circular control, one ReIcon mark, for every
-                table that needs a row menu. The circle, its resting ring and its
-                hover, active and disabled states all live in `KebabButton`, so a
-                table here never re-decides them. Behaviour is unchanged - it
-                toggles the menu, which still closes on an outside click, on
-                Escape and on picking an entry. */}
             <KebabButton
                 ref={triggerRef}
                 onClick={() => setIsMenuOpen((open) => !open)}
@@ -289,11 +251,6 @@ const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
 
                             {canManage && (
                                 <MenuItem onClick={() => choose(onToggleStatus)}>
-                                    {/* Two icons, not one that changes shape: the
-                                        words beside them already say which way
-                                        this goes, and a mark that swapped with
-                                        the state would be a different glyph each
-                                        time the row was re-rendered. */}
                                     <Icon name={isBlocked ? "unblock" : "block"} size={16} />
                                     {isBlocked ? "Unblock" : "Block"} user
                                 </MenuItem>
@@ -313,10 +270,11 @@ const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
     );
 };
 
-/** DOCU: One entry in the kebab menu. A `<button>` inside a `role="menu"`, so it
- *  is reachable by keyboard and announced as a menu item. The label is text,
- *  not an icon, so the action is readable at a glance; `tone` tints a
- *  destructive entry red. */
+/**
+ * One entry in the kebab menu. A `<button>` inside a `role="menu"`, so it is reachable by
+ * keyboard and announced as a menu item. The label is text, not an icon, so the action is
+ * readable at a glance; `tone` tints a destructive entry red.
+ */
 const MenuItem = ({ children, tone = "default", onClick }) => (
     <li>
         <button
@@ -333,19 +291,12 @@ const MenuItem = ({ children, tone = "default", onClick }) => (
 );
 
 /**
- * DOCU: The users table. A real `<table>` with a caption, `<th scope="col">`
- * headers and `aria-sort` on the sortable ones, so the structure a screen reader
- * walks is the structure an admin sees.
- *
- * Responsively, the table holds every column from `lg` upwards. Below that the
- * container scrolls horizontally rather than the rows turning into a different
- * component on small screens: one table keeps one set of semantics. The scroll
- * container is focusable and labelled, so it can be reached with the keyboard.
+ * The users table. A real `<table>` with a caption, `<th scope="col">` headers and `aria-sort`
+ * on the sortable ones, so the structure a screen reader walks is the structure an admin sees.
  */
 const UsersTable = ({ rows, sortBy, sortDir, onSort, onView, onToggleStatus, onDelete, canManageRow }) => (
     <div
         className="overflow-x-auto"
-        /* A scrollable region has to be reachable without a mouse. */
         tabIndex={0}
         role="region"
         aria-label="Registered users"
@@ -417,4 +368,3 @@ const UsersTable = ({ rows, sortBy, sortDir, onSort, onView, onToggleStatus, onD
 );
 
 export default UsersTable;
-

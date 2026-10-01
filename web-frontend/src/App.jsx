@@ -13,9 +13,9 @@ import { RequireAuth, RequireGuest, RequireAdmin } from "./components/RouteGuard
 import { ROUTES } from "./constants/routes";
 
 /**
- * DOCU: The route table, mounted inside the shell. `/login` and `/register` are
- * two modes of the same page, so both render `Auth`, which picks the form from
- * the current location. See `AppShell` for the page frame and the footer.
+ * The route table, mounted inside the shell. `/login` and `/register` are two modes of the same
+ * page, so both render `Auth`, which picks the form from the current location. See `AppShell`
+ * for the page frame and the footer.
  */
 function App() {
     return (

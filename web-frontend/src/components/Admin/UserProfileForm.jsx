@@ -9,21 +9,8 @@ import {
 } from "../../constants/validation";
 
 /**
- * DOCU: The first name, last name and email editor, with the same field
- * component, the same messages and the same patterns as the auth forms
- * (`FormField` plus `constants/validation.js`), so a value the sign-up form
- * refuses cannot be saved here either.
- *
- * The server validates all three again and refuses a duplicate email with a 409;
- * that error is shown against the email field, because the collision is always
- * about the address. The role and the account status are deliberately not here:
- * each has its own endpoint and its own confirmation, so a rename can never
- * carry a privilege change with it.
- *
- * Save is disabled until something actually changes. Entering edit mode seeds the
- * form with the account's current values, so an untouched form would otherwise
- * offer to save a rename that renames nothing - a pointless request that still
- * invalidates the session cache and reports a change that did not happen.
+ * The first name, last name and email editor, with the same field component, the same messages
+ * and the same patterns as the auth forms
  */
 const UserProfileForm = ({ user, isPending, serverError, onSave, onCancel }) => {
     const formApi = useForm();
@@ -33,18 +20,13 @@ const UserProfileForm = ({ user, isPending, serverError, onSave, onCancel }) => 
         handleSubmit,
         reset,
         setError,
-        /* `isDirty` is react-hook-form's own answer to "does this differ from the
-         * values the form was seeded with". Reading it rather than comparing the
-         * three fields here means the Save button cannot disagree with what the
-         * inputs hold: it is false on entry, true after an edit, and false again
-         * when a value is typed back to where it started - which a hand-rolled
-         * "was it touched" flag gets wrong, since it cannot tell a reverted value
-         * from an untouched one. */
         formState: { errors, isDirty },
     } = formApi;
 
-    /* Re-seed the form whenever a different user is opened or the saved row comes
-     * back, so the inputs never show a stale account's values. */
+    /**
+     * Re-seed the form whenever a different user is opened or the saved row comes back, so the
+     * inputs never show a stale account's values.
+     */
     useEffect(() => {
         reset({
             firstName: user?.firstName ?? "",
@@ -53,8 +35,10 @@ const UserProfileForm = ({ user, isPending, serverError, onSave, onCancel }) => 
         });
     }, [user?._id, user?.firstName, user?.lastName, user?.email, reset]);
 
-    /** DOCU: Puts a rejected request's field errors next to their own inputs.
-     *  Anything not keyed by a field becomes a general message instead. */
+    /**
+     * Puts a rejected request's field errors next to their own inputs. Anything not keyed by a
+     * field becomes a general message instead.
+     */
     const reportServerErrors = (error) => {
         const details = error?.fields;
 

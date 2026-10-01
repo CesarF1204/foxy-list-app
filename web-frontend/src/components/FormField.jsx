@@ -1,9 +1,7 @@
-/** DOCU: A labelled input wired up for react-hook-form, centralising the label,
- *  error message and aria wiring so every field is announced the same way.
- *
- *  `endAdornment` takes a control to sit inside the input's right edge - the
- *  password eye uses it. The input is given matching right padding by the
- *  caller, so a value can never run underneath the control. */
+/**
+ * A labelled input wired up for react-hook-form, centralising the label, error message and aria
+ * wiring so every field is announced the same way.
+ */
 const FormField = ({
     id,
     label,
@@ -13,7 +11,7 @@ const FormField = ({
     endAdornment,
     ...inputProps
 }) => {
-    /* Accept either a plain string or a react-hook-form error object. */
+    /** Accept either a plain string or a react-hook-form error object. */
     const errorText = typeof error === "string" ? error : error?.message;
 
     return (

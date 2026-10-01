@@ -17,15 +17,9 @@ const NAME_MAX_LENGTH = 60;
 const PASSWORD_MAX_LENGTH = 128;
 
 /**
- * DOCU: Any whitespace anywhere in a password - leading, trailing or internal.
- *
- * A password is never trimmed or rewritten: the value the user typed is the value
- * that would be stored, and " my password" is a different secret from "my
- * password". Silent trimming would store one thing while the user believes they
- * stored another, and a leading or internal space is the kind of thing that
- * survives unnoticed until a sign-in fails on another device. So the rule is to
- * refuse the value and say why, in both `constants/validation.js` here and the
- * frontend's copy of it.
+ * A password is never trimmed or rewritten: " my password" is a different secret from "my
+ * password", and silent trimming would store one thing while the user believes they stored
+ * another. Whitespace is refused rather than fixed.
  */
 const PASSWORD_NO_SPACES_PATTERN = /\s/;
 

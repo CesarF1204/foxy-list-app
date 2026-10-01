@@ -3,20 +3,19 @@ import { useEffect, useRef } from "react";
 import { IconButton } from "./icons";
 
 /**
- * DOCU: A side panel, used by the admin user drawer. It follows the same rules
- * as `Modal` - Escape closes it, the page behind cannot scroll, focus moves in
- * on open - and adds one thing a drawer needs: focus returns to whatever opened
- * it on close, so keyboard users are not dropped at the top of the page.
- *
- * It is a right-hand sheet from `sm` upwards and a full-height sheet below that,
- * where a narrow floating panel would leave almost no room for a form.
+ * A side panel, used by the admin user drawer. It follows the same rules as `Modal` - Escape
+ * closes it, the page behind cannot scroll, focus moves in on open - and adds one thing a
+ * drawer needs: focus returns to whatever opened it on close, so keyboard users are not dropped
+ * at the top of the page.
  */
 const Drawer = ({ isOpen, onClose, title, children, footer }) => {
     const panelRef = useRef(null);
     const openerRef = useRef(null);
 
-    /* Kept in a ref so the effect below depends only on `isOpen`: an inline
-     * `onClose` would otherwise re-run it and steal focus mid-typing. */
+    /**
+     * Kept in a ref so the effect below depends only on `isOpen`: an inline `onClose` would
+     * otherwise re-run it and steal focus mid-typing.
+     */
     const onCloseRef = useRef(onClose);
     useEffect(() => {
         onCloseRef.current = onClose;
@@ -25,7 +24,7 @@ const Drawer = ({ isOpen, onClose, title, children, footer }) => {
     useEffect(() => {
         if (!isOpen) return undefined;
 
-        /* Remembered so focus can go back where it came from. */
+        /** Remembered so focus can go back where it came from. */
         openerRef.current = document.activeElement;
 
         const onKeyDown = (event) => {
@@ -45,7 +44,7 @@ const Drawer = ({ isOpen, onClose, title, children, footer }) => {
         return () => {
             document.removeEventListener("keydown", onKeyDown);
             document.body.style.overflow = previousOverflow;
-            /* Only if the opener is still on screen: it may have been removed. */
+            /** Only if the opener is still on screen: it may have been removed. */
             openerRef.current?.focus?.();
         };
     }, [isOpen]);

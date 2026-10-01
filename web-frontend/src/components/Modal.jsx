@@ -2,14 +2,18 @@ import { useEffect, useRef } from "react";
 
 import { IconButton } from "./icons";
 
-/** DOCU: An accessible modal: backdrop dismissal, Escape, scroll locking and
- *  focus moved into the panel on open. */
+/**
+ * An accessible modal: backdrop dismissal, Escape, scroll locking and focus moved into the
+ * panel on open.
+ */
 const Modal = ({ isOpen, onClose, title, children, footer }) => {
     const panelRef = useRef(null);
 
-    /** In a ref, so the effect below depends only on isOpen. `onClose` is usually
-     *  an inline arrow with a new identity each render, and re-running would
-     *  refocus the panel and steal focus from whatever the user was typing into. */
+    /**
+     * In a ref, so the effect below depends only on isOpen. `onClose` is usually an inline
+     * arrow with a new identity each render, and re-running would refocus the panel and steal
+     * focus from whatever the user was typing into.
+     */
     const onCloseRef = useRef(onClose);
     useEffect(() => {
         onCloseRef.current = onClose;
@@ -24,7 +28,7 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
 
         document.addEventListener("keydown", onKeyDown);
 
-        /* Prevent the page behind the modal from scrolling. */
+        /** Prevent the page behind the modal from scrolling. */
         const previousOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
 
@@ -53,7 +57,7 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
                 aria-modal="true"
                 aria-label={title}
                 tabIndex={-1}
-                /* Clicks inside the panel must not reach the backdrop. */
+                /** Clicks inside the panel must not reach the backdrop. */
                 onClick={(event) => event.stopPropagation()}
                 className="surface animate-pop-in w-full max-w-md p-6 outline-none"
             >

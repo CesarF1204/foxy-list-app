@@ -3,20 +3,15 @@ import { useRef, useState } from "react";
 import Icon from "../icons/Icon";
 
 /**
- * DOCU: The "add a task" composer at the foot of the To Do column. Collapsed to
- * a single button until clicked. Submits on Enter from the title and Cmd/Ctrl
- * Enter from the note, and stays open so several can be added in a row.
- *
- * The fields are mirrored into a ref so a submit can empty them synchronously;
- * state only settles on the next render, and a second submit arriving first
- * would otherwise re-add the same task.
+ * The "add a task" composer at the foot of the To Do column. Collapsed to a single button until
+ * clicked. Submits on Enter from the title and Cmd/Ctrl
  */
 const AddTask = ({ onAdd }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
 
-    /* Read and cleared synchronously by submit, so it always holds the truth. */
+    /** Read and cleared synchronously by submit, so it always holds the truth. */
     const draft = useRef({ title: "", description: "" });
 
     const submit = () => {
@@ -31,7 +26,7 @@ const AddTask = ({ onAdd }) => {
 
         onAdd({ title: currentTitle, description: currentDescription });
 
-        /* Stays open so several tasks can be added in a row. */
+        /** Stays open so several tasks can be added in a row. */
     };
 
     const handleTitleChange = (value) => {

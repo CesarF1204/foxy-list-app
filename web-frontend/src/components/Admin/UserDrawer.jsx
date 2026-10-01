@@ -10,7 +10,7 @@ import UserProfileForm from "./UserProfileForm";
 import DeleteUserWarning from "./DeleteUserWarning";
 import { UserConfirmDialog, RoleDialog, PasswordDialog } from "./UserDialogs";
 
-/** DOCU: One labelled row of the read-only detail list. */
+/** One labelled row of the read-only detail list. */
 const DetailRow = ({ label, children }) => (
     <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-3">
         <dt className="w-32 shrink-0 text-xs font-extrabold tracking-wide text-ink-soft uppercase">
@@ -20,8 +20,10 @@ const DetailRow = ({ label, children }) => (
     </div>
 );
 
-/** DOCU: The per-board task counts, as a labelled list rather than a bare row of
- *  numbers, so "12 To Do" is read aloud instead of "12, 3, 7". */
+/**
+ * The per-board task counts, as a labelled list rather than a bare row of numbers, so "12 To
+ * Do" is read aloud instead of "12, 3, 7".
+ */
 const TaskCounts = ({ counts }) => (
     <ul className="grid grid-cols-4 gap-2">
         <li className="rounded-2xl border-2 border-ink bg-white p-2 text-center">
@@ -50,46 +52,15 @@ const TaskCounts = ({ counts }) => (
 );
 
 /**
- * DOCU: The one place a single user is inspected and changed. It opens as a
- * drawer over the table, so the row it was opened from stays visible behind it.
- *
- * Two callers share this one component: the admin table opens it to manage
- * somebody, and the navbar opens it to read your own account. Which controls
- * appear is read off the two facts the caller already has - the role of the
- * signed-in user, and whether the account on screen is that same account - and
- * it is a render decision rather than a styling one: a control that is not
- * allowed is not put in the tree at all, so there is no button to click, no
- * dialog to open and nothing to reach by keyboard.
- *
- * Hiding a control is a courtesy; `requireAdmin` on the API is what holds, and
- * the two are independent on purpose. The self-service routes are the mirror
- * image: `authMiddleware` is enough for them, because they take no id and so
- * cannot reach another account.
- *
- * Every sensitive action is confirmed, and each one is a separate request: the
- * profile, the role, the status and the password have four endpoints between
- * them, so no single call here can change two things at once. Role, status and
- * password each validate server-side, so a request crafted outside the UI is
- * refused by the same rules.
- *
- * The actions that would lock an admin out - demoting, blocking or deleting
- * yourself - are hidden on your own row, and the API refuses them too. The UI
- * hiding them is a convenience; the check that holds is the one in the API.
+ * The one place a single user is inspected and changed. It opens as a drawer over the table, so
+ * the row it was opened from stays visible behind it.
  */
 const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [dialog, setDialog] = useState(null);
-    /**
-     * DOCU: A refusal the API made about a value typed into a dialog, held here
-     * so it can be shown beside that dialog's field. It lives in the drawer
-     * because the drawer owns which dialog is open, and a dialog that closed and
-     * reopened must not still be carrying the last message - so it is cleared
-     * whenever the drawer opens one, in `openDialog` below, rather than being
-     * reset inside the dialog itself.
-     */
     const [dialogError, setDialogError] = useState("");
 
-    /** DOCU: Opens a dialog, clearing any message the previous one left behind. */
+    /** Opens a dialog, clearing any message the previous one left behind. */
     const openDialog = (name) => {
         setDialogError("");
         setDialog(name);
@@ -97,48 +68,34 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
 
     if (!user) return null;
 
-    /* The account on screen, and whether it is the caller's own. */
+    /** The account on screen, and whether it is the caller's own. */
     const isSelf = currentUser?._id === user._id;
     const isBlocked = user.status === "blocked";
 
-    /* Which controls this drawer may offer, decided from the caller's role
-     * rather than from a prop, so a caller cannot widen them by forgetting to
-     * pass something. `isAdmin` is the same utility the navbar and the route
-     * guards use, so there is one definition of an admin in the app.
-     *
-     * Editing your own name and email, and setting your own password, are
-     * self-service: the API has a route for each that needs only a session.
-     * Everything else - role, block, delete - is an administrative write against
-     * somebody, and only an admin may perform one. */
+    /**
+     * Which controls this drawer may offer, decided from the caller's role rather than from a
+     * prop, so a caller cannot widen them by forgetting to pass something. `isAdmin` is the
+     * same utility the navbar and the route guards use, so there is one definition of an admin
+     * in the app.
+     */
     const isViewerAdmin = isAdmin(currentUser);
     const canEditProfile = true;
     const canSetPassword = true;
     const canChangeRole = isViewerAdmin;
-    /* The self-lock-out guard stays on top of the role check: an admin opening
-     * their own account still cannot demote, block or delete themselves. The
-     * API refuses it as well, so the two agree. */
+    /**
+     * The self-lock-out guard stays on top of the role check: an admin opening their own
+     * account still cannot demote, block or delete themselves. The API refuses it as well, so
+     * the two agree.
+     */
     const canBlock = isViewerAdmin && !isSelf;
     const canDelete = isViewerAdmin && !isSelf;
 
     const isPending = actions.isMutating;
 
     /**
-     * DOCU: Runs one action, reports the outcome as a toast, and closes the
-     * dialog on success. The message names the account from the row the admin
-     * was looking at, never from anything the request carried, so a message can
-     * never claim a change that did not happen.
-     *
-     * `onError` is for the one caller that can do better than a toast: the
-     * password dialog has a field to put the reason beside, and a password the
-     * API refused - the one already in force, say - is a fact about a specific
-     * input rather than something to announce to the room. Handed the error, it
-     * shows it inline and stays open; handed nothing, the refusal is a toast like
-     * every other one.
-     *
-     * @param {() => Promise<*>} work - The request to make
-     * @param {object} successToast - The toast to raise on success
-     * @param {(error: Error) => boolean} [onError] - Handles a refusal itself
-     * @returns {Promise<boolean>} whether the action succeeded
+     * Runs one action, reports the outcome as a toast, and closes the dialog on success. The
+     * message names the account from the row the admin was looking at, never from anything the
+     * request carried, so a message can never claim a change that did not happen.
      */
     const run = async (work, successToast, onError) => {
         try {
@@ -177,17 +134,6 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
                     </div>
                 </div>
 
-                {/* Self-service: every signed-in user can edit their own name and email,
-                    through `useOwnAccountActions` or the admin hook depending on
-                    the caller. `canEditProfile` is stated rather than assumed so
-                    the rule lives in one place with the rest of them.
-                    Set new password sits beside it because both are the "your own
-                    account" pair; the administrative writes stay below the
-                    divider, where they are not mistaken for self-service.
-                    It steps aside while the form is open: two ways of editing
-                    the same account side by side invites the wrong one, so the
-                    password button returns once the form is cancelled or
-                    saved. */}
                 {(canEditProfile || canSetPassword) && (
                     <div className="flex flex-wrap items-start gap-2">
                         {canEditProfile &&
@@ -221,10 +167,6 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
                                 </button>
                             ))}
 
-                        {/* Hidden, not disabled, while the profile form is open: a
-                            disabled control on screen implies the password is
-                            blocked, which is not what is happening here - the
-                            form simply has the row to itself. */}
                         {canSetPassword && !isEditing && (
                             <button
                                 type="button"
@@ -255,15 +197,6 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
 
                 {/* ------------------------------ actions ------------------------------ */}
 
-                {/* Administrative writes only: role, block and delete. The two
-                    self-service buttons are up top with the identity block, so
-                    this bar holds nothing that touches somebody else's account
-                    by accident. Each control is gated on its own capability, so
-                    an admin sees the full set while a plain user gets none.
-                    The ones that are refused are not rendered, not disabled:
-                    there is nothing in the tree to click or tab to.
-                    The bar itself is hidden when it would be empty, so a plain
-                    user is not left with a bare divider to look at. */}
                 {(canChangeRole || canBlock || canDelete) && (
                     <div className="flex flex-wrap gap-2 border-t-2 border-paper-deep pt-4">
                         {canChangeRole && (
@@ -336,11 +269,6 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
                 <PasswordDialog
                     user={user}
                     isPending={isPending}
-                    /* The API's own refusal - a password that is already the
-                     * account's, say - shown beside the field, the way
-                     * `UserProfileForm` shows a rejected email beside its input.
-                     * A toast alone would say something is wrong without saying
-                     * which box to fix. */
                     serverError={dialogError}
                     onClose={() => setDialog(null)}
                     onConfirm={(password) =>
@@ -402,8 +330,6 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
                     isPending={isPending}
                     onClose={() => setDialog(null)}
                     onConfirm={async () => {
-                        /* The account is gone, so there is nothing left to show it
-                         * in: the drawer closes and the table refetches. */
                         await run(
                             () => actions.deleteUser(user._id),
                             actions.toasts.deleted(user),
@@ -419,4 +345,3 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
 };
 
 export default UserDrawer;
-

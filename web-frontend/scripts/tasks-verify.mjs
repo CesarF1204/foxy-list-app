@@ -1,11 +1,7 @@
 /**
- * A check of the task creation flow, in particular that one create action
- * leaves exactly one task on the board. The pure helpers live in
- * src/hooks/useTasks.js and are reproduced here. Run with: npm run verify:tasks
- *
- * The bug this guards against: the optimistic placeholder was written into the
- * cache on add and never removed when the server's task came back, so a single
- * submission rendered two cards.
+ * A check of the task creation flow, in particular that one create action leaves exactly one
+ * task on the board. The pure helpers live in src/hooks/useTasks.js and are reproduced here.
+ * Run with: npm run verify:tasks
  */
 
 const BOARDS = ["todo", "ongoing", "done"];
@@ -25,7 +21,7 @@ const renumber = (tasks, moving) => {
     return result;
 };
 
-/* --- mirrors of the create helpers in src/hooks/useTasks.js ------------- */
+// Mirrors of the create helpers in src/hooks/useTasks.js.
 
 let placeholderCounter = 0;
 const makePlaceholderId = () => `temp-${Date.now().toString(36)}-${(placeholderCounter += 1)}`;
@@ -42,7 +38,7 @@ const applyCreateConfirmed = (tasks, placeholderId, task) => {
     const list = placeholderId
         ? tasks.filter((item) => item._id !== placeholderId)
         : [...tasks];
-    /* The stored task takes over the placeholder's position on the board. */
+    /** The stored task takes over the placeholder's position on the board. */
     const placeholder = tasks.find((item) => item._id === placeholderId);
     const confirmed = { ...task, order: placeholder?.order ?? task.order };
     const index = list.findIndex((item) => item._id === task._id);
@@ -54,7 +50,7 @@ const applyCreateConfirmed = (tasks, placeholderId, task) => {
 const applyCreateDiscarded = (tasks, placeholderId) =>
     placeholderId ? tasks.filter((item) => item._id !== placeholderId) : tasks;
 
-/* ------------------------------------------------------------------------ */
+// ----
 
 let failures = 0;
 
@@ -102,9 +98,8 @@ const makeServer = () => {
 };
 
 /**
- * The whole of `addTask` plus its mutation, wired to a board. The caller
- * decides when each request comes back, which is how the in-flight cases are
- * reproduced.
+ * The whole of `addTask` plus its mutation, wired to a board. The caller decides when each
+ * request comes back, which is how the in-flight cases are reproduced.
  */
 const createFlow = (board, server) => {
     const pending = [];
@@ -124,7 +119,7 @@ const createFlow = (board, server) => {
         pending.push({ placeholderId: placeholder._id, request: { title, description } });
     };
 
-    /* Resolves one outstanding create, as the network eventually would. */
+    /** Resolves one outstanding create, as the network eventually would. */
     const settle = (index = 0) => {
         const entry = pending.splice(index, 1)[0];
         if (!entry) return null;
@@ -150,7 +145,7 @@ const createFlow = (board, server) => {
     };
 };
 
-/* --- checks -------------------------------------------------------------- */
+// ---- checks ----
 
 console.log("\nCreating one task:");
 {
@@ -243,7 +238,7 @@ console.log("\nConfirmations arriving out of order:");
     flow.addTask({ title: "Beta", description: "" });
     flow.addTask({ title: "Gamma", description: "" });
 
-    /* The last request answers first, the way a slow first request would. */
+    /** The last request answers first, the way a slow first request would. */
     flow.settle(2);
     flow.settle(1);
     flow.settle(0);
@@ -306,8 +301,10 @@ console.log("\nTasks already on the board:");
     check("the new task is on the todo board", render(board).includes("Brand new"));
     check("orders are dense", dense(ordersOf(board, "todo")));
 
-    /** Editing and completing a new task means the card must be reachable by the
-     *  id the server gave it, not the temporary one. */
+    /**
+     * Editing and completing a new task means the card must be reachable by the id the server
+     * gave it, not the temporary one.
+     */
     const created = board.tasks.find((task) => task.title === "Brand new");
     board.tasks = board.tasks.map((task) =>
         task._id === created._id ? { ...task, title: "Edited", status: "done", order: 0 } : task
@@ -332,9 +329,11 @@ console.log("\nEmpty input:");
 
 console.log("\nHow the create mutation is wired to React Query:");
 {
-    /** `context` is only ever what `onMutate` returned, and this create has no
-     *  onMutate, so reading the placeholder id from it throws and the placeholder
-     *  is never replaced. These checks model that contract. */
+    /**
+     * `context` is only ever what `onMutate` returned, and this create has no onMutate, so
+     * reading the placeholder id from it throws and the placeholder is never replaced. These
+     * checks model that contract.
+     */
     const wiring = (board, api, { onMutate } = {}) => {
         let sent = null;
 
@@ -343,7 +342,7 @@ console.log("\nHow the create mutation is wired to React Query:");
             return api({ title, description });
         };
 
-        /* onSuccess/onError exactly as defined on the mutation in the hook. */
+        /** onSuccess/onError exactly as defined on the mutation in the hook. */
         const onSuccess = (data, variables) => {
             board.tasks = applyCreateConfirmed(board.tasks, variables.placeholderId, data.task);
         };
@@ -352,7 +351,7 @@ console.log("\nHow the create mutation is wired to React Query:");
         };
 
         return {
-            /* Mirrors mutation.execute: onMutate's result becomes the context. */
+            /** Mirrors mutation.execute: onMutate's result becomes the context. */
             async run(variables) {
                 const context = await onMutate?.(variables);
                 try {
@@ -370,7 +369,7 @@ console.log("\nHow the create mutation is wired to React Query:");
 
     const board = makeBoard();
     const api = makeServer();
-    /* The API answers with { task }, which is what onSuccess destructures. */
+    /** The API answers with { task }, which is what onSuccess destructures. */
     const mutation = wiring(board, (payload) => ({ task: api.create(payload) }));
 
     const placeholder = { _id: makePlaceholderId(), title: "Wired up", description: "note", status: "todo" };
@@ -388,12 +387,12 @@ console.log("\nHow the create mutation is wired to React Query:");
     check("exactly one task remains", board.tasks.length === 1, `(got ${board.tasks.length})`);
     check("the stored task is on the board", countByTitle(board, "Wired up") === 1);
 
-    /* The client-only id must never reach the API. */
+    /** The client-only id must never reach the API. */
     check("only the API's own fields are sent",
         JSON.stringify(Object.keys(mutation.sent).sort()) === JSON.stringify(["description", "title"]),
         `(sent ${JSON.stringify(mutation.sent)})`);
 
-    /* A failure resolves the same way: the card is withdrawn, not left faded. */
+    /** A failure resolves the same way: the card is withdrawn, not left faded. */
     const failingBoard = makeBoard();
     const failing = wiring(failingBoard, () => {
         throw new Error("nope");
@@ -405,7 +404,7 @@ console.log("\nHow the create mutation is wired to React Query:");
     check("a failed create leaves no faded card behind",
         failingBoard.tasks.length === 0, `(got ${failingBoard.tasks.length})`);
 
-    /* Mutations that do roll back take their snapshot from onMutate. */
+    /** Mutations that do roll back take their snapshot from onMutate. */
     const snapshotBoard = makeBoard([{ _id: "a", title: "Keep me", description: "", status: "todo", order: 0 }]);
     const onMutate = () => ({ snapshot: { tasks: [...snapshotBoard.tasks] } });
     const context = await onMutate();

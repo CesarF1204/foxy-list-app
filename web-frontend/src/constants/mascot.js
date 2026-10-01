@@ -1,27 +1,27 @@
 /**
- * 3x3 sheets: nine head directions and nine expressions. Served from `public/`
- * so they stay out of the JS bundle. Swap both files to change character.
+ * 3x3 sheets: nine head directions and nine expressions. Served from `public/` so they stay out
+ * of the JS bundle. Swap both files to change character.
  */
 const MASCOT_SHEETS = {
     directions: "/mascots/fox-directions.webp",
     reactions: "/mascots/fox-reactions.webp",
 };
 
-/** DOCU: The character name a screen reader announces for the mascot. */
+/** The character name a screen reader announces for the mascot. */
 const MASCOT_LABEL = "fox";
 
-/** DOCU: The builder, used on the 404 screen. Same shape as the fox's sheets. */
+/** The builder, used on the 404 screen. Same shape as the fox's sheets. */
 const BUILDER_SHEETS = {
     directions: "/mascots/builder-directions.webp",
     reactions: "/mascots/builder-reactions.webp",
 };
 
-/** DOCU: The character name a screen reader announces for the builder. */
+/** The character name a screen reader announces for the builder. */
 const BUILDER_LABEL = "builder";
 
 /**
- * How each form mood reads on the expressions sheet. The sheet is a 3x3 grid
- * in reading order, and the names match the `page-mascot` library's own list.
+ * How each form mood reads on the expressions sheet. The sheet is a 3x3 grid in reading order,
+ * and the names match the `page-mascot` library's own list.
  */
 const MASCOT_MOODS = {
     /** Invalid field, or a rejected attempt. */
@@ -32,22 +32,24 @@ const MASCOT_MOODS = {
     success: "heart",
 };
 
-/** DOCU: How long each mood holds its face, in ms. */
+/** How long each mood holds its face, in ms. */
 const MASCOT_HOLD_MS = {
     error: 2000,
     neutral: 900,
     success: 1600,
 };
 
-/** One table for both, so whatever the toast claims is what the fox reacts to.
- *  INFO is deliberately null: it narrates without a verdict. */
+/**
+ * One table for both, so whatever the toast claims is what the fox reacts to. INFO is
+ * deliberately null: it narrates without a verdict.
+ */
 const TOAST_MOODS = {
     SUCCESS: "success",
     ERROR: "error",
     INFO: null,
 };
 
-/** DOCU: The nine head directions on the directions sheet, in reading order. */
+/** The nine head directions on the directions sheet, in reading order. */
 const MASCOT_DIRECTIONS = [
     "up-left",
     "up",
@@ -97,8 +99,10 @@ const MASCOT_DIZZY_AFTER = 4;
 const MASCOT_DIZZY_WINDOW_MS = 1600;
 const MASCOT_DIZZY_END_MS = 1100;
 
-/** The click squash. Easing is per keyframe: easing the effect would reinterpret
- *  every offset and front-load the bounce. */
+/**
+ * The click squash. Easing is per keyframe: easing the effect would reinterpret every offset
+ * and front-load the bounce.
+ */
 const MASCOT_SQUASH = [
     { transform: "scale(1, 1)", easing: "ease-in" },
     { transform: "scale(1.1, 0.86)", offset: 0.18, easing: "ease-out" },

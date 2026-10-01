@@ -2,14 +2,7 @@
 
 /** The suite must be run with the server already listening. */
 
-/**
- * DOCU: Checks that every admin route refuses a non-admin and a stranger.
- * Last Updated Date: October 1, 2026
- * @function authorization
- * @param {object} context - { admin, plain } sessions
- * @returns {Promise<{routes: Array}>} The routes that were exercised
- * @author Cesar
- */
+/** Checks that every admin route refuses a non-admin and a stranger. */
 export const authorization = async ({ admin, plain }) => {
     console.log('\n--- ADMIN AUTHORIZATION ---');
 
@@ -51,7 +44,7 @@ export const authorization = async ({ admin, plain }) => {
         );
     }
 
-    /* A 403 must come before any lookup, so a non-admin cannot probe for real ids. */
+    /** A 403 must come before any lookup, so a non-admin cannot probe for real ids. */
     await checkStatus(
         'a plain user asking about a non-existent id also gets 403',
         'GET',
@@ -64,14 +57,7 @@ export const authorization = async ({ admin, plain }) => {
     return { routes };
 };
 
-/**
- * DOCU: Checks the dashboard statistics and that the totals reconcile.
- * Last Updated Date: October 1, 2026
- * @function statistics
- * @param {object} context - { admin, plain } sessions
- * @returns {Promise<{stats: object}>} The stats that were read
- * @author Cesar
- */
+/** Checks the dashboard statistics and that the totals reconcile. */
 export const statistics = async ({ admin, plain }) => {
     console.log('\n--- ADMIN STATISTICS ---');
 
@@ -95,15 +81,7 @@ export const statistics = async ({ admin, plain }) => {
     return { stats: stats.data?.stats };
 };
 
-
-/**
- * DOCU: Checks the users table: paging, search, filters and sorting.
- * Last Updated Date: October 1, 2026
- * @function usersTable
- * @param {object} context - { admin, plain } sessions
- * @returns {Promise<{users: object}>} The first page that was read
- * @author Cesar
- */
+/** Checks the users table: paging, search, filters and sorting. */
 export const usersTable = async ({ admin, plain }) => {
     console.log('\n--- THE USERS TABLE ---');
 
@@ -128,7 +106,7 @@ export const usersTable = async ({ admin, plain }) => {
         true
     );
 
-    /* A row must never carry a password, even for an admin. */
+    /** A row must never carry a password, even for an admin. */
     check('no row carries a password', users.rows.some((row) => 'password' in row), false);
 
     const target = users.rows.find((row) => row._id === plain.id);
@@ -186,7 +164,7 @@ export const usersTable = async ({ admin, plain }) => {
     check('a search with no matches returns no rows', noMatch.data?.users?.rows?.length, 0);
     check('a search with no matches reports a total of 0', noMatch.data?.users?.total, 0);
 
-    /* A regex metacharacter must be treated as text, not as a pattern. */
+    /** A regex metacharacter must be treated as text, not as a pattern. */
     const injected = await req('GET', '/api/admin/users?search=.*', undefined, { jar: admin.jar });
     check('a regex metacharacter in the search is escaped', injected.data?.users?.total, 0);
 
@@ -213,7 +191,7 @@ export const usersTable = async ({ admin, plain }) => {
         true
     );
 
-    /* An unknown filter value must not become a Mongo query. */
+    /** An unknown filter value must not become a Mongo query. */
     const bogus = await req('GET', '/api/admin/users?role=superuser&status=deleted', undefined, {
         jar: admin.jar,
     });
@@ -227,15 +205,7 @@ export const usersTable = async ({ admin, plain }) => {
     return { users };
 };
 
-
-/**
- * DOCU: Checks every management action, including the self-lockout rules.
- * Last Updated Date: October 1, 2026
- * @function management
- * @param {object} context - { admin, plain } sessions
- * @returns {Promise<{plain: object}>} The account that was edited
- * @author Cesar
- */
+/** Checks every management action, including the self-lockout rules. */
 export const management = async ({ admin, plain }) => {
     console.log('\n--- EDITING A PROFILE ---');
 
@@ -250,7 +220,7 @@ export const management = async ({ admin, plain }) => {
     check('the rename is applied', edited.data?.user?.firstName, 'Renamed');
     check('a profile edit returns the task counts too', typeof edited.data?.user?.taskCounts?.total, 'number');
 
-    /* The email is unique across accounts, case-insensitively. */
+    /** The email is unique across accounts, case-insensitively. */
     await checkStatus(
         'editing to an email another account uses -> 409',
         'PATCH',
@@ -268,7 +238,7 @@ export const management = async ({ admin, plain }) => {
         { jar: admin.jar }
     );
 
-    /* Role and status have their own endpoints, so a rename cannot smuggle one in. */
+    /** Role and status have their own endpoints, so a rename cannot smuggle one in. */
     await checkStatus(
         'editing a profile while sending a role -> 400',
         'PATCH',
@@ -337,7 +307,7 @@ export const management = async ({ admin, plain }) => {
     );
     check('the block is applied', blocked.data?.user?.status, 'blocked');
 
-    /* A block must bite on the blocked user's next request, not at next sign-in. */
+    /** A block must bite on the blocked user's next request, not at next sign-in. */
     await checkStatus(
         'a blocked user cannot reach their board -> 403',
         'GET',
@@ -425,8 +395,10 @@ export const management = async ({ admin, plain }) => {
         { jar: admin.jar }
     );
 
-    /* Whitespace is refused, never trimmed: a silently trimmed password would
-     * store one secret while the admin believed they had set another. */
+    /**
+     * Whitespace is refused, never trimmed: a silently trimmed password would store one secret
+     * while the admin believed they had set another.
+     */
     for (const [label, password] of [
         ['a leading space', ' brandnew123'],
         ['a trailing space', 'brandnew123 '],
@@ -442,9 +414,11 @@ export const management = async ({ admin, plain }) => {
         );
     }
 
-    /* The password in force is refused: this is the rule an admin cannot check
-     * themselves, since they never see the account's current password. It is
-     * compared against the stored hash, so neither value is sent or echoed. */
+    /**
+     * The password in force is refused: this is the rule an admin cannot check themselves,
+     * since they never see the account's current password. It is compared against the stored
+     * hash, so neither value is sent or echoed.
+     */
     const unchanged = await checkStatus(
         'setting the password that is already in force -> 400',
         'PUT',
@@ -472,18 +446,11 @@ export const management = async ({ admin, plain }) => {
     return { plain };
 };
 
-/**
- * DOCU: Checks the self-lockout rules and the delete cascade.
- * Last Updated Date: October 1, 2026
- * @function selfLockOutAndDelete
- * @param {object} context - { admin, plain } sessions
- * @returns {Promise<void>} Resolves once the checks have run
- * @author Cesar
- */
+/** Checks the self-lockout rules and the delete cascade. */
 export const selfLockOutAndDelete = async ({ admin, plain }) => {
     console.log('\n--- SELF LOCKOUTS ---');
 
-    /* An admin who could demote, block or delete themselves would lock everyone out. */
+    /** An admin who could demote, block or delete themselves would lock everyone out. */
     await checkStatus(
         'an admin cannot demote themselves -> 400',
         'PUT',
@@ -509,13 +476,13 @@ export const selfLockOutAndDelete = async ({ admin, plain }) => {
         { jar: admin.jar }
     );
 
-    /* The admin is untouched by those attempts. */
+    /** The admin is untouched by those attempts. */
     const stillAdmin = await req('GET', '/api/admin/stats', undefined, { jar: admin.jar });
     check('the admin still reaches the dashboard', stillAdmin.status, 200);
 
     console.log('\n--- DELETING A USER ---');
 
-    /* Give the doomed user some tasks, so the cascade is observable. */
+    /** Give the doomed user some tasks, so the cascade is observable. */
     for (const title of ['Doomed 1', 'Doomed 2', 'Doomed 3']) {
         await req('POST', '/api/tasks', { title }, { jar: plain.jar });
     }
@@ -553,7 +520,7 @@ export const selfLockOutAndDelete = async ({ admin, plain }) => {
         { jar: plain.jar }
     );
 
-    /* The tasks go with the account, or the dashboard keeps counting orphans. */
+    /** The tasks go with the account, or the dashboard keeps counting orphans. */
     const afterStats = await req('GET', '/api/admin/stats', undefined, { jar: admin.jar });
     check(
         "the deleted user's tasks went with them",
@@ -575,12 +542,12 @@ export const selfLockOutAndDelete = async ({ admin, plain }) => {
     check('the admin count is at least the one signed in', users?.admins >= 1, true);
 };
 
-/* Allow the file to be run on its own, not only through tests/run.js */
+/** Allow the file to be run on its own, not only through tests/run.js */
 if (process.argv[1]?.endsWith('api-admin.test.js')) {
     const admin = await createAndSignIn('root', 'admin');
     const plain = await createAndSignIn('member', 'plain');
 
-    /* Promoted explicitly, so the file works on a fresh or an existing database. */
+    /** Promoted explicitly, so the file works on a fresh or an existing database. */
     const { connectDB, disconnectDB } = await import('../config/db.js');
     const { promote } = await import('./seed-admin.js');
 

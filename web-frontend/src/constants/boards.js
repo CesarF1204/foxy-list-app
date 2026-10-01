@@ -1,17 +1,10 @@
-/**
- * DOCU: The three boards, in display order. The single list every layer agrees
- * on: the renderer walks it, the optimistic update renumbers it, and both fake
- * API layers validate moves against it. Add a fourth board here first.
- */
 const BOARDS = ["todo", "ongoing", "done"];
-
-/** DOCU: The board a task lands on when created, and the one it returns to. */
 const DEFAULT_BOARD = "todo";
 
 /**
- * DOCU: The board names as they are read aloud, keyed to the API's own values.
- * Separate from `BOARD_META` because the toast announces a board in a sentence
- * while the board heading is styled copy, and the two must be allowed to differ.
+ * The board names as they are read aloud, keyed to the API's own values. Separate from
+ * `BOARD_META` because the toast announces a board in a sentence while the board heading is
+ * styled copy, and the two must be allowed to differ.
  */
 const BOARD_LABELS = {
     todo: "To Do",
@@ -19,9 +12,11 @@ const BOARD_LABELS = {
     done: "Done",
 };
 
-/** DOCU: Per-board colours and copy, keyed to the CSS custom properties in index.css.
- * `emptyTitle` and `emptyDescription` are always both set, so every empty
- * column renders the same two-line block and the three line up. */
+/**
+ * Per-board colours and copy, keyed to the CSS custom properties in index.css. `emptyTitle` and
+ * `emptyDescription` are always both set, so every empty column renders the same two-line block
+ * and the three line up.
+ */
 const BOARD_META = {
     todo: {
         label: "To do",
@@ -56,9 +51,9 @@ const BOARD_META = {
 };
 
 /**
- * DOCU: How a card marks the board it is on. The coloured spine runs down the
- * left edge of every card; only the done board also gets a tick and a
- * struck-through title, so a finished card reads without checking its position.
+ * How a card marks the board it is on. The coloured spine runs down the left edge of every
+ * card; only the done board also gets a tick and a struck-through title, so a finished card
+ * reads without checking its position.
  */
 const CARD_BOARD_META = {
     todo: { spine: "bg-todo", check: null },

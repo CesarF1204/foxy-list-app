@@ -16,8 +16,10 @@ import UserDrawer from "../components/Admin/UserDrawer";
 import ConfirmDialog from "../components/Admin/ConfirmDialog";
 import DeleteUserWarning from "../components/Admin/DeleteUserWarning";
 
-/** DOCU: The grey rows shown while a page of users is loading, in the shape of
- *  the real table so the layout holds still when the data arrives. */
+/**
+ * The grey rows shown while a page of users is loading, in the shape of the real table so the
+ * layout holds still when the data arrives.
+ */
 const TableSkeleton = ({ rows = 5 }) => (
     <div aria-hidden="true" className="flex flex-col gap-2 p-3">
         {Array.from({ length: rows }, (_, index) => (
@@ -27,18 +29,8 @@ const TableSkeleton = ({ rows = 5 }) => (
 );
 
 /**
- * DOCU: User management: the search box, the two filters, the table of accounts
- * with their task counts, and every action available on a row.
- *
- * Filtering, sorting and paging all happen in the API. The browser sends a query
- * string and receives one page of rows, so this screen behaves the same with ten
- * users and with ten thousand; the alternative - loading everyone and filtering
- * in the browser - is what makes an admin table unusable at scale.
- *
- * A row's actions are confirmed before they fire, and the drawer's own dialogs
- * confirm the rest. None of the buttons decide what is allowed: the API checks
- * the caller's role on every request and validates every value, so a request
- * made outside this UI is refused by the same rules.
+ * User management: the search box, the two filters, the table of accounts with their task
+ * counts, and every action available on a row.
  */
 const AdminUsers = () => {
     const { user, showToast } = useAppContext();
@@ -55,9 +47,9 @@ const AdminUsers = () => {
     const [pending, setPending] = useState(null);
 
     /**
-     * DOCU: The open user, refetched by id so the drawer always shows what the
-     * API currently holds - a role changed on another screen, or a delete that
-     * already happened, cannot leave a stale row on display.
+     * The open user, refetched by id so the drawer always shows what the API currently holds -
+     * a role changed on another screen, or a delete that already happened, cannot leave a stale
+     * row on display.
      */
     const { data: openUser } = useQuery({
         ...getAdminUserQueryOptions(openUserId ?? ""),
@@ -66,7 +58,7 @@ const AdminUsers = () => {
 
     const rows = data?.rows ?? [];
 
-    /** DOCU: Runs a row action: the request, then a toast naming the account. */
+    /** Runs a row action: the request, then a toast naming the account. */
     const run = async (work, toast) => {
         try {
             await work();
@@ -122,9 +114,6 @@ const AdminUsers = () => {
         >
             <div className="flex flex-col gap-4">
                 <UserFilters
-                    /* The box shows what is being typed, not what the API has been
-                     * asked for. The page resets to 1 inside the debounce, so the
-                     * two never disagree for longer than the pause. */
                     search={filters.searchInput}
                     role={filters.params.role}
                     status={filters.params.status}
@@ -155,8 +144,10 @@ const AdminUsers = () => {
                                 />
                             </div>
                         ) : isLoading ? (
-                            /* The very first load, when there is no previous page to
-                             * keep on screen: a skeleton holds the shape. */
+                            /**
+                             * The very first load, when there is no previous page to keep on
+                             * screen: a skeleton holds the shape.
+                             */
                             <TableSkeleton />
                         ) : rows.length === 0 ? (
                             <div className="p-4">
@@ -175,9 +166,11 @@ const AdminUsers = () => {
                                 />
                             </div>
                         ) : (
-                            /* A refetch never replaces the table. The rows stay put,
-                             * dimmed, and the overlay says the table is updating - the
-                             * filters and the pagination around it never move. */
+                            /**
+                             * A refetch never replaces the table. The rows stay put, dimmed,
+                             * and the overlay says the table is updating - the filters and the
+                             * pagination around it never move.
+                             */
                             <div
                                 className={`transition-opacity ${
                                     isFetching ? "opacity-60" : "opacity-100"
@@ -197,8 +190,6 @@ const AdminUsers = () => {
                                         })
                                     }
                                     onDelete={(target) => setPending({ user: target, action: "delete" })}
-                                    /* The signed-in admin's own row cannot be blocked,
-                                     * demoted or deleted - the API refuses those too. */
                                     canManageRow={(target) => target._id !== user?._id}
                                 />
                             </div>
@@ -277,4 +268,3 @@ const AdminUsers = () => {
 };
 
 export default AdminUsers;
-

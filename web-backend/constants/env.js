@@ -1,7 +1,4 @@
-/** Port used when PORT is not set. */
 const DEFAULT_PORT = 5000;
-
-/** Frontend origin allowed by CORS when FRONTEND_URL is not set. */
 const DEFAULT_FRONTEND_URL = 'http://localhost:5173';
 
 /** Token lifetime used when JWT_EXPIRES_IN is not set. */

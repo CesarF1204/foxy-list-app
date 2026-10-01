@@ -12,13 +12,7 @@ import {
 } from './api-admin.test.js';
 import { run as integration, adminContract, errorContract } from './integration.test.js';
 
-/**
- * DOCU: Runs every suite against a server that is already listening.
- * Last Updated Date: October 1, 2026
- * @function main
- * @returns {Promise<void>} Resolves once every suite has run
- * @author Cesar
- */
+/** Runs every suite against a server that is already listening. */
 const main = async () => {
     console.log('===== Foxy List API test suite =====');
     console.log('Creating accounts...');
@@ -29,7 +23,7 @@ const main = async () => {
     console.log(`  admin candidate: ${admin.email}`);
     console.log(`  user:            ${plain.email}`);
 
-    /* Promoted explicitly, so the run works on a fresh database and an existing one. */
+    /** Promoted explicitly, so the run works on a fresh database and an existing one. */
     await connectDB();
     try {
         await promote(admin.email);
@@ -40,7 +34,7 @@ const main = async () => {
     await auth();
     await recovery();
 
-    /* The board suite needs the fixtures the CRUD suite creates. */
+    /** The board suite needs the fixtures the CRUD suite creates. */
     await crud().then(board);
 
     const context = { admin, plain };
@@ -50,13 +44,15 @@ const main = async () => {
     await management(context);
     await selfLockOutAndDelete(context);
 
-    /* Last, and against fresh accounts, so it sees the API as a first-time user would. */
+    /** Last, and against fresh accounts, so it sees the API as a first-time user would. */
     const contract = await integration();
     await adminContract();
     await errorContract(contract);
 
-    /* After everything else, and on its own account: it renames and re-passwords
-     * a session, so any suite that ran later would be holding a stale one. */
+    /**
+     * After everything else, and on its own account: it renames and re-passwords a session, so
+     * any suite that ran later would be holding a stale one.
+     */
     await selfService();
 
     console.log(

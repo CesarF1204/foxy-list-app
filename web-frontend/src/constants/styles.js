@@ -1,6 +1,6 @@
 /**
- * Shared control styles for the app navbar: fixing the box model in one place
- * keeps every navbar control the same size.
+ * Shared control styles for the app navbar: fixing the box model in one place keeps every
+ * navbar control the same size.
  */
 
 /** The common shape of every navbar control. */

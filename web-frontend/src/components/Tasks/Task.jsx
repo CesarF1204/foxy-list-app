@@ -11,7 +11,7 @@ import AddTask from "./AddTask";
 import DeleteTask from "./DeleteTask";
 import { InlineLoader, EmptyState, ErrorState } from "../Feedback";
 
-/** DOCU: Renders the three task boards with drag and drop between them. */
+/** Renders the three task boards with drag and drop between them. */
 const TaskBoard = () => {
     const { data, isError, error, refetch } = useQuery(getTasksQueryOptions());
     const [pendingDelete, setPendingDelete] = useState(null);
@@ -20,8 +20,10 @@ const TaskBoard = () => {
         data?.tasks
     );
 
-    /** One stable handler for every card, so the memo on TaskCard is not broken
-     *  by a fresh closure per row. The card passes its own task in. */
+    /**
+     * One stable handler for every card, so the memo on TaskCard is not broken by a fresh
+     * closure per row. The card passes its own task in.
+     */
     const handleSave = useCallback(
         (task, title, description) => renameTask(task, title, description),
         [renameTask]
@@ -29,8 +31,10 @@ const TaskBoard = () => {
 
     const handleDelete = useCallback((task) => setPendingDelete(task), []);
 
-    /** Stable identity matters: every board slice is memoised on `tasks`, so
-     *  dragging one card must not hand every other card a new array. */
+    /**
+     * Stable identity matters: every board slice is memoised on `tasks`, so dragging one card
+     * must not hand every other card a new array.
+     */
     const boardTasks = useMemo(
         () => Object.fromEntries(boards.map((board) => [board, getBoardTasks(tasks, board)])),
         [boards, tasks]
@@ -38,7 +42,7 @@ const TaskBoard = () => {
 
     const handleDragEnd = useCallback(
         ({ source, destination, draggableId }) => {
-            /* Dropped outside any board, or back exactly where it started. */
+            /** Dropped outside any board, or back exactly where it started. */
             if (!destination) return;
             if (
                 source.droppableId === destination.droppableId &&
@@ -161,8 +165,10 @@ const TaskBoard = () => {
     );
 };
 
-/** DOCU: Entry point for the task board. The query lives in a child so the drag
- *  and drop context is not torn down every time the data refreshes. */
+/**
+ * Entry point for the task board. The query lives in a child so the drag and drop context is
+ * not torn down every time the data refreshes.
+ */
 const Task = (props) => (
     <Suspense fallback={<InlineLoader label="Loading your tasks..." />}>
         <TaskBoard {...props} />

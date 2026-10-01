@@ -22,13 +22,11 @@ import PasswordField from "../components/PasswordField";
 import useAuthMascotMood from "../hooks/useAuthMascotMood";
 import { fieldErrorToast } from "../helpers/mascotMood";
 
-/** DOCU: How long the fox gets to look pleased before the page changes, so the
- *  success face is never cut off. */
 const SUCCESS_HOLD_MS = MASCOT_HOLD_MS.success;
 
 /**
- * DOCU: The combined sign-in and register screen. The mode is decided by the
- * route (`/login` or `/register`), so each mode is linkable and reloadable.
+ * The combined sign-in and register screen. The mode is decided by the route (`/login` or
+ * `/register`), so each mode is linkable and reloadable.
  */
 const Auth = () => {
     const location = useLocation();
@@ -48,12 +46,16 @@ const Auth = () => {
         formState: { errors },
     } = formApi;
 
-    /** Keying on the mode remounts the form when the user switches, so values,
-     *  errors and focus all clear - more reliable than unregistering fields. */
+    /**
+     * Keying on the mode remounts the form when the user switches, so values, errors and focus
+     * all clear - more reliable than unregistering fields.
+     */
     const formKey = isRegisterMode ? "register" : "login";
 
-    /** In a ref, because the redirect runs on a timer that must not fire after
-     *  the user has navigated on. */
+    /**
+     * In a ref, because the redirect runs on a timer that must not fire after the user has
+     * navigated on.
+     */
     const redirectRef = useRef(null);
     useEffect(
         () => () => {
@@ -77,7 +79,7 @@ const Auth = () => {
                 message: "Signed in. Welcome back!",
                 type: TOAST_TYPES.success,
             });
-            /* Refetch the session so the board renders with the new user. */
+            /** Refetch the session so the board renders with the new user. */
             queryClient.removeQueries({ queryKey: VALIDATE_TOKEN_KEY, exact: true });
             redirectAfterCelebrating(ROUTES.board);
         },
@@ -96,8 +98,10 @@ const Auth = () => {
         onError: (error) => showToast({ message: error.message, type: TOAST_TYPES.error }),
     });
 
-    /** Only the request for the mode on screen may drive the fox, or it shows the
-     *  previous screen's result. */
+    /**
+     * Only the request for the mode on screen may drive the fox, or it shows the previous
+     * screen's result.
+     */
     const activeMutation = isRegisterMode ? registerMutation : signInMutation;
 
     /** Keyed on the mode so switching clears the old form and request. */
@@ -118,9 +122,9 @@ const Auth = () => {
     const isSubmitting = signInMutation.isPending || registerMutation.isPending;
 
     /**
-     * DOCU: A submit that never left the browser, since `handleSubmit` stops
-     * before the mutation. The toast makes a rejected form announce itself the
-     * same way a rejected request does, and gives the mascot the same signal.
+     * A submit that never left the browser, since `handleSubmit` stops before the mutation. The
+     * toast makes a rejected form announce itself the same way a rejected request does, and
+     * gives the mascot the same signal.
      */
     const reportFieldErrors = (errors) => {
         const toast = fieldErrorToast(errors);
@@ -213,12 +217,6 @@ const Auth = () => {
                     error={errors.password}
                     {...register(
                         "password",
-                        /* Sign-in only checks that something was typed: the length
-                         * and whitespace rules are about the passwords the app
-                         * accepts, and applying them to an existing account could
-                         * lock out somebody whose password predates the rule.
-                         * Register is the screen that sets one, so it takes the
-                         * full rule set from the shared builder. */
                         isRegisterMode
                             ? newPasswordRules()
                             : {

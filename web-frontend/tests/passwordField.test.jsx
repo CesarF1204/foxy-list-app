@@ -1,14 +1,3 @@
-/**
- * Tests for the shared password field's show/hide toggle.
- *
- * One component covers every password input in the app, so what matters is
- * that it never touches the value: masking is the input's own `type`, not a
- * rewritten string, so a typed password stays intact for validation and
- * submission. Also checked are the two promises that keep it safe inside a
- * form - the button is `type="button"`, so it cannot submit, and two fields
- * never toggle together.
- */
-
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 
@@ -34,7 +23,7 @@ describe("PasswordField", () => {
         type(input, "MyPassword123");
 
         fireEvent.click(eye("Show password"));
-        /* The type swaps; the value is the password, never asterisks. */
+        /** The type swaps; the value is the password, never asterisks. */
         expect(input).toHaveAttribute("type", "text");
         expect(input).toHaveValue("MyPassword123");
 
@@ -77,7 +66,7 @@ describe("PasswordField", () => {
         fireEvent.click(eye("Show password"));
         expect(onSubmit).not.toHaveBeenCalled();
 
-        /* The real submit button still submits. */
+        /** The real submit button still submits. */
         fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
         expect(onSubmit).toHaveBeenCalledTimes(1);
     });
@@ -98,9 +87,9 @@ describe("PasswordField", () => {
 });
 
 /**
- * A new password and its confirmation side by side, which is the one case where
- * a shared toggle would be wrong: the user has to compare the two values, so
- * each eye must move on its own and neither may disturb the other's value.
+ * A new password and its confirmation side by side, which is the one case where a shared toggle
+ * would be wrong: the user has to compare the two values, so each eye must move on its own and
+ * neither may disturb the other's value.
  */
 describe("a password and its confirmation", () => {
     const renderPair = () =>
@@ -129,7 +118,7 @@ describe("a password and its confirmation", () => {
 
         expect(password).toHaveAttribute("type", "text");
         expect(confirm).toHaveAttribute("type", "password");
-        /* Both values survive, so the pair can still be compared and submitted. */
+        /** Both values survive, so the pair can still be compared and submitted. */
         expect(password).toHaveValue("MyPassword123");
         expect(confirm).toHaveValue("MyPassword123");
     });
@@ -141,14 +130,16 @@ describe("a password and its confirmation", () => {
         type(password, "MyPassword123");
         type(confirm, "MyPassword123");
 
-        /* The two eyes share a name while both read the same, so the
-         * confirmation's is the second one in DOM order. */
+        /**
+         * The two eyes share a name while both read the same, so the confirmation's is the
+         * second one in DOM order.
+         */
         const eyes = screen.getAllByRole("button", { name: "Show password" });
         fireEvent.click(eyes[1]);
         expect(confirm).toHaveAttribute("type", "text");
         expect(password).toHaveAttribute("type", "password");
 
-        /* Now only one eye reads "Hide password"; it belongs to the confirmation. */
+        /** Now only one eye reads "Hide password"; it belongs to the confirmation. */
         const [confirmEye] = screen.getAllByRole("button", { name: "Hide password" });
         fireEvent.click(confirmEye);
         expect(confirm).toHaveAttribute("type", "password");
@@ -156,4 +147,3 @@ describe("a password and its confirmation", () => {
         expect(confirm).toHaveValue("MyPassword123");
     });
 });
-

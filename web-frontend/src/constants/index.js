@@ -1,7 +1,7 @@
 /**
- * Every constant the app shares, re-exported from one entry point. Each area
- * keeps its own module, and importing it directly is equally fine. Nothing here
- * may import from `src/` at large: these are the values every layer agrees on.
+ * Every constant the app shares, re-exported from one entry point. Each area keeps its own
+ * module, and importing it directly is equally fine. Nothing here may import from `src/` at
+ * large: these are the values every layer agrees on.
  */
 
 export {

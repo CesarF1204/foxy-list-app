@@ -6,14 +6,16 @@ import { TEMP_ID_PREFIX } from "../../constants/tasks";
 import Icon from "../icons/Icon";
 import EditTask from "./EditTask";
 
-/** DOCU: The two actions available on a task: edit and delete. */
+/** The two actions available on a task: edit and delete. */
 const CardActions = ({ task, onEdit, onDelete }) => {
     const buttonClass =
         "flex h-7 w-7 items-center justify-center rounded-lg text-ink-faint transition " +
         "hover:bg-ink/10 hover:text-ink focus-visible:ring-4 focus-visible:ring-ink/20";
 
-    /** A button press must never start a drag: stopping pointerdown propagation
-     *  means the library never sees the gesture begin. */
+    /**
+     * A button press must never start a drag: stopping pointerdown propagation means the
+     * library never sees the gesture begin.
+     */
     const stopDragStart = (event) => event.stopPropagation();
 
     return (
@@ -44,16 +46,15 @@ const CardActions = ({ task, onEdit, onDelete }) => {
 };
 
 /**
- * DOCU: A single task. The whole card is the drag handle, so there is no grip to
- * find. Wrapped in `memo` so a drag only re-renders the cards whose props
- * actually changed.
+ * A single task. The whole card is the drag handle, so there is no grip to find. Wrapped in
+ * `memo` so a drag only re-renders the cards whose props actually changed.
  */
 const TaskCard = ({ task, board, index, onSave, onDelete }) => {
     const [isEditing, setIsEditing] = useState(false);
 
     const meta = CARD_BOARD_META[board];
 
-    /* A task created locally has a temporary id until the server replies. */
+    /** A task created locally has a temporary id until the server replies. */
     const isPending = task._id.startsWith(TEMP_ID_PREFIX);
 
     return (
@@ -63,9 +64,6 @@ const TaskCard = ({ task, board, index, onSave, onDelete }) => {
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
                     ref={provided.innerRef}
-                    /** The element the library transforms on every pointer move, so
-                     *  it must stay free of any CSS animation or transitioned
-                     *  transform. The entrance animation is on the wrapper below. */
                     data-dragging={snapshot.isDragging ? "true" : "false"}
                     className={`task-card relative rounded-2xl border-2 border-ink bg-white pl-4 pr-9 ${
                         snapshot.isDragging

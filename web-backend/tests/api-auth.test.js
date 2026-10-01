@@ -9,13 +9,7 @@
     VALID_PASSWORD,
 } from './helpers.js';
 
-/**
- * DOCU: Tests registration, sign in, sign out and session validation.
- * Last Updated Date: October 1, 2026
- * @function run
- * @returns {Promise<{email: string}>} The account the session was created with
- * @author Cesar
- */
+/** Tests registration, sign in, sign out and session validation. */
 const run = async () => {
     console.log('\n--- REGISTRATION ---');
 
@@ -44,7 +38,7 @@ const run = async () => {
         { auth: false }
     );
 
-    /* One mailbox is one account, whatever the case. */
+    /** One mailbox is one account, whatever the case. */
     await checkStatus(
         'register a duplicate email in another case -> 409',
         'POST',
@@ -73,8 +67,10 @@ const run = async () => {
         { auth: false }
     );
 
-    /* Whitespace is refused at registration too, rather than trimmed into a
-     * password nobody typed. */
+    /**
+     * Whitespace is refused at registration too, rather than trimmed into a password nobody
+     * typed.
+     */
     for (const [label, password] of [
         ['a leading space', ' secret123'],
         ['a trailing space', 'secret123 '],
@@ -108,7 +104,7 @@ const run = async () => {
         { auth: false }
     );
 
-    /* A signup form must not be able to grant itself a role. */
+    /** A signup form must not be able to grant itself a role. */
     const escalate = await checkStatus(
         'register asking for the admin role -> 400',
         'POST',
@@ -149,7 +145,7 @@ const run = async () => {
         { auth: false }
     );
 
-    /* The same wording for both, so the endpoint cannot enumerate accounts. */
+    /** The same wording for both, so the endpoint cannot enumerate accounts. */
     const wrongPassword = await req(
         'POST',
         '/api/users/sign_in',
@@ -223,13 +219,7 @@ const run = async () => {
 
 export { run, selfService };
 
-/**
- * DOCU: Tests password recovery and the unknown route fallback.
- * Last Updated Date: October 1, 2026
- * @function recovery
- * @returns {Promise<void>} Resolves once the checks have run
- * @author Cesar
- */
+/** Tests password recovery and the unknown route fallback. */
 export const recovery = async () => {
     console.log('\n--- PASSWORD RECOVERY ---');
 
@@ -280,8 +270,10 @@ export const recovery = async () => {
         { auth: false }
     );
 
-    /* Whitespace is refused rather than trimmed, on the reset path like every
-     * other one: trimming would store a different secret from the one typed. */
+    /**
+     * Whitespace is refused rather than trimmed, on the reset path like every other one:
+     * trimming would store a different secret from the one typed.
+     */
     for (const [label, password] of [
         ['a leading space', ' newsecret1'],
         ['a trailing space', 'newsecret1 '],
@@ -332,9 +324,11 @@ export const recovery = async () => {
         { auth: false }
     );
 
-    /* The password already in force is refused here too. The reset link does not
-     * carry the current password, so this can only be caught server-side, by
-     * comparing against the stored hash. */
+    /**
+     * The password already in force is refused here too. The reset link does not carry the
+     * current password, so this can only be caught server-side, by comparing against the stored
+     * hash.
+     */
     const reused = await checkStatus(
         'reset to the password that is already in force -> 400',
         'PUT',
@@ -363,21 +357,10 @@ export const recovery = async () => {
 };
 
 /**
- * DOCU: Checks the self-service profile routes, the ones the View Profile
- * drawer's Edit name and email and Set new password buttons call.
- *
- * The point of the pair is that a plain user is a legitimate caller - so the
- * interesting checks are the limits. Neither route takes an id, a session
- * cannot reach another account through them, and neither can carry a role or a
- * status change in its body even though the caller owns the account.
- *
- * It creates its own account rather than borrowing the suite-wide `plain`: the
- * admin suite deletes that one, and a deleted session answers 401 to
- * everything, which would make every check here fail for the wrong reason.
- * Last Updated Date: October 1, 2026
- * @function selfService
- * @returns {Promise<{email: string}>} The account that was edited
- * @author Cesar
+ * The self-service profile routes, the ones the View Profile drawer's Edit name and email and
+ * Set new password buttons call. A plain user is a legitimate caller, so the interesting checks
+ * are the limits: neither route takes an id, and neither can carry a role or status change in
+ * its body.
  */
 const selfService = async () => {
     console.log('\n--- SELF-SERVICE PROFILE ---');
@@ -417,8 +400,10 @@ const selfService = async () => {
     check('the edit never returns a password', renamed.data?.user?.password, undefined);
     check('the edit does not change the role', renamed.data?.user?.role, 'user');
 
-    /* The session must now report the change, or the navbar would keep showing
-     * the old name until a reload. */
+    /**
+     * The session must now report the change, or the navbar would keep showing the old name
+     * until a reload.
+     */
     const reread = await checkStatus(
         'the session reports the new name',
         'GET',
@@ -429,7 +414,7 @@ const selfService = async () => {
     );
     check('the session email follows the edit', reread.data?.user?.email, fresh);
 
-    /* The body carries no id at all, so there is nothing to point elsewhere. */
+    /** The body carries no id at all, so there is nothing to point elsewhere. */
     const withId = await checkStatus(
         'an edit carrying somebody else\'s id -> 200',
         'PATCH',
@@ -441,7 +426,7 @@ const selfService = async () => {
     check('the foreign id is ignored, the caller is still edited', withId.data?.user?.email, fresh);
     check('the caller is still themselves', withId.data?.user?._id, id);
 
-    /* Owning the account is not the same as being allowed to promote it. */
+    /** Owning the account is not the same as being allowed to promote it. */
     const escalate = await checkStatus(
         'edit your own profile asking for the admin role -> 400',
         'PATCH',
@@ -465,9 +450,11 @@ const selfService = async () => {
         { jar }
     );
 
-    /* A second account, so the collision is with somebody else's address. The
-     * caller's own old address was freed by the rename above, and reusing it
-     * would test the "same account" branch rather than the conflict. */
+    /**
+     * A second account, so the collision is with somebody else's address. The caller's own old
+     * address was freed by the rename above, and reusing it would test the "same account"
+     * branch rather than the conflict.
+     */
     const other = await createAndSignIn('other', 'otherjar');
 
     await checkStatus(
@@ -488,7 +475,7 @@ const selfService = async () => {
         { jar }
     );
 
-    /* Re-read after the refusals: none of them may have changed anything. */
+    /** Re-read after the refusals: none of them may have changed anything. */
     const unchanged = await checkStatus(
         'the role is still plain after every attempt',
         'GET',
@@ -511,7 +498,7 @@ const selfService = async () => {
         { jar }
     );
 
-    /* Whitespace is refused, never trimmed, on the self-service path too. */
+    /** Whitespace is refused, never trimmed, on the self-service path too. */
     for (const [label, password] of [
         ['a leading space', ' newsecret1'],
         ['a trailing space', 'newsecret1 '],
@@ -527,9 +514,11 @@ const selfService = async () => {
         );
     }
 
-    /* The password in force is refused. The request carries no current password -
-     * it does not have to, and should not: the server compares against the stored
-     * hash, so the old secret never crosses the wire. */
+    /**
+     * The password in force is refused. The request carries no current password - it does not
+     * have to, and should not: the server compares against the stored hash, so the old secret
+     * never crosses the wire.
+     */
     const reused = await checkStatus(
         'set your own password to the one already in force -> 400',
         'PUT',
@@ -581,9 +570,10 @@ const selfService = async () => {
         { auth: false }
     );
 
-    /* A plain user still cannot reach the administrative writes, and the role
-     * one specifically: this is the call the hidden Change role button would
-     * have made. */
+    /**
+     * A plain user still cannot reach the administrative writes, and the role one specifically:
+     * this is the call the hidden Change role button would have made.
+     */
     await checkStatus(
         'a plain user changing their own role -> 403',
         'PUT',
@@ -596,7 +586,7 @@ const selfService = async () => {
     return { email: fresh };
 };
 
-/* Allow the file to be run on its own, not only through tests/run.js */
+/** Allow the file to be run on its own, not only through tests/run.js */
 if (process.argv[1]?.endsWith('api-auth.test.js')) {
     run()
         .then(recovery)

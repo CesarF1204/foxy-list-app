@@ -19,7 +19,7 @@ router.get('/', asyncHandler(getAllTasks));
 
 router.post('/', asyncHandler(createTask));
 
-/* Declared before /:id so "move" is never captured as an id. */
+/** Declared before /:id so "move" is never captured as an id. */
 router.put('/move', asyncHandler(moveTask));
 
 router.get('/:id', asyncHandler(getTaskById));
