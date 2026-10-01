@@ -1,7 +1,9 @@
-import { DEFAULT_PORT } from '../constants/env.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 /** The suite drives a running server over HTTP, so it can check the real contract. */
-const BASE = process.env.BASE_URL || `http://localhost:${process.env.PORT || DEFAULT_PORT}`;
+const BASE = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
 
 /** Running totals for the whole suite. */
 const state = { checks: 0, failures: 0 };

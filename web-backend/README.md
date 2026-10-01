@@ -44,8 +44,7 @@ npm run seed:admin someone@example.com
 ## Architecture
 
 ```
-server.js              process: env, database, listen, graceful shutdown
-app.js                 the Express app: middleware, routes, 404, error handler
+server.js              the single entry point: env, Express app, middleware, routes, 404, error handler, database, listen, graceful shutdown
 config/                db.js (connection + required env), cookies.js
 constants/             boards.js, roles.js - the single definition of each list
 schemas/               userSchema.js, taskSchema.js - Mongoose models

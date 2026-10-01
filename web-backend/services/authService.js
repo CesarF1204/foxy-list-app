@@ -1,11 +1,10 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import * as userModel from '../models/userModel.js';
-import { AUTH_COOKIE_NAME, AUTH_COOKIE_OPTIONS, getAuthCookieMaxAge } from '../config/cookies.js';
+import { AUTH_COOKIE_NAME, getAuthCookieOptions, getAuthCookieMaxAge } from '../config/cookies.js';
 import { unauthorized, forbidden, conflict, notFound, badRequest } from '../helpers/errorHelper.js';
 import { requireEnv } from '../config/db.js';
 import { isActive, ADMIN_ROLE } from '../constants/roles.js';
-import { DEFAULT_JWT_EXPIRES_IN, DEFAULT_BCRYPT_SALT_ROUNDS } from '../constants/env.js';
 import {
     BLOCKED_ACCOUNT_MESSAGE,
     INVALID_CREDENTIALS_MESSAGE,
@@ -16,7 +15,7 @@ import {
 } from '../constants/messages.js';
 
 /** The cost factor, configurable so tests can run cheaper than production. */
-const SALT_ROUNDS = () => Number(process.env.BCRYPT_SALT_ROUNDS || DEFAULT_BCRYPT_SALT_ROUNDS);
+const SALT_ROUNDS = () => Number(process.env.BCRYPT_SALT_ROUNDS || 12);
 
 /**
  * DOCU: Hashes a plaintext password with bcrypt.
@@ -57,7 +56,7 @@ const toPublicUser = (user) => ({
  */
 const issueToken = (user) =>
     jwt.sign({ sub: String(user._id) }, requireEnv('JWT_SECRET'), {
-        expiresIn: process.env.JWT_EXPIRES_IN || DEFAULT_JWT_EXPIRES_IN,
+        expiresIn: process.env.JWT_EXPIRES_IN || '1d',
     });
 
 /**
@@ -153,7 +152,7 @@ const getSessionUser = async (userId) => {
  */
 const setSessionCookie = (res, token) => {
     res.cookie(AUTH_COOKIE_NAME, token, {
-        ...AUTH_COOKIE_OPTIONS,
+        ...getAuthCookieOptions(),
         maxAge: getAuthCookieMaxAge(),
     });
 };
@@ -166,7 +165,7 @@ const setSessionCookie = (res, token) => {
  * @author Cesar
  */
 const clearSessionCookie = (res) => {
-    res.clearCookie(AUTH_COOKIE_NAME, AUTH_COOKIE_OPTIONS);
+    res.clearCookie(AUTH_COOKIE_NAME, getAuthCookieOptions());
 };
 
 /**

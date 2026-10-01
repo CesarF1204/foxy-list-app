@@ -1,18 +1,23 @@
-import { DEFAULT_JWT_EXPIRES_IN, DEFAULT_COOKIE_MAX_AGE } from '../constants/env.js';
-
-/** Driven by the environment, or the browser drops the cookie over plain HTTP. */
-const SECURE_COOKIES = process.env.COOKIE_SECURE === 'true';
-
 /** The cookie the JWT is stored in, read by the auth middleware. */
 const AUTH_COOKIE_NAME = 'session';
 
-/** The same options set the cookie on sign in and clear it on sign out. */
-const AUTH_COOKIE_OPTIONS = {
+/**
+ * DOCU: Builds the cookie options, reading the environment at call time.
+ * Last Updated Date: October 1, 2026
+ * @description The environment is read here rather than at module load, because the
+ * entry point loads .env after the imports are evaluated. A top-level read would
+ * always see undefined and silently fall back to the defaults.
+ * @function getAuthCookieOptions
+ * @returns {object} The options used to set and clear the session cookie
+ * @author Cesar
+ */
+const getAuthCookieOptions = () => ({
     httpOnly: true,
-    secure: SECURE_COOKIES,
+    /** Driven by the environment, or the browser drops the cookie over plain HTTP. */
+    secure: process.env.COOKIE_SECURE === 'true',
     sameSite: process.env.COOKIE_SAME_SITE || 'lax',
     path: '/',
-};
+});
 
 /** Multipliers used to read the token's own lifetime. */
 const TOKEN_UNIT_MULTIPLIERS = { s: 1000, m: 60000, h: 3600000, d: 86400000 };
@@ -25,16 +30,15 @@ const TOKEN_UNIT_MULTIPLIERS = { s: 1000, m: 60000, h: 3600000, d: 86400000 };
  * @author Cesar
  */
 const getAuthCookieMaxAge = () => {
-    const expiresIn = process.env.JWT_EXPIRES_IN || DEFAULT_JWT_EXPIRES_IN;
+    const expiresIn = process.env.JWT_EXPIRES_IN || '1d';
     const match = /^(\d+)([smhd])$/.exec(String(expiresIn).trim());
-    if (!match) return DEFAULT_COOKIE_MAX_AGE;
+    if (!match) return 24 * 60 * 60 * 1000;
 
     return Number(match[1]) * TOKEN_UNIT_MULTIPLIERS[match[2]];
 };
 
 export {
     AUTH_COOKIE_NAME,
-    AUTH_COOKIE_OPTIONS,
-    SECURE_COOKIES,
+    getAuthCookieOptions,
     getAuthCookieMaxAge,
 };
