@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import Icon from "../icons/Icon";
 
 /**
  * The "add a task" composer at the foot of the To Do column. Collapsed to a single button until
- * clicked. Submits on Enter from the title and Cmd/Ctrl
+ * clicked. Submits on Enter from the title and Cmd/Ctrl + Enter from the note, then closes itself
+ * and on a click outside, so the new card is what you are left looking at.
  */
 const AddTask = ({ onAdd }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -13,6 +14,9 @@ const AddTask = ({ onAdd }) => {
 
     /** Read and cleared synchronously by submit, so it always holds the truth. */
     const draft = useRef({ title: "", description: "" });
+
+    /** The composer itself, so an outside click can be told apart from a click inside it. */
+    const composerRef = useRef(null);
 
     const submit = () => {
         const { title: currentTitle, description: currentDescription } = draft.current;
@@ -26,7 +30,8 @@ const AddTask = ({ onAdd }) => {
 
         onAdd({ title: currentTitle, description: currentDescription });
 
-        /** Stays open so several tasks can be added in a row. */
+        /** Close once the task is handed off, so the column shows the new task right away. */
+        setIsOpen(false);
     };
 
     const handleTitleChange = (value) => {
@@ -46,6 +51,26 @@ const AddTask = ({ onAdd }) => {
         setDescription("");
     };
 
+    /** Close on a click outside the composer, or on Escape. */
+    useEffect(() => {
+        if (!isOpen) return undefined;
+
+        const onPointerDown = (event) => {
+            if (!composerRef.current?.contains(event.target)) close();
+        };
+        const onKeyDown = (event) => {
+            if (event.key === "Escape") close();
+        };
+
+        document.addEventListener("mousedown", onPointerDown);
+        document.addEventListener("keydown", onKeyDown);
+
+        return () => {
+            document.removeEventListener("mousedown", onPointerDown);
+            document.removeEventListener("keydown", onKeyDown);
+        };
+    }, [isOpen]);
+
     if (!isOpen) {
         return (
             <button
@@ -60,7 +85,10 @@ const AddTask = ({ onAdd }) => {
     }
 
     return (
-        <div className="animate-pop-in mt-auto flex flex-col gap-2 rounded-2xl border-2 border-ink bg-white p-3 shadow-card">
+        <div
+            ref={composerRef}
+            className="animate-pop-in mt-auto flex flex-col gap-2 rounded-2xl border-2 border-ink bg-white p-3 shadow-card"
+        >
             <input
                 type="text"
                 autoFocus
