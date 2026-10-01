@@ -2,7 +2,11 @@ import { useState } from "react";
 
 import Modal from "../Modal";
 import { USER_ROLES, ROLE_META } from "../../constants/roles";
-import { PASSWORD_MIN_LENGTH, VALIDATION_MESSAGES } from "../../constants/validation";
+import {
+    PASSWORD_MIN_LENGTH,
+    PASSWORD_NO_SPACES_PATTERN,
+    VALIDATION_MESSAGES,
+} from "../../constants/validation";
 import PasswordField from "../PasswordField";
 import { getFullName } from "../../helpers/globalHelper";
 
@@ -27,6 +31,12 @@ export const UserConfirmDialog = ({
     confirmLabel,
     variant = "primary",
     isPending,
+    /* Set when the confirmation would do nothing - the role dialog uses it for
+     * "you picked the role the account already has". It is a plain boolean rather
+     * than logic of the caller's own, so every dialog disables its confirm
+     * button the same way: `isPending` while the request is in flight, and
+     * whatever else the dialog decides is untrue. */
+    isDisabled = false,
     onConfirm,
     onClose,
     children,
@@ -43,7 +53,7 @@ export const UserConfirmDialog = ({
                 <button
                     type="button"
                     onClick={onConfirm}
-                    disabled={isPending}
+                    disabled={isPending || isDisabled}
                     className={`btn ${variant === "danger" ? "btn-danger" : "btn-primary"}`}
                 >
                     {isPending ? "Working..." : confirmLabel}
@@ -59,15 +69,29 @@ export const UserConfirmDialog = ({
  * DOCU: Changes a user's role. The options come from `USER_ROLES`, the same list
  * the API validates against, so a role the app does not support is never offered
  * here and would be rejected there.
+ *
+ * The selection starts on the account's current role, which means the dialog
+ * opens in a state where confirming would change nothing. So the button is
+ * disabled until a *different* role is picked, and re-enabled the moment one is -
+ * the same disabled treatment the profile editor gives an unchanged form. It is
+ * derived from `choice` and `role` on every render rather than tracked with extra
+ * state, so it cannot disagree with what the radios actually show: picking the
+ * original role again disables the button again, and switching back and forth
+ * never leaves it stuck on. `isPending` still applies on top, so a slow request
+ * cannot be fired twice.
  */
 export const RoleDialog = ({ user, role, isPending, onConfirm, onClose }) => {
     const [choice, setChoice] = useState(role);
+
+    /** Nothing to confirm while the chosen role is the one already in force. */
+    const isUnchanged = choice === role;
 
     return (
         <UserConfirmDialog
             title={`Make ${getFullName(user)} ${ROLE_META[choice]?.label.toLowerCase()}?`}
             confirmLabel="Change role"
             isPending={isPending}
+            isDisabled={isUnchanged}
             onClose={onClose}
             onConfirm={() => onConfirm(choice)}
         >
@@ -105,8 +129,18 @@ export const RoleDialog = ({ user, role, isPending, onConfirm, onClose }) => {
 /** DOCU: Sets a new password. The field is a password input, is never pre-filled
  *  with anything, and the API answers with a message rather than the user, so
  *  there is nothing to show afterwards. The inputs are cleared on success, so a
- *  closed dialog never leaves a password in the DOM. */
-export const PasswordDialog = ({ user, isPending, onConfirm, onClose }) => {
+ *  closed dialog never leaves a password in the DOM.
+ *
+ *  Two rules need the server rather than the browser. The no-whitespace rule is
+ *  checked here as well, so the user hears about it before a round trip - but the
+ *  API checks it too, because a request made outside this UI reaches the same
+ *  endpoint. And the "must differ from the current password" rule cannot be
+ *  checked here at all: nobody typing into this dialog knows the account's
+ *  existing password, least of all an admin setting somebody else's. The API
+ *  compares against the stored hash and refuses, and `serverError` is how that
+ *  refusal is shown beside the field rather than as a toast that does not say
+ *  which box to fix. */
+export const PasswordDialog = ({ user, isPending, serverError, onConfirm, onClose }) => {
     const [password, setPassword] = useState("");
     const [confirmation, setConfirmation] = useState("");
     const [error, setError] = useState("");
@@ -114,16 +148,37 @@ export const PasswordDialog = ({ user, isPending, onConfirm, onClose }) => {
     const [errorField, setErrorField] = useState("password");
 
     /* The same rules the sign-up form applies, so an admin cannot set a password
-     * the app would then refuse at sign-in. */
+     * the app would then refuse at sign-in. The rules themselves live in
+     * `constants/validation.js`, shared with the auth forms - including the
+     * no-whitespace rule, which is checked on the confirmation as well as on the
+     * password so a stray space is named on the box that has it rather than
+     * showing up as a mismatch between two values that look identical. */
     const validate = () => {
         if (!password) return [VALIDATION_MESSAGES.password.required, "password"];
         if (password.length < PASSWORD_MIN_LENGTH) {
             return [VALIDATION_MESSAGES.passwordTooShort, "password"];
         }
-        if (password !== confirmation) return ["Passwords do not match", "confirmation"];
+        if (PASSWORD_NO_SPACES_PATTERN.test(password)) {
+            return [VALIDATION_MESSAGES.passwordHasSpaces, "password"];
+        }
+        if (!confirmation) return [VALIDATION_MESSAGES.confirmPassword.required, "confirmation"];
+        if (PASSWORD_NO_SPACES_PATTERN.test(confirmation)) {
+            return [VALIDATION_MESSAGES.passwordHasSpaces, "confirmation"];
+        }
+        if (password !== confirmation) {
+            return [VALIDATION_MESSAGES.passwordsDoNotMatch, "confirmation"];
+        }
         return ["", ""];
     };
 
+    /**
+     * DOCU: Submits the new password.
+     *
+     * The typed values are left alone unless the API accepted them, so a refusal
+     * - the password already in force, say - leaves the dialog as the user filled
+     * it in and they can correct one character rather than start again. The
+     * password itself never appears in a message and is never logged.
+     */
     const submit = async () => {
         const [problem, field] = validate();
         setError(problem);
@@ -189,6 +244,17 @@ export const PasswordDialog = ({ user, isPending, onConfirm, onClose }) => {
                         setError("");
                     }}
                 />
+
+                {/* The API's refusal, announced and pinned to the password box -
+                    * the same treatment `UserProfileForm` gives a rejected email.
+                    *  It sits here rather than on a field's `error` so that a
+                    *  message arriving before the first submit is not overwritten by
+                    *  the next keystroke, which clears the local errors. */}
+                {serverError && (
+                    <span className="text-xs font-bold text-red-600" role="alert">
+                        {serverError}
+                    </span>
+                )}
             </div>
         </Modal>
     );

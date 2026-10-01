@@ -200,6 +200,28 @@ describe("the section links in the account menu", () => {
         expect(within(openAccountMenu()).getByRole("button", { name: "Sign out" })).toBeInTheDocument();
     });
 
+    /**
+     * Sign out is a menu entry rather than one of the `.btn` buttons, so it does
+     * not inherit that class's `cursor: pointer` and has to ask for it. Without
+     * it the pointer stays an I-beam over a row that is entirely clickable.
+     */
+    it("shows a pointer cursor over Sign out", () => {
+        renderNavbar(ROUTES.board, ADMIN);
+
+        expect(within(openAccountMenu()).getByRole("button", { name: "Sign out" })).toHaveClass(
+            "cursor-pointer"
+        );
+    });
+
+    it("keeps its hover fill and its pending state alongside the pointer", () => {
+        renderNavbar(ROUTES.board, ADMIN);
+        const signOut = within(openAccountMenu()).getByRole("button", { name: "Sign out" });
+
+        /* The pointer is added, not swapped in: the styling that was already there
+         * is untouched, and the disabled state still refuses the click. */
+        expect(signOut).toHaveClass("hover:bg-red-50", "disabled:cursor-not-allowed");
+    });
+
     it("closes once a section link is followed", () => {
         renderNavbar(ROUTES.board, ADMIN);
         const menu = openAccountMenu();

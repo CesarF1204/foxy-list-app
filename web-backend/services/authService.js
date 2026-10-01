@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import * as userModel from '../models/userModel.js';
 import { AUTH_COOKIE_NAME, AUTH_COOKIE_OPTIONS, getAuthCookieMaxAge } from '../config/cookies.js';
-import { unauthorized, forbidden, conflict, notFound } from '../helpers/errorHelper.js';
+import { unauthorized, forbidden, conflict, notFound, badRequest } from '../helpers/errorHelper.js';
 import { requireEnv } from '../config/db.js';
 import { isActive, ADMIN_ROLE } from '../constants/roles.js';
 import { DEFAULT_JWT_EXPIRES_IN, DEFAULT_BCRYPT_SALT_ROUNDS } from '../constants/env.js';
@@ -11,6 +11,7 @@ import {
     INVALID_CREDENTIALS_MESSAGE,
     ACCOUNT_GONE_MESSAGE,
     PASSWORD_UPDATED_MESSAGE,
+    PASSWORD_UNCHANGED_MESSAGE,
     DUPLICATE_EMAIL_MESSAGE,
 } from '../constants/messages.js';
 
@@ -183,6 +184,37 @@ const forgotPassword = async (data) => {
 };
 
 /**
+ * DOCU: Refuses a "new" password that is the account's current one.
+ *
+ * The check belongs here, on the server, because the server is the only side
+ * that holds the hash to compare against - and comparing hashes is the only way
+ * to do it without the client ever having to send the current password over the
+ * wire. `bcrypt.compare` is a constant-time comparison against the stored hash;
+ * neither password is logged, echoed in the error, or returned anywhere.
+ *
+ * A screen that can detect the duplication itself (a change-password form, which
+ * has the current value in hand) still validates on the client, so the user is
+ * told immediately instead of after a round trip. This is the backstop for that,
+ * and the only thing standing behind the forms that cannot know - an admin
+ * setting somebody else's password, and a reset link's new password. A request
+ * crafted outside the UI hits exactly the same code.
+ *
+ * @param {object} user - The account, carrying its password hash
+ * @param {string} newPassword - The plaintext the caller wants to set
+ * @returns {Promise<void>} Rejects when the two are the same password
+ * @author Cesar
+ */
+const assertPasswordChanged = async (user, newPassword) => {
+    /* Without a hash there is nothing to compare against; every real account
+     * has one, and a missing hash is refused on write by the schema anyway. */
+    if (!user?.password) return;
+
+    if (await bcrypt.compare(newPassword, user.password)) {
+        throw badRequest(PASSWORD_UNCHANGED_MESSAGE);
+    }
+};
+
+/**
  * DOCU: Completes password recovery by storing a new hash.
  * Last Updated Date: October 1, 2026
  * @function resetPassword
@@ -191,12 +223,16 @@ const forgotPassword = async (data) => {
  * @author Cesar
  */
 const resetPassword = async (data) => {
-    const user = await userModel.findByEmail(data.email);
+    /* `findForLogin` rather than `findByEmail`, because this is the one reset
+     * path that has to see the hash: refusing to re-set the password that is
+     * already in force needs it. */
+    const user = await userModel.findForLogin(data.email);
 
     if (!user) {
         throw notFound('No account found for that email');
     }
 
+    await assertPasswordChanged(user, data.password);
     await userModel.updatePassword(user._id, await hashPassword(data.password));
 
     return PASSWORD_UPDATED_MESSAGE;
@@ -255,6 +291,12 @@ const updateOwnProfile = async (actor, data) => {
  * @author Cesar
  */
 const setOwnPassword = async (actor, data) => {
+    /* The session's copy of the user is read without the hash, so it is fetched
+     * again for the one check that needs it - the same way `resetPassword`
+     * does, and for the same reason. */
+    const account = await userModel.findForLogin(actor.email);
+
+    await assertPasswordChanged(account, data.password);
     await userModel.updatePassword(actor._id, await hashPassword(data.password));
 
     return PASSWORD_UPDATED_MESSAGE;
@@ -263,6 +305,7 @@ const setOwnPassword = async (actor, data) => {
 export {
     SALT_ROUNDS,
     hashPassword,
+    assertPasswordChanged,
     toPublicUser,
     issueToken,
     register,

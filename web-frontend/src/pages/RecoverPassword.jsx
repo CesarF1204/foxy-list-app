@@ -8,7 +8,12 @@ import { useAppContext } from "../contexts/useAppContext";
 import { ROUTES } from "../constants/routes";
 import { TOAST_TYPES } from "../constants/toast";
 import { MASCOT_HOLD_MS } from "../constants/mascot";
-import { EMAIL_PATTERN, PASSWORD_MIN_LENGTH, VALIDATION_MESSAGES } from "../constants/validation";
+import {
+    EMAIL_PATTERN,
+    VALIDATION_MESSAGES,
+    newPasswordRules,
+    confirmPasswordRules,
+} from "../constants/validation";
 import AuthLayout from "../components/AuthLayout";
 import FormField from "../components/FormField";
 import PasswordField from "../components/PasswordField";
@@ -199,13 +204,7 @@ const RecoverPassword = () => {
                         autoComplete="new-password"
                         placeholder="At least 6 characters"
                         error={errors.password}
-                        {...register("password", {
-                            required: VALIDATION_MESSAGES.password.required,
-                            minLength: {
-                                value: PASSWORD_MIN_LENGTH,
-                                message: VALIDATION_MESSAGES.passwordTooShort,
-                            },
-                        })}
+                        {...register("password", newPasswordRules())}
                     />
 
                     <PasswordField
@@ -214,11 +213,10 @@ const RecoverPassword = () => {
                         autoComplete="new-password"
                         placeholder="Re-enter your new password"
                         error={errors.confirmPassword}
-                        {...register("confirmPassword", {
-                            required: VALIDATION_MESSAGES.confirmPassword.required,
-                            validate: (value) =>
-                                value === watch("password") || "Passwords do not match",
-                        })}
+                        {...register(
+                            "confirmPassword",
+                            confirmPasswordRules(() => watch("password")),
+                        )}
                     />
 
                     <button

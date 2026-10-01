@@ -142,6 +142,11 @@ link tidy, and **the API is the boundary that holds**: `requireAdmin` in
 - An admin cannot demote, block or delete their own account.
 - Passwords are never returned by any endpoint. The API hashes them with bcrypt
   and stores nothing else.
+- Passwords may not contain spaces, and a new one may not equal the current one.
+  Both rules are enforced by the API as well - the forms apply the space rule up
+  front so the user hears about it immediately, and the API is what actually
+  holds. The "must differ" rule can only be checked server-side, by comparing
+  against the stored hash, so the current password is never sent or displayed.
 
 The task counts are computed from the real task records on every request, and
 only the three real boards are counted, so `total = todo + ongoing + done` always
@@ -151,7 +156,10 @@ holds.
 
 All three happen in the API: the browser sends a query string and receives one
 page of rows, so the table behaves the same with ten users and with ten thousand.
-The search box is debounced; changing a filter returns to page 1.
+The search box is debounced; changing a filter returns to page 1. The table shows
+five rows per page to begin with, which is `DEFAULT_PAGE_SIZE` here and the same
+constant in the API - the picker renders the `pageSize` the API reported, so the
+two defaults have to agree.
 
 Every one of those triggers - the debounced search, either filter, a sort and a
 page change - shows the same circular indicator *inside* the table while its

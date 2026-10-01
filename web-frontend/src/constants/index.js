@@ -81,7 +81,10 @@ export {
     EMAIL_PATTERN,
     NAME_PATTERN,
     PASSWORD_MIN_LENGTH,
+    PASSWORD_NO_SPACES_PATTERN,
     VALIDATION_MESSAGES,
+    newPasswordRules,
+    confirmPasswordRules,
 } from "./validation";
 export {
     CONTROL_BASE,

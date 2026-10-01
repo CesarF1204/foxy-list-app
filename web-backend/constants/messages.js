@@ -22,6 +22,16 @@ const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password.';
 /** Shown when a password is set or reset, so no user object is returned. */
 const PASSWORD_UPDATED_MESSAGE = 'Password updated';
 
+/**
+ * DOCU: Shown when a "new" password turns out to be the current one.
+ *
+ * Deliberately says nothing else. It does not need to - the request that triggers
+ * it is always one the caller was entitled to make, so there is no account to
+ * enumerate - and it must not echo either value back, since a message that
+ * repeated a password would put it in a log, a toast and a screenshot.
+ */
+const PASSWORD_UNCHANGED_MESSAGE = 'Your new password must be different from your current one.';
+
 /** Shown when an email already belongs to another account. */
 const DUPLICATE_EMAIL_MESSAGE = 'That email is already in use by another account';
 
@@ -43,6 +53,7 @@ export {
     ACCOUNT_GONE_MESSAGE,
     INVALID_CREDENTIALS_MESSAGE,
     PASSWORD_UPDATED_MESSAGE,
+    PASSWORD_UNCHANGED_MESSAGE,
     DUPLICATE_EMAIL_MESSAGE,
     INVALID_ID_MESSAGE,
     ROUTE_NOT_FOUND_MESSAGE,

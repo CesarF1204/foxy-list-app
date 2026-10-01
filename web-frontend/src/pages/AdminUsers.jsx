@@ -14,6 +14,7 @@ import UsersTable from "../components/Admin/UsersTable";
 import Pagination from "../components/Admin/Pagination";
 import UserDrawer from "../components/Admin/UserDrawer";
 import ConfirmDialog from "../components/Admin/ConfirmDialog";
+import DeleteUserWarning from "../components/Admin/DeleteUserWarning";
 
 /** DOCU: The grey rows shown while a page of users is loading, in the shape of
  *  the real table so the layout holds still when the data arrives. */
@@ -87,15 +88,7 @@ const AdminUsers = () => {
                 title: `Delete ${getFullName(pending.user)}?`,
                 confirmLabel: "Delete permanently",
                 variant: "danger",
-                body: (
-                    <>
-                        This removes the account and all{" "}
-                        <span className="font-extrabold text-ink">
-                            {pending.user.taskCounts?.total ?? 0}
-                        </span>{" "}
-                        of its tasks. It cannot be undone.
-                    </>
-                ),
+                body: <DeleteUserWarning user={pending.user} />,
             };
         }
 

@@ -12,8 +12,9 @@ import { MASCOT_HOLD_MS } from "../constants/mascot";
 import {
     EMAIL_PATTERN,
     NAME_PATTERN,
-    PASSWORD_MIN_LENGTH,
     VALIDATION_MESSAGES,
+    newPasswordRules,
+    confirmPasswordRules,
 } from "../constants/validation";
 import AuthLayout from "../components/AuthLayout";
 import FormField from "../components/FormField";
@@ -210,13 +211,20 @@ const Auth = () => {
                     autoComplete={isRegisterMode ? "new-password" : "current-password"}
                     placeholder="At least 6 characters"
                     error={errors.password}
-                    {...register("password", {
-                        required: VALIDATION_MESSAGES.password.required,
-                        minLength: {
-                            value: PASSWORD_MIN_LENGTH,
-                            message: VALIDATION_MESSAGES.passwordTooShort,
-                        },
-                    })}
+                    {...register(
+                        "password",
+                        /* Sign-in only checks that something was typed: the length
+                         * and whitespace rules are about the passwords the app
+                         * accepts, and applying them to an existing account could
+                         * lock out somebody whose password predates the rule.
+                         * Register is the screen that sets one, so it takes the
+                         * full rule set from the shared builder. */
+                        isRegisterMode
+                            ? newPasswordRules()
+                            : {
+                                  required: VALIDATION_MESSAGES.password.required,
+                              },
+                    )}
                 />
 
                 {isRegisterMode && (
@@ -226,12 +234,10 @@ const Auth = () => {
                         autoComplete="new-password"
                         placeholder="Re-enter your password"
                         error={errors.confirmPassword}
-                        {...register("confirmPassword", {
-                            required: "Please confirm your password",
-                            /* watch() reads the live password value for comparison. */
-                            validate: (value) =>
-                                value === watch("password") || "Passwords do not match",
-                        })}
+                        {...register(
+                            "confirmPassword",
+                            confirmPasswordRules(() => watch("password")),
+                        )}
                     />
                 )}
 

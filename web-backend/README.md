@@ -131,6 +131,13 @@ rename can never carry a privilege change with it. The schemas enforce that: a
   login.
 - Passwords must be at least 6 characters, matching `PASSWORD_MIN_LENGTH` in the
   frontend. The two must agree, or the server rejects passwords the form allows.
+- Passwords may not contain whitespace - leading, trailing or internal. The value
+  is refused rather than trimmed, so what was typed is always what would be
+  stored. `PASSWORD_NO_SPACES_PATTERN` must match the frontend's copy exactly.
+- A new password may not be the one already in force. `assertPasswordChanged`
+  compares the candidate against the stored hash with `bcrypt.compare`, so the
+  current password never has to be sent by the client and is never echoed back.
+  It covers reset, the self-service route and the admin's set-password route.
 - Task counts on the admin table are computed in one aggregation rather than
   stored, so `total = todo + ongoing + done` always holds and a task created a
   moment ago is counted a moment later.

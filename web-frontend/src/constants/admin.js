@@ -6,8 +6,17 @@
 /** The page sizes the users table offers. */
 const PAGE_SIZE_OPTIONS = [5, 10, 25];
 
-/** The page size used until the admin picks another. */
-const DEFAULT_PAGE_SIZE = 10;
+/**
+ * DOCU: The page size used until the admin picks another.
+ *
+ * Five, and it has to agree with `DEFAULT_PAGE_SIZE` in the API's
+ * `constants/pagination.js`. The picker renders the `pageSize` the API reported,
+ * so if the two defaults disagreed the control would read "5" while the table held
+ * ten rows - and the first page an admin sees would silently change shape between
+ * deployments. One number, stated once per side, both equal to the first entry in
+ * `PAGE_SIZE_OPTIONS`.
+ */
+const DEFAULT_PAGE_SIZE = 5;
 
 /**
  * DOCU: The columns the users table can be sorted by, mapped to the field the

@@ -120,7 +120,7 @@ export const usersTable = async ({ admin, plain }) => {
     check('the table returns rows', Array.isArray(users?.rows), true);
     check('the table reports its total', typeof users?.total, 'number');
     check('the table reports a page count', typeof users?.pageCount, 'number');
-    check('the table defaults to 10 per page', users?.pageSize, 10);
+    check('the table defaults to 5 per page', users?.pageSize, 5);
     check('the table starts on page 1', users?.page, 1);
     check(
         'the default sort is newest first',
@@ -423,6 +423,50 @@ export const management = async ({ admin, plain }) => {
         { password: 'abc' },
         400,
         { jar: admin.jar }
+    );
+
+    /* Whitespace is refused, never trimmed: a silently trimmed password would
+     * store one secret while the admin believed they had set another. */
+    for (const [label, password] of [
+        ['a leading space', ' brandnew123'],
+        ['a trailing space', 'brandnew123 '],
+        ['an internal space', 'brand new123'],
+    ]) {
+        await checkStatus(
+            `setting a password with ${label} -> 400`,
+            'PUT',
+            `/api/admin/users/${plain.id}/password`,
+            { password },
+            400,
+            { jar: admin.jar }
+        );
+    }
+
+    /* The password in force is refused: this is the rule an admin cannot check
+     * themselves, since they never see the account's current password. It is
+     * compared against the stored hash, so neither value is sent or echoed. */
+    const unchanged = await checkStatus(
+        'setting the password that is already in force -> 400',
+        'PUT',
+        `/api/admin/users/${plain.id}/password`,
+        { password: newPassword },
+        400,
+        { jar: admin.jar }
+    );
+    check(
+        'the refusal names the field that was not allowed',
+        String(unchanged.data?.message).toLowerCase().includes('different'),
+        true
+    );
+    check('the refusal repeats neither password', JSON.stringify(unchanged.data).includes(newPassword), false);
+
+    await checkStatus(
+        'the password that was already in force still works after the refusal',
+        'POST',
+        '/api/users/sign_in',
+        { email: plain.email, password: newPassword },
+        200,
+        { auth: false }
     );
 
     return { plain };

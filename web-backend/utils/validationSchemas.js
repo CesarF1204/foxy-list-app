@@ -8,6 +8,7 @@ import {
     PASSWORD_MIN_LENGTH,
     NAME_MAX_LENGTH,
     PASSWORD_MAX_LENGTH,
+    PASSWORD_NO_SPACES_PATTERN,
     TITLE_MAX_LENGTH,
     DESCRIPTION_MAX_LENGTH,
 } from '../constants/validation.js';
@@ -37,9 +38,17 @@ const emailField = z
     .regex(EMAIL_PATTERN, 'Enter a valid email address');
 
 /**
- * DOCU: Builds a password field with the length rules.
- * Last Updated Date: October 1, 2026
- * @function passwordField
+ * DOCU: Builds a password field with the length rules and the no-whitespace
+ * rule. Every password a client can set - register, reset, own account and the
+ * admin's set-password - goes through this one builder, so the four screens
+ * cannot drift apart on what counts as an acceptable password.
+ *
+ * The whitespace check is a rejection rather than a trim, and deliberately so:
+ * trimming would store a different secret from the one the user believes they
+ * typed, and "password " vs "password" is exactly the sort of difference that
+ * only shows up as a failed sign-in on another device. Refusing it with a
+ * message keeps what was typed and what was stored identical, always.
+ *
  * @param {string} [label] - The field name, used in the error messages
  * @returns {import('zod').ZodType} The field schema
  * @author Cesar
@@ -49,7 +58,10 @@ const passwordField = (label = 'Password') =>
         .string({ error: `${label} is required` })
         .min(1, `${label} is required`)
         .min(PASSWORD_MIN_LENGTH, `${label} must be at least ${PASSWORD_MIN_LENGTH} characters`)
-        .max(PASSWORD_MAX_LENGTH, `${label} must be under ${PASSWORD_MAX_LENGTH} characters`);
+        .max(PASSWORD_MAX_LENGTH, `${label} must be under ${PASSWORD_MAX_LENGTH} characters`)
+        .refine((value) => !PASSWORD_NO_SPACES_PATTERN.test(value), {
+            message: `${label} cannot contain spaces`,
+        });
 
 /**
  * DOCU: Builds a field that carries a 24 character ObjectId.

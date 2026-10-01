@@ -73,6 +73,23 @@ const run = async () => {
         { auth: false }
     );
 
+    /* Whitespace is refused at registration too, rather than trimmed into a
+     * password nobody typed. */
+    for (const [label, password] of [
+        ['a leading space', ' secret123'],
+        ['a trailing space', 'secret123 '],
+        ['an internal space', 'secret 123'],
+    ]) {
+        await checkStatus(
+            `register with a password carrying ${label} -> 400`,
+            'POST',
+            '/api/users/register',
+            { firstName: 'Ada', lastName: 'L', email: uniqueEmail('spaced'), password },
+            400,
+            { auth: false }
+        );
+    }
+
     await checkStatus(
         'register with digits in a name -> 400',
         'POST',
@@ -263,6 +280,23 @@ export const recovery = async () => {
         { auth: false }
     );
 
+    /* Whitespace is refused rather than trimmed, on the reset path like every
+     * other one: trimming would store a different secret from the one typed. */
+    for (const [label, password] of [
+        ['a leading space', ' newsecret1'],
+        ['a trailing space', 'newsecret1 '],
+        ['an internal space', 'new secret1'],
+    ]) {
+        await checkStatus(
+            `reset with a password carrying ${label} -> 400`,
+            'PUT',
+            '/api/users/reset_password',
+            { email: target, password },
+            400,
+            { auth: false }
+        );
+    }
+
     const reset = await req(
         'PUT',
         '/api/users/reset_password',
@@ -295,6 +329,32 @@ export const recovery = async () => {
         '/api/users/reset_password',
         { email: uniqueEmail('nobody'), password: 'newsecret1' },
         404,
+        { auth: false }
+    );
+
+    /* The password already in force is refused here too. The reset link does not
+     * carry the current password, so this can only be caught server-side, by
+     * comparing against the stored hash. */
+    const reused = await checkStatus(
+        'reset to the password that is already in force -> 400',
+        'PUT',
+        '/api/users/reset_password',
+        { email: target, password: 'newsecret1' },
+        400,
+        { auth: false }
+    );
+    check(
+        'the refusal explains that it must differ',
+        String(reused.data?.message).toLowerCase().includes('different'),
+        true
+    );
+    check('the refusal repeats neither password', JSON.stringify(reused.data).includes('newsecret1'), false);
+    await checkStatus(
+        'the password in force still works after the refusal',
+        'POST',
+        '/api/users/sign_in',
+        { email: target, password: 'newsecret1' },
+        200,
         { auth: false }
     );
 
@@ -449,6 +509,48 @@ const selfService = async () => {
         { password: 'abc' },
         400,
         { jar }
+    );
+
+    /* Whitespace is refused, never trimmed, on the self-service path too. */
+    for (const [label, password] of [
+        ['a leading space', ' newsecret1'],
+        ['a trailing space', 'newsecret1 '],
+        ['an internal space', 'new secret1'],
+    ]) {
+        await checkStatus(
+            `set your own password with ${label} -> 400`,
+            'PUT',
+            '/api/users/password',
+            { password },
+            400,
+            { jar }
+        );
+    }
+
+    /* The password in force is refused. The request carries no current password -
+     * it does not have to, and should not: the server compares against the stored
+     * hash, so the old secret never crosses the wire. */
+    const reused = await checkStatus(
+        'set your own password to the one already in force -> 400',
+        'PUT',
+        '/api/users/password',
+        { password: VALID_PASSWORD },
+        400,
+        { jar }
+    );
+    check(
+        'the refusal explains that it must differ',
+        String(reused.data?.message).toLowerCase().includes('different'),
+        true
+    );
+    check('the refusal repeats neither password', JSON.stringify(reused.data).includes(VALID_PASSWORD), false);
+    await checkStatus(
+        'the password in force still signs in after the refusal',
+        'POST',
+        '/api/users/sign_in',
+        { email: fresh, password: VALID_PASSWORD },
+        200,
+        { auth: false }
     );
 
     const changed = await checkStatus(

@@ -19,6 +19,11 @@ import {
  * about the address. The role and the account status are deliberately not here:
  * each has its own endpoint and its own confirmation, so a rename can never
  * carry a privilege change with it.
+ *
+ * Save is disabled until something actually changes. Entering edit mode seeds the
+ * form with the account's current values, so an untouched form would otherwise
+ * offer to save a rename that renames nothing - a pointless request that still
+ * invalidates the session cache and reports a change that did not happen.
  */
 const UserProfileForm = ({ user, isPending, serverError, onSave, onCancel }) => {
     const formApi = useForm();
@@ -28,7 +33,14 @@ const UserProfileForm = ({ user, isPending, serverError, onSave, onCancel }) => 
         handleSubmit,
         reset,
         setError,
-        formState: { errors },
+        /* `isDirty` is react-hook-form's own answer to "does this differ from the
+         * values the form was seeded with". Reading it rather than comparing the
+         * three fields here means the Save button cannot disagree with what the
+         * inputs hold: it is false on entry, true after an edit, and false again
+         * when a value is typed back to where it started - which a hand-rolled
+         * "was it touched" flag gets wrong, since it cannot tell a reverted value
+         * from an untouched one. */
+        formState: { errors, isDirty },
     } = formApi;
 
     /* Re-seed the form whenever a different user is opened or the saved row comes
@@ -126,7 +138,7 @@ const UserProfileForm = ({ user, isPending, serverError, onSave, onCancel }) => 
                 <button type="button" onClick={onCancel} disabled={isPending} className="btn btn-neutral">
                     Cancel
                 </button>
-                <button type="submit" disabled={isPending} className="btn btn-primary">
+                <button type="submit" disabled={isPending || !isDirty} className="btn btn-primary">
                     {isPending ? "Saving..." : "Save changes"}
                 </button>
             </div>

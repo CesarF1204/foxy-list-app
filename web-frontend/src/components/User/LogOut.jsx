@@ -38,7 +38,14 @@ const LogOut = ({ onDone }) => {
                 type="button"
                 onClick={() => mutation.mutate()}
                 disabled={mutation.isPending}
-                className="block w-full px-4 py-2 text-left text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+                /* `cursor-pointer` because this is a menu entry, not one of the
+                 * `.btn` buttons that carry it - it is a full-width row of text on
+                 * a red hover, and without it the pointer stays an I-beam over
+                 * something that is entirely clickable. `disabled:cursor-not-allowed`
+                 * is the same pairing the pager and the kebab trigger use, so a
+                 * button that is mid-request stops inviting the click. The hover
+                 * fill and the dimmed pending state are unchanged. */
+                className="block w-full cursor-pointer px-4 py-2 text-left text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
                 {mutation.isPending ? "Signing out..." : "Sign out"}
             </button>

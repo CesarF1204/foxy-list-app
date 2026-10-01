@@ -16,6 +16,19 @@ const NAME_MAX_LENGTH = 60;
 /** Maximum password length. */
 const PASSWORD_MAX_LENGTH = 128;
 
+/**
+ * DOCU: Any whitespace anywhere in a password - leading, trailing or internal.
+ *
+ * A password is never trimmed or rewritten: the value the user typed is the value
+ * that would be stored, and " my password" is a different secret from "my
+ * password". Silent trimming would store one thing while the user believes they
+ * stored another, and a leading or internal space is the kind of thing that
+ * survives unnoticed until a sign-in fails on another device. So the rule is to
+ * refuse the value and say why, in both `constants/validation.js` here and the
+ * frontend's copy of it.
+ */
+const PASSWORD_NO_SPACES_PATTERN = /\s/;
+
 /** Maximum task title length. */
 const TITLE_MAX_LENGTH = 200;
 
@@ -29,6 +42,7 @@ export {
     PASSWORD_MIN_LENGTH,
     NAME_MAX_LENGTH,
     PASSWORD_MAX_LENGTH,
+    PASSWORD_NO_SPACES_PATTERN,
     TITLE_MAX_LENGTH,
     DESCRIPTION_MAX_LENGTH,
 };

@@ -1,6 +1,6 @@
 import * as userModel from '../models/userModel.js';
 import * as taskModel from '../models/taskModel.js';
-import { hashPassword, toPublicUser } from './authService.js';
+import { hashPassword, assertPasswordChanged, toPublicUser } from './authService.js';
 import { notFound, conflict } from '../helpers/errorHelper.js';
 import { assertNotSelfLockOut } from '../middleware/adminMiddleware.js';
 import { escapeRegex, parsePagination } from '../helpers/queryHelper.js';
@@ -287,6 +287,12 @@ const updateUserStatus = async (actor, userId, data) => {
 const updateUserPassword = async (actor, userId, data) => {
     const target = await resolveTarget(actor, userId);
 
+    /* An admin does not know the account's current password, so the client
+     * cannot have made this comparison - it is the server that has to, and
+     * `assertPasswordChanged` is the same guard the self-service path uses. */
+    const account = await userModel.findForLogin(target.email);
+
+    await assertPasswordChanged(account, data.password);
     await userModel.updatePassword(target._id, await hashPassword(data.password));
 
     return PASSWORD_UPDATED_MESSAGE;

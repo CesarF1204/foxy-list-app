@@ -7,6 +7,7 @@ import { ROLE_META, ACCOUNT_STATUS_META, isAdmin } from "../../constants/roles";
 import { TOAST_TYPES } from "../../constants/toast";
 import { RoleBadge, StatusBadge } from "./Badges";
 import UserProfileForm from "./UserProfileForm";
+import DeleteUserWarning from "./DeleteUserWarning";
 import { UserConfirmDialog, RoleDialog, PasswordDialog } from "./UserDialogs";
 
 /** DOCU: One labelled row of the read-only detail list. */
@@ -78,6 +79,21 @@ const TaskCounts = ({ counts }) => (
 const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [dialog, setDialog] = useState(null);
+    /**
+     * DOCU: A refusal the API made about a value typed into a dialog, held here
+     * so it can be shown beside that dialog's field. It lives in the drawer
+     * because the drawer owns which dialog is open, and a dialog that closed and
+     * reopened must not still be carrying the last message - so it is cleared
+     * whenever the drawer opens one, in `openDialog` below, rather than being
+     * reset inside the dialog itself.
+     */
+    const [dialogError, setDialogError] = useState("");
+
+    /** DOCU: Opens a dialog, clearing any message the previous one left behind. */
+    const openDialog = (name) => {
+        setDialogError("");
+        setDialog(name);
+    };
 
     if (!user) return null;
 
@@ -111,15 +127,28 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
      * dialog on success. The message names the account from the row the admin
      * was looking at, never from anything the request carried, so a message can
      * never claim a change that did not happen.
+     *
+     * `onError` is for the one caller that can do better than a toast: the
+     * password dialog has a field to put the reason beside, and a password the
+     * API refused - the one already in force, say - is a fact about a specific
+     * input rather than something to announce to the room. Handed the error, it
+     * shows it inline and stays open; handed nothing, the refusal is a toast like
+     * every other one.
+     *
+     * @param {() => Promise<*>} work - The request to make
+     * @param {object} successToast - The toast to raise on success
+     * @param {(error: Error) => boolean} [onError] - Handles a refusal itself
      * @returns {Promise<boolean>} whether the action succeeded
      */
-    const run = async (work, successToast) => {
+    const run = async (work, successToast, onError) => {
         try {
             await work();
             showToast(successToast);
             setDialog(null);
             return true;
         } catch (error) {
+            if (onError) return onError(error);
+
             showToast({ message: error.message, type: TOAST_TYPES.error });
             return false;
         }
@@ -200,7 +229,7 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
                             <button
                                 type="button"
                                 disabled={isPending}
-                                onClick={() => setDialog("password")}
+                                onClick={() => openDialog("password")}
                                 className="btn btn-neutral"
                             >
                                 Set new password
@@ -241,7 +270,7 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
                             <button
                                 type="button"
                                 disabled={isPending}
-                                onClick={() => setDialog("role")}
+                                onClick={() => openDialog("role")}
                                 className="btn btn-neutral"
                             >
                                 Change role
@@ -252,7 +281,7 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
                             <button
                                 type="button"
                                 disabled={isPending}
-                                onClick={() => setDialog(isBlocked ? "unblock" : "block")}
+                                onClick={() => openDialog(isBlocked ? "unblock" : "block")}
                                 className={`btn ${isBlocked ? "btn-primary" : "btn-neutral"}`}
                             >
                                 {isBlocked ? "Unblock user" : "Block user"}
@@ -263,7 +292,7 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
                             <button
                                 type="button"
                                 disabled={isPending}
-                                onClick={() => setDialog("delete")}
+                                onClick={() => openDialog("delete")}
                                 className="btn btn-danger"
                             >
                                 Delete user
@@ -307,11 +336,21 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
                 <PasswordDialog
                     user={user}
                     isPending={isPending}
+                    /* The API's own refusal - a password that is already the
+                     * account's, say - shown beside the field, the way
+                     * `UserProfileForm` shows a rejected email beside its input.
+                     * A toast alone would say something is wrong without saying
+                     * which box to fix. */
+                    serverError={dialogError}
                     onClose={() => setDialog(null)}
                     onConfirm={(password) =>
                         run(
                             () => actions.changePassword({ userId: user._id, password }),
                             actions.toasts.passwordChanged(user),
+                            (problem) => {
+                                setDialogError(problem.message);
+                                return false;
+                            },
                         )
                     }
                 />
@@ -372,9 +411,7 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
                         closeOnDelete();
                     }}
                 >
-                    This removes the account and all{" "}
-                    <span className="font-extrabold text-ink">{user.taskCounts?.total ?? 0}</span> of
-                    its tasks. It cannot be undone.
+                    <DeleteUserWarning user={user} />
                 </UserConfirmDialog>
             )}
         </>

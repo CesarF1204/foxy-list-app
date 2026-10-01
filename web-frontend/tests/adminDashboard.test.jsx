@@ -647,6 +647,11 @@ describe("editing a user", () => {
         });
         renderForm({ onSave });
 
+        /* Save is disabled until something changes, so the collision is staged on
+         * a real edit - which is also how it happens in the app. */
+        fireEvent.change(screen.getByLabelText("Email"), {
+            target: { value: "taken@example.com" },
+        });
         fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
         expect(
@@ -658,6 +663,7 @@ describe("editing a user", () => {
         const onSave = vi.fn().mockRejectedValue({ message: "Could not save" });
         renderForm({ onSave });
 
+        fireEvent.change(screen.getByLabelText("First name"), { target: { value: "Augusta" } });
         fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
         expect(await screen.findByText("Could not save")).toBeInTheDocument();
@@ -668,6 +674,70 @@ describe("editing a user", () => {
 
         expect(screen.getByRole("button", { name: "Saving..." })).toBeDisabled();
         expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+    });
+
+    /**
+     * Save is gated on the form being dirty - different from the values it was
+     * seeded with - so it cannot offer to save a rename that renames nothing.
+     */
+    describe("with nothing changed", () => {
+        it("disables Save on entry, so there is no pointless request", () => {
+            renderForm();
+
+            expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
+        });
+
+        it("enables Save once a value is edited", () => {
+            renderForm();
+
+            fireEvent.change(screen.getByLabelText("First name"), { target: { value: "Augusta" } });
+
+            expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled();
+        });
+
+        it("enables Save whichever field was edited, including the email", () => {
+            renderForm();
+
+            fireEvent.change(screen.getByLabelText("Email"), {
+                target: { value: "augusta@example.com" },
+            });
+
+            expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled();
+        });
+
+        it("disables Save again once the value is typed back", () => {
+            renderForm();
+
+            const firstName = screen.getByLabelText("First name");
+            fireEvent.change(firstName, { target: { value: "Augusta" } });
+            expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled();
+
+            fireEvent.change(firstName, { target: { value: "Ada" } });
+
+            expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
+        });
+
+        it("is not fooled by focus alone - only an actual change counts", () => {
+            renderForm();
+
+            screen.getByLabelText("First name").focus();
+            screen.getByLabelText("Last name").focus();
+
+            expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
+        });
+
+        it("compares against the values the form actually loaded", () => {
+            /* A different account's values, to show the comparison is made against
+             * what is in the form rather than anything hardcoded. */
+            renderForm({ user: makeUser({ firstName: "Grace", lastName: "Hopper" }) });
+
+            expect(screen.getByLabelText("First name")).toHaveValue("Grace");
+            expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
+
+            fireEvent.change(screen.getByLabelText("Last name"), { target: { value: "Murray" } });
+
+            expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled();
+        });
     });
 });
 
@@ -708,6 +778,60 @@ describe("the security-sensitive dialogs", () => {
         fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
         expect(onConfirm).not.toHaveBeenCalled();
+    });
+
+    /**
+     * The dialog opens on the account's current role, so confirming straight
+     * away would change nothing. The button says so rather than accepting a
+     * request that renames nobody.
+     */
+    describe("with the role unchanged", () => {
+        it("disables Change role on entry", () => {
+            renderRole();
+
+            expect(screen.getByRole("button", { name: "Change role" })).toBeDisabled();
+        });
+
+        it("enables it once a different role is picked", () => {
+            renderRole();
+
+            fireEvent.click(screen.getByRole("radio", { name: /Admin/ }));
+
+            expect(screen.getByRole("button", { name: "Change role" })).toBeEnabled();
+        });
+
+        it("disables it again if the original role is picked back", () => {
+            renderRole();
+
+            fireEvent.click(screen.getByRole("radio", { name: /Admin/ }));
+            fireEvent.click(screen.getByRole("radio", { name: /^User/ }));
+
+            expect(screen.getByRole("button", { name: "Change role" })).toBeDisabled();
+        });
+
+        it("cannot be fired while disabled", () => {
+            const onConfirm = vi.fn();
+            renderRole({ onConfirm });
+
+            fireEvent.click(screen.getByRole("button", { name: "Change role" }));
+
+            expect(onConfirm).not.toHaveBeenCalled();
+        });
+
+        it("opens on the account's actual role, whichever that is", () => {
+            renderRole({ role: "admin" });
+
+            expect(screen.getByRole("radio", { name: /Admin/ })).toBeChecked();
+            expect(screen.getByRole("button", { name: "Change role" })).toBeDisabled();
+        });
+
+        it("still disables it while a request is in flight", () => {
+            renderRole({ isPending: true });
+
+            fireEvent.click(screen.getByRole("radio", { name: /Admin/ }));
+
+            expect(screen.getByRole("button", { name: "Working..." })).toBeDisabled();
+        });
     });
 
     it("asks for a password twice, and never shows one", () => {
@@ -768,6 +892,94 @@ describe("the security-sensitive dialogs", () => {
         render(<PasswordDialog user={makeUser()} onConfirm={vi.fn()} onClose={() => {}} />);
 
         expect(screen.getByRole("dialog")).toHaveAttribute("aria-modal", "true");
+    });
+
+    /**
+     * Whitespace is refused rather than trimmed. Trimming would store a different
+     * secret from the one on screen, and "password " against "password" is exactly
+     * the difference that only surfaces as a failed sign-in elsewhere.
+     */
+    describe("passwords containing spaces", () => {
+        const fill = (password, confirmation = password) => {
+            fireEvent.change(screen.getByLabelText("New password"), {
+                target: { value: password },
+            });
+            fireEvent.change(screen.getByLabelText("Confirm new password"), {
+                target: { value: confirmation },
+            });
+            fireEvent.click(screen.getByRole("button", { name: "Set password" }));
+        };
+
+        it.each([
+            ["a leading space", " leadingpass"],
+            ["a trailing space", "leadingpass "],
+            ["an internal space", "leading pass"],
+        ])("refuses %s", (_case, value) => {
+            const onConfirm = vi.fn();
+            render(<PasswordDialog user={makeUser()} onConfirm={onConfirm} onClose={() => {}} />);
+
+            fill(value);
+
+            expect(screen.getByText("Password cannot contain spaces")).toBeInTheDocument();
+            expect(onConfirm).not.toHaveBeenCalled();
+        });
+
+        it("leaves the typed value alone rather than rewriting it", () => {
+            const onConfirm = vi.fn();
+            render(<PasswordDialog user={makeUser()} onConfirm={onConfirm} onClose={() => {}} />);
+
+            fill(" leadingpass ");
+
+            /* The value the user typed is still the value in the box - nothing has
+             * silently trimmed it into something else. */
+            expect(screen.getByLabelText("New password")).toHaveValue(" leadingpass ");
+        });
+
+        it("applies the same rule to the confirmation", () => {
+            const onConfirm = vi.fn();
+            render(<PasswordDialog user={makeUser()} onConfirm={onConfirm} onClose={() => {}} />);
+
+            fill("leadingpass", " leadingpass");
+
+            expect(screen.getByText("Password cannot contain spaces")).toBeInTheDocument();
+            expect(onConfirm).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * "Must differ from the current one" is the one rule the dialog cannot check:
+     * nobody typing into it knows the account's existing password. The API
+     * compares against the stored hash, and its refusal arrives here as
+     * `serverError` - shown beside the field rather than as a bare toast.
+     */
+    describe("when the API refuses the password", () => {
+        it("shows the reason beside the field, and announces it", () => {
+            render(
+                <PasswordDialog
+                    user={makeUser()}
+                    serverError="Your new password must be different from your current one."
+                    onConfirm={vi.fn()}
+                    onClose={() => {}}
+                />
+            );
+
+            expect(screen.getByRole("alert")).toHaveTextContent(
+                "Your new password must be different from your current one."
+            );
+        });
+
+        it("never repeats the password itself in the message", () => {
+            render(
+                <PasswordDialog
+                    user={makeUser()}
+                    serverError="Your new password must be different from your current one."
+                    onConfirm={vi.fn()}
+                    onClose={() => {}}
+                />
+            );
+
+            expect(document.body.textContent).not.toMatch(/hunter2/);
+        });
     });
 });
 
@@ -969,8 +1181,10 @@ describe("the users page, driven through the API", () => {
     it("asks the API for the first page, with the filters it was given", async () => {
         await renderPage();
 
+        /* Five rows, not ten: `DEFAULT_PAGE_SIZE` in `constants/admin.js` is what
+         * the table asks for on load, and it matches the API's own default. */
         expect(getAdminUsers).toHaveBeenCalledWith(
-            expect.objectContaining({ page: 1, pageSize: 10, sortBy: "createdAt", sortDir: "desc" }),
+            expect.objectContaining({ page: 1, pageSize: 5, sortBy: "createdAt", sortDir: "desc" }),
             /* The second argument is the cancellation handle React Query supplies. */
             expect.objectContaining({ signal: expect.anything() }),
         );
@@ -1220,6 +1434,43 @@ describe("the users page, driven through the API", () => {
         expect(dialog).toHaveTextContent("Delete Ada Lovelace?");
         expect(dialog).toHaveTextContent("4");
         expect(dialog).toHaveTextContent("cannot be undone");
+    });
+
+    /**
+     * An account with no tasks has nothing to count, and "and all 0 of its tasks"
+     * reads like a bug rather than a warning. The count is left out; the account
+     * itself going, and the fact that it cannot be undone, are not.
+     */
+    describe("deleting an account with no tasks", () => {
+        const renderWithoutTasks = async () => {
+            await renderPage(
+                page({
+                    rows: [makeUser({ taskCounts: { total: 0, todo: 0, ongoing: 0, done: 0 } })],
+                })
+            );
+            chooseAction("Ada Lovelace", "Delete user");
+            return screen.getByRole("dialog");
+        };
+
+        it("says the account is removed permanently, with no task count", async () => {
+            const dialog = await renderWithoutTasks();
+
+            expect(dialog).toHaveTextContent(
+                "This removes the account permanently. It cannot be undone."
+            );
+        });
+
+        it("does not mention a task count at all", async () => {
+            const dialog = await renderWithoutTasks();
+
+            expect(dialog).not.toHaveTextContent("of its tasks");
+        });
+
+        it("still warns that it cannot be undone", async () => {
+            const dialog = await renderWithoutTasks();
+
+            expect(dialog).toHaveTextContent("cannot be undone");
+        });
     });
 
     it("refuses to let an admin delete their own account from the table", async () => {
