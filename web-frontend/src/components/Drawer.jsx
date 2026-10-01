@@ -53,7 +53,7 @@ const Drawer = ({ isOpen, onClose, title, children, footer }) => {
 
     return (
         <div
-            className="fixed inset-0 z-50 flex justify-end bg-ink/50 backdrop-blur-sm"
+            className="fixed inset-0 z-overlay flex justify-end bg-ink/50 backdrop-blur-sm"
             onClick={onClose}
         >
             <div

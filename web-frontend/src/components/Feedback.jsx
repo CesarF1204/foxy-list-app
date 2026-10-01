@@ -41,7 +41,7 @@ const InlineLoader = ({ label = "Loading..." }) => (
  */
 const RefreshOverlay = ({ label = "Updating..." }) => (
     <div
-        className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-2.5 bg-paper/70"
+        className="pointer-events-none absolute inset-0 z-page flex items-center justify-center gap-2.5 bg-paper/70"
         role="status"
         aria-live="polite"
     >

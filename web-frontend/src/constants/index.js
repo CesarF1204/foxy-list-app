@@ -91,4 +91,5 @@ export {
     CONTROL_BUTTON,
     CONTROL_BUTTON_SUBTLE,
     CONTROL_ICON,
+    LAYERS,
 } from "./styles";

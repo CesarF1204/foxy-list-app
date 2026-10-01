@@ -238,7 +238,7 @@ const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
                         role="menu"
                         aria-label={`Actions for ${name}`}
                         style={{ top: position.top, left: position.left, width: MENU_WIDTH }}
-                        className="animate-pop-in fixed z-50 overflow-hidden rounded-2xl border-2 border-ink bg-white shadow-pop"
+                        className="animate-pop-in fixed z-overlay overflow-hidden rounded-2xl border-2 border-ink bg-white shadow-pop"
                     >
                         <ul className="py-1.5">
                             {/* Each entry pairs the app's standard icon for the

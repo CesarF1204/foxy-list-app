@@ -30,13 +30,7 @@ const Toast = ({ message, type = TOAST_DEFAULT_TYPE, onClose }) => {
 
     return (
         <div
-            /**
-             * Anchored to the bottom: a top-right toast sat on top of the navbar controls,
-             * hiding the action it referred to. pointer-events-none keeps it from swallowing
-             * clicks underneath.
-             */
-            className={`animate-pop-in pointer-events-none fixed bottom-4 left-4 right-4 z-50 flex items-start gap-3 rounded-xl border-2 border-ink px-4 py-3 text-sm font-bold text-white shadow-pop sm:left-auto sm:max-w-sm ${TOAST_STYLES[type] ?? TOAST_STYLES[TOAST_DEFAULT_TYPE]}`}
-            /** Errors interrupt, confirmations are announced politely. */
+            className={`animate-pop-in pointer-events-none fixed bottom-4 left-4 right-4 z-toast flex items-start gap-3 rounded-xl border-2 border-ink px-4 py-3 text-sm font-bold text-white shadow-pop sm:left-auto sm:max-w-sm ${TOAST_STYLES[type] ?? TOAST_STYLES[TOAST_DEFAULT_TYPE]}`}
             role={isError ? "alert" : "status"}
             aria-live={isError ? "assertive" : "polite"}
         >

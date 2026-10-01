@@ -64,7 +64,7 @@ const Navbar = ({ user }) => {
 
     return (
         <>
-            <header className="sticky top-0 z-30 border-b-2 border-ink bg-paper/95 backdrop-blur">
+            <header className="sticky top-0 z-header border-b-2 border-ink bg-paper/95 backdrop-blur">
                 <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
 
                 <div className="flex shrink-0 items-center gap-2.5 pr-2">
@@ -122,7 +122,7 @@ const Navbar = ({ user }) => {
                             {isMenuOpen && (
                                 <div
                                     role="menu"
-                                    className="animate-pop-in absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded-2xl border-2 border-ink bg-white shadow-pop"
+                                    className="animate-pop-in absolute right-0 z-header mt-2 w-60 overflow-hidden rounded-2xl border-2 border-ink bg-white shadow-pop"
                                 >
                                     <div className="border-b-2 border-paper-deep px-4 py-3">
                                         <p className="truncate text-sm font-extrabold text-ink">
