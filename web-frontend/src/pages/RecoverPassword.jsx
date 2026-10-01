@@ -8,18 +8,24 @@ import { useAppContext } from "../contexts/useAppContext";
 import { ROUTES } from "../constants/routes";
 import { TOAST_TYPES } from "../constants/toast";
 import { MASCOT_HOLD_MS } from "../constants/mascot";
-import { EMAIL_PATTERN, PASSWORD_MIN_LENGTH, VALIDATION_MESSAGES } from "../constants/validation";
+import {
+    EMAIL_PATTERN,
+    VALIDATION_MESSAGES,
+    newPasswordRules,
+    confirmPasswordRules,
+} from "../constants/validation";
 import AuthLayout from "../components/AuthLayout";
 import FormField from "../components/FormField";
+import PasswordField from "../components/PasswordField";
+import Icon from "../components/icons/Icon";
 import useAuthMascotMood from "../hooks/useAuthMascotMood";
 import { fieldErrorToast } from "../helpers/mascotMood";
 
-/** DOCU: How long the fox celebrates before the page changes. */
 const SUCCESS_HOLD_MS = MASCOT_HOLD_MS.success;
 
 /**
- * DOCU: Password recovery, in two steps on one page, so the address never has to
- * be passed around in the URL or retyped.
+ * Password recovery, in two steps on one page, so the address never has to be passed around in
+ * the URL or retyped.
  */
 const RecoverPassword = () => {
     const navigate = useNavigate();
@@ -37,8 +43,10 @@ const RecoverPassword = () => {
         formState: { errors },
     } = formApi;
 
-    /** Cleared on unmount: the redirect would otherwise move the user again after
-     *  they had already navigated somewhere else. */
+    /**
+     * Cleared on unmount: the redirect would otherwise move the user again after they had
+     * already navigated somewhere else.
+     */
     const redirectRef = useRef(null);
     useEffect(
         () => () => {
@@ -55,8 +63,10 @@ const RecoverPassword = () => {
         }, SUCCESS_HOLD_MS);
     };
 
-    /** Moves to the next step, holding the email across. Read before the step
-     *  changes: after it, the step one fields are unmounted. */
+    /**
+     * Moves to the next step, holding the email across. Read before the step changes: after it,
+     * the step one fields are unmounted.
+     */
     const goToStep = (nextStep) => {
         const email = getValues("email");
         setStep(nextStep);
@@ -70,8 +80,10 @@ const RecoverPassword = () => {
                 message: "Reset link sent. Check your inbox.",
                 type: TOAST_TYPES.success,
             });
-            /** A short pause so the fox gets to be pleased, then on to step two.
-             *  `replace` is not wanted: back should skip this step. */
+            /**
+             * A short pause so the fox gets to be pleased, then on to step two. `replace` is
+             * not wanted: back should skip this step.
+             */
             window.clearTimeout(redirectRef.current);
             redirectRef.current = window.setTimeout(() => goToStep(2), SUCCESS_HOLD_MS);
         },
@@ -94,9 +106,9 @@ const RecoverPassword = () => {
     const activeMutation = step === 1 ? forgotMutation : resetMutation;
 
     /**
-     * DOCU: A submit that never left the browser, since `handleSubmit` stops
-     * before the mutation. The toast makes a rejected form announce itself the
-     * same way a rejected request does, and gives the mascot the same signal.
+     * A submit that never left the browser, since `handleSubmit` stops before the mutation. The
+     * toast makes a rejected form announce itself the same way a rejected request does, and
+     * gives the mascot the same signal.
      */
     const reportFieldErrors = (errors) => {
         const toast = fieldErrorToast(errors);
@@ -105,8 +117,10 @@ const RecoverPassword = () => {
         }
     };
 
-    /** Keyed on the step, so moving between them clears the previous step's
-     *  verdict and form state. */
+    /**
+     * Keyed on the step, so moving between them clears the previous step's verdict and form
+     * state.
+     */
     const mascotReaction = useAuthMascotMood(formApi, activeMutation, step);
 
     return (
@@ -125,15 +139,18 @@ const RecoverPassword = () => {
                     <li key={number} className="flex items-center gap-2">
                         <span
                             aria-current={step === number ? "step" : undefined}
-                            className={`flex h-7 w-7 items-center justify-center rounded-full border-2 border-ink text-xs font-extrabold transition ${
+                            className={`flex h-7 w-7 items-center justify-center rounded-full border-2 border-ink transition ${
                                 step === number
                                     ? "bg-fox-400 text-white"
                                     : step > number
                                       ? "bg-done text-white"
-                                      : "bg-white text-ink-faint"
+                                      : "bg-white text-xs font-extrabold text-ink-faint"
                             }`}
                         >
-                            {step > number ? "✓" : number}
+                            {/* A finished step is the app's tick, not a `✓`
+                                character - the same mark a completed task card
+                                wears, so "done" looks the same everywhere. */}
+                            {step > number ? <Icon name="check" size={14} /> : <span>{number}</span>}
                         </span>
                         {number === 1 && (
                             <span className="h-0.5 w-8 rounded-full bg-ink/20" aria-hidden="true" />
@@ -180,7 +197,7 @@ const RecoverPassword = () => {
                     className="flex w-full flex-col gap-4"
                     onSubmit={handleSubmit(
                         (data) => {
-                            /* The email comes from step one, not from the user again. */
+                            /** The email comes from step one, not from the user again. */
                             const { email } = getValues();
                             resetMutation.mutate({ email, password: data.password });
                         },
@@ -188,34 +205,25 @@ const RecoverPassword = () => {
                     )}
                     noValidate
                 >
-                    <FormField
+                    <PasswordField
                         id="password"
                         label="New password"
-                        type="password"
                         autoComplete="new-password"
                         placeholder="At least 6 characters"
                         error={errors.password}
-                        {...register("password", {
-                            required: VALIDATION_MESSAGES.password.required,
-                            minLength: {
-                                value: PASSWORD_MIN_LENGTH,
-                                message: VALIDATION_MESSAGES.passwordTooShort,
-                            },
-                        })}
+                        {...register("password", newPasswordRules())}
                     />
 
-                    <FormField
+                    <PasswordField
                         id="confirmPassword"
                         label="Confirm new password"
-                        type="password"
                         autoComplete="new-password"
                         placeholder="Re-enter your new password"
                         error={errors.confirmPassword}
-                        {...register("confirmPassword", {
-                            required: VALIDATION_MESSAGES.confirmPassword.required,
-                            validate: (value) =>
-                                value === watch("password") || "Passwords do not match",
-                        })}
+                        {...register(
+                            "confirmPassword",
+                            confirmPasswordRules(() => watch("password")),
+                        )}
                     />
 
                     <button
@@ -229,7 +237,7 @@ const RecoverPassword = () => {
                     <button
                         type="button"
                         onClick={() => {
-                            /* Step two's form state is no longer wanted. */
+                            /** Step two's form state is no longer wanted. */
                             window.clearTimeout(redirectRef.current);
                             reset();
                             setStep(1);

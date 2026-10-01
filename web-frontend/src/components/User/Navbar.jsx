@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { Mascot } from "page-mascot";
 import {
     getFullName,
     getInitials,
-    getAvatarImage,
     getTodayLabel,
 } from "../../helpers/globalHelper";
 import { MASCOT_SHEETS, MASCOT_LABEL } from "../../constants/mascot";
@@ -12,30 +11,38 @@ import { CONTROL_ICON } from "../../constants/styles";
 import { ROUTES } from "../../constants/routes";
 import { isAdmin } from "../../constants/roles";
 import LogOut from "./LogOut";
+import ProfileDrawer from "./ProfileDrawer";
+import Icon from "../icons/Icon";
 
 /**
- * The two states of a navigation entry, so the navbar and the account menu
- * highlight the current section identically: the same solid fox fill the
- * navbar and the rest of the app use for a selected control.
+ * The two states of a navigation entry, so the navbar and the account menu highlight the
+ * current section identically: the same solid fox fill the navbar and the rest of the app use
+ * for a selected control.
  */
 const navClass = (isActive) =>
     isActive ? "bg-fox-400 text-white" : "text-ink hover:bg-fox-50";
 
+/** The Admin Overview entry names the admin *section*, not the single screen at */
+const isAdminSection = (pathname) =>
+    pathname === ROUTES.admin || pathname.startsWith(`${ROUTES.admin}/`);
+
 /**
- * DOCU: The app navbar. Always visible: signed in it carries the brand, mascot,
- * today's date and the account menu; signed out, a sign-in call to action.
+ * The app navbar. Always visible: signed in it carries the brand, mascot, today's date and the
+ * account menu; signed out, a sign-in call to action.
  */
 const Navbar = ({ user }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
     const containerRef = useRef(null);
-    /** The failed URL rather than a flag, so a new user no longer matching it
-     *  retries the image with nothing to reset. */
-    const [failedImage, setFailedImage] = useState("");
-    /* Demo accounts get a picture; everyone else falls back to the initials. */
-    const candidateImage = getAvatarImage(user);
-    const avatarImage = candidateImage && candidateImage !== failedImage ? candidateImage : "";
 
-    /* Close the menu on an outside click or Escape. */
+    /**
+     * The admin entry follows the section, not the path it points at, so both the navbar link
+     * and the account menu's copy read this one flag.
+     */
+    const { pathname } = useLocation();
+    const inAdminSection = isAdminSection(pathname);
+
+    /** Close the menu on an outside click or Escape. */
     useEffect(() => {
         if (!isMenuOpen) return undefined;
 
@@ -56,15 +63,10 @@ const Navbar = ({ user }) => {
     }, [isMenuOpen]);
 
     return (
-        <header className="sticky top-0 z-30 border-b-2 border-ink bg-paper/95 backdrop-blur">
-            {/* `ml-auto` on the account block, rather than `justify-between`
-                across three children, keeps the section links parked beside
-                the brand on the left and pushes the date and avatar to the far
-                right - `justify-between` would float the links into the middle
-                of the bar instead. */}
-            <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
-                {/* The mascot is a button of its own: nesting one inside an anchor
-                    is invalid HTML and confuses screen readers and keyboards. */}
+        <>
+            <header className="sticky top-0 z-header border-b-2 border-ink bg-paper/95 backdrop-blur">
+                <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
+
                 <div className="flex shrink-0 items-center gap-2.5 pr-2">
                     <Mascot {...MASCOT_SHEETS} label={MASCOT_LABEL} size={40} />
                     <Link
@@ -75,15 +77,6 @@ const Navbar = ({ user }) => {
                     </Link>
                 </div>
 
-                {/* Only shown signed in. The Dashboard sits here from the `md`
-                    breakpoint up and drops into the account menu below it,
-                    which is the same split the admin link makes, so a narrow
-                    screen gets its section links from the avatar and a wide
-                    one gets them in the navbar - never both at once, never
-                    neither. Hiding them is a courtesy, not the protection:
-                    /admin is guarded and every endpoint re-checks the role.
-                    `NavLink` marks the current section for sighted users and
-                    for assistive tech. */}
                 {user && (
                     <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
                         <NavLink
@@ -96,15 +89,13 @@ const Navbar = ({ user }) => {
                             Dashboard
                         </NavLink>
                         {isAdmin(user) && (
-                            <NavLink
+                            <Link
                                 to={ROUTES.adminOverview}
-                                end
-                                className={({ isActive }) =>
-                                    `rounded-xl px-3 py-2 text-sm font-bold transition ${navClass(isActive)}`
-                                }
+                                aria-current={inAdminSection ? "page" : undefined}
+                                className={`rounded-xl px-3 py-2 text-sm font-bold transition ${navClass(inAdminSection)}`}
                             >
                                 Admin Overview
-                            </NavLink>
+                            </Link>
                         )}
                     </nav>
                 )}
@@ -123,28 +114,15 @@ const Navbar = ({ user }) => {
                                 aria-haspopup="menu"
                                 aria-expanded={isMenuOpen}
                                 aria-label="Open account menu"
-                                className={`flex h-10 w-10 cursor-pointer shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-ink text-sm font-extrabold text-white transition ${
-                                    /** The image covers the box, so only the
-                                     *  initials fallback needs a coloured fill. */
-                                    avatarImage ? "bg-transparent" : "bg-fox-400 hover:bg-fox-500"
-                                }`}
+                                className="flex h-10 w-10 cursor-pointer shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-ink bg-fox-400 text-sm font-extrabold text-white transition hover:bg-fox-500"
                             >
-                                {avatarImage ? (
-                                    <img
-                                        src={avatarImage}
-                                        alt={getFullName(user)}
-                                        onError={() => setFailedImage(avatarImage)}
-                                        className="h-full w-full object-cover"
-                                    />
-                                ) : (
-                                    getInitials(user)
-                                )}
+                                {getInitials(user)}
                             </button>
 
                             {isMenuOpen && (
                                 <div
                                     role="menu"
-                                    className="animate-pop-in absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded-2xl border-2 border-ink bg-white shadow-pop"
+                                    className="animate-pop-in absolute right-0 z-header mt-2 w-60 overflow-hidden rounded-2xl border-2 border-ink bg-white shadow-pop"
                                 >
                                     <div className="border-b-2 border-paper-deep px-4 py-3">
                                         <p className="truncate text-sm font-extrabold text-ink">
@@ -153,29 +131,22 @@ const Navbar = ({ user }) => {
                                         <p className="truncate text-xs font-semibold text-ink-soft">
                                             {user.email}
                                         </p>
+
+                                        <button
+                                            type="button"
+                                            role="menuitem"
+                                            aria-haspopup="dialog"
+                                            onClick={() => {
+                                                setIsMenuOpen(false);
+                                                setIsProfileOpen(true);
+                                            }}
+                                            className="mt-1 w-fit cursor-pointer truncate text-sm font-extrabold text-fox-600 underline decoration-2 underline-offset-2 transition hover:text-fox-700"
+                                        >
+                                            View Profile
+                                        </button>
                                     </div>
                                     <ul className="py-1.5 text-sm font-bold">
-                                        {/* The Dashboard mirrors the navbar's own
-                                            `md` threshold, so a phone carries it
-                                            here and a desktop shows it in the
-                                            navbar: never both at once, never
-                                            neither. The admin link splits the
-                                            same way, and is offered only to an
-                                            admin. Hiding them is a courtesy, not
-                                            the protection: the board and /admin
-                                            are both guarded and every endpoint
-                                            re-checks the role.
 
-                                            Both are `NavLink`s, not plain
-                                            anchors, so the section a phone is
-                                            actually on is filled in the same
-                                            fox the navbar uses. The active
-                                            colour comes from `navClass` alone -
-                                            `text-ink` is deliberately left out
-                                            of the base, since two same-layer
-                                            text utilities would be resolved by
-                                            stylesheet order rather than by the
-                                            order they are written here. */}
                                         <li className="md:hidden">
                                             <NavLink
                                                 to={ROUTES.board}
@@ -190,19 +161,20 @@ const Navbar = ({ user }) => {
                                         </li>
                                         {isAdmin(user) && (
                                             <li className="md:hidden">
-                                                <NavLink
+                                                <Link
                                                     to={ROUTES.adminOverview}
-                                                    end
                                                     onClick={() => setIsMenuOpen(false)}
-                                                    className={({ isActive }) =>
-                                                        `block w-full px-4 py-2 text-left transition ${navClass(isActive)}`
+                                                    aria-current={
+                                                        inAdminSection ? "page" : undefined
                                                     }
+                                                    className={`block w-full px-4 py-2 text-left transition ${navClass(inAdminSection)}`}
                                                 >
                                                     Admin Overview
-                                                </NavLink>
+                                                </Link>
                                             </li>
                                         )}
-                                        <li aria-hidden="true" className="my-1.5 border-t-2 border-paper-deep" />
+
+                                        <li aria-hidden="true" className="my-1.5 border-t-2 border-paper-deep md:hidden" />
                                         <LogOut onDone={() => setIsMenuOpen(false)} />
                                     </ul>
                                 </div>
@@ -211,19 +183,18 @@ const Navbar = ({ user }) => {
                     </div>
                 ) : (
                     <Link to={ROUTES.login} className={`${CONTROL_ICON} ml-auto text-ink!`} aria-label="Sign in">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path
-                                d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"
-                                stroke="currentColor"
-                                strokeWidth="2.2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        </svg>
+                        <Icon name="signIn" size={18} />
                     </Link>
                 )}
-            </div>
-        </header>
+                </div>
+            </header>
+
+            <ProfileDrawer
+                user={user}
+                isOpen={isProfileOpen}
+                onClose={() => setIsProfileOpen(false)}
+            />
+        </>
     );
 };
 

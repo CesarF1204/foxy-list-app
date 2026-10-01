@@ -1,6 +1,6 @@
 import Modal from "../Modal";
 
-/** DOCU: Confirmation dialog shown before removing a task. */
+/** Confirmation dialog shown before removing a task. */
 const DeleteTask = ({ task, onConfirm, onClose }) => (
     <Modal
         isOpen

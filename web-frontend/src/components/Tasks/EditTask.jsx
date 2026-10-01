@@ -1,16 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * DOCU: The inline editor for a task. Saves on the Save button or Cmd/Ctrl
- * Enter, cancels on Escape, and refuses to save an empty title.
- * @param {Function} props.onSave - called with (title, description)
+ * The inline editor for a task. Saves on the Save button or Cmd/Ctrl Enter, cancels on Escape,
+ * and refuses to save an empty title.
  */
 const EditTask = ({ task, onSave, onCancel }) => {
     const [title, setTitle] = useState(task.title);
     const [description, setDescription] = useState(task.description ?? "");
     const titleRef = useRef(null);
 
-    /* Put the caret in the title as soon as the editor opens. */
+    /** Put the caret in the title as soon as the editor opens. */
     useEffect(() => {
         titleRef.current?.focus();
         titleRef.current?.select();
@@ -36,7 +35,6 @@ const EditTask = ({ task, onSave, onCancel }) => {
     return (
         <div
             className="animate-pop-in flex flex-col gap-2"
-            /* Escape and the save shortcut work from either field. */
             onKeyDown={handleKeyDown}
         >
             <input

@@ -1,6 +1,3 @@
-/** Every scenario the auth mascot can be in, checked against the real
- *  `resolveAuthMood` and the real sprite cells. Run with: npm run verify:mascot */
-
 import {
     resolveAuthMood,
     fieldErrorToast,
@@ -12,7 +9,7 @@ import {
     TOAST_MOODS,
 } from "../src/constants/mascot.js";
 
-/* The nine cells of the reactions sheet, in reading order: the real list. */
+/** The nine cells of the reactions sheet, in reading order: the real list. */
 const REACTIONS = MASCOT_REACTIONS;
 
 /** The background-position a reaction name resolves to, as the sprite renders it. */

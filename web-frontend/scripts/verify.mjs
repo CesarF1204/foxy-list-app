@@ -1,7 +1,6 @@
 /**
- * A check of the board's ordering arithmetic. The same helpers live in
- * src/hooks/useTasks.js and src/api-client/localApi.js, reproduced here so the
- * drag-and-drop maths can be exercised in Node. Run with: npm run verify
+ * A check of the board's ordering arithmetic. The same helpers live in src/hooks/useTasks.js,
+ * reproduced here so the drag-and-drop maths can be exercised in Node. Run with: npm run verify
  */
 
 const BOARDS = ["todo", "ongoing", "done"];
@@ -28,8 +27,10 @@ const applyMove = (tasks, taskId, newStatus, newIndex) => {
     const moving = tasks.find((task) => task._id === taskId);
     if (!moving) return tasks;
 
-    /** The destination board is rebuilt from scratch. `offBoard` must exclude its
-     *  cards too, or they would end up in the list twice. */
+    /**
+     * The destination board is rebuilt from scratch. `offBoard` must exclude its cards too, or
+     * they would end up in the list twice.
+     */
     const offBoard = tasks.filter(
         (task) => task._id !== taskId && task.status !== newStatus
     );
@@ -41,9 +42,9 @@ const applyMove = (tasks, taskId, newStatus, newIndex) => {
     destination.splice(newIndex, 0, { ...moving, status: newStatus });
 
     /*
-      Assign the destination's positions first, then renumber everything so the
-      gap left behind on the source board closes up.
-    */
+     * Assign the destination's positions first, then renumber everything so the gap left behind
+     * on the source board closes up.
+     */
     const destinationOrder = new Map(destination.map((task, index) => [task._id, index]));
 
     return renumber(offBoard.concat(destination), moving).map((task) =>
@@ -53,7 +54,7 @@ const applyMove = (tasks, taskId, newStatus, newIndex) => {
     );
 };
 
-/** The mock API's own move, so both sides of the round trip can be compared. */
+/** The backend's own move, so both sides of the round trip can be compared. */
 const serverMove = (tasks, userId, { taskId, newStatus, newIndex }) => {
     const previousStatus = tasks.find((t) => t._id === taskId)?.status;
 
@@ -165,7 +166,7 @@ console.log("\nAdding and deleting:");
     assertEqual("a new task appends to the end", boardOf(tasks, "todo"), ["a", "b", "e"]);
     assertDense("after add", tasks);
 
-    /* Removing from the middle must close the gap, not leave a hole. */
+    /** Removing from the middle must close the gap, not leave a hole. */
     tasks = renumber(tasks.filter((t) => t._id !== "a"));
     assertEqual("deleting from the middle closes the gap", boardOf(tasks, "todo"), ["b", "e"]);
     assertDense("after delete", tasks);

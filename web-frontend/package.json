@@ -9,7 +9,6 @@
     "lint": "eslint .",
     "verify": "node scripts/verify.mjs",
     "verify:tasks": "node scripts/tasks-verify.mjs",
-    "verify:mock": "node scripts/mock-verify.mjs",
     "verify:mascot": "node scripts/mascot-verify.mjs",
     "verify:toast": "node scripts/toast-verify.mjs",
     "test": "vitest run",
@@ -26,6 +25,7 @@
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.89.0",
     "react-router-dom": "^7.18.4",
+    "reicon-react": "^1.2.6",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {

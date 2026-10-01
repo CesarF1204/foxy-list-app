@@ -53,6 +53,16 @@
   --shadow-pop-sm: 2px 2px 0 0 #2b2119;
   --shadow-pop-lg: 5px 5px 0 0 #2b2119;
   --shadow-card: 2px 2px 0 0 rgb(43 33 25 / 0.16);
+
+  /*
+    The toast outranks every overlay: the provider mounts it
+    before the app's children, so at an equal z-index the drawer that raised it paints its
+    dimming backdrop straight over the confirmation.
+  */
+  --z-page: 10;
+  --z-header: 30;
+  --z-overlay: 50;
+  --z-toast: 60;
 }
 
 @layer base {
@@ -191,6 +201,63 @@
     color: var(--color-ink-faint);
   }
 
+  /*
+    The dropdown list.
+
+    A `<select>`'s popup is the one surface in this app the page cannot build
+    itself: the browser draws it in a separate window, outside the document, so
+    no layout of ours reaches it. What can be reached is the `option` elements
+    inside it, and that is enough to stop the popup looking like a different
+    application - which is what it looked like before these rules: the operating
+    system's grey rows, its own highlight blue, and its default font, all of
+    which clash with the paper-and-fox palette the rest of the app is built on.
+
+    Three declarations do the work, and all three are honoured by the desktop
+    engines that render the popup (Chrome, Edge, Firefox, Safari):
+
+      - the row's own background and text colour, which is what replaces the
+        grey-and-blue;
+      - `accent-color` on the select, which is what tints the *highlighted* row.
+        That row is drawn by the engine rather than by us, so this is a request
+        rather than a guarantee, and an engine that ignores it keeps its system
+        highlight - the closed control still looks right either way, because the
+        arrow on top of it is ours;
+      - the font, so the rows match the body copy instead of falling back to the
+        platform UI font.
+
+    `padding` on an `option` is honoured inconsistently - Firefox and Chrome take
+    it, Safari largely ignores it - so it is a nicety rather than a guarantee,
+    and the popup is never the only place an option's label appears.
+  */
+  select.field {
+    accent-color: var(--color-fox-400);
+
+    /* A select is a menu, not a text field: the pointer should say so, and the
+       arrow we draw on top of it is not itself clickable. */
+    cursor: pointer;
+  }
+
+  select.field:disabled {
+    cursor: not-allowed;
+  }
+
+  select.field option {
+    background-color: white;
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* The row that is currently chosen. Declared for the engines that let the
+     popup honour a per-row background at all; where it is ignored, the
+     `accent-color` above is what marks the row instead. */
+  select.field option:checked {
+    background-color: var(--color-fox-100);
+    color: var(--color-ink);
+  }
+
   /* Long unbroken words (URLs, tokens) must not blow out a card's width. */
   .break-anywhere {
     overflow-wrap: anywhere;
@@ -254,6 +321,34 @@
   .animate-pop-in {
     animation: pop-in 320ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
   }
+
+  /*
+    The stacking scale, named by what sits there rather than by number. Declared here rather
+    than reached for as a raw `z-[60]` in each component, because Tailwind only emits the classes
+    it can find as literal strings in the source: a value interpolated into a class name -
+    `z-[${LAYERS.toast}]` - is silently dropped from the build, leaving the element with no
+    stacking at all. These are found wherever they are used.
+
+    `z-toast` sits above every overlay on purpose. The provider mounts the toast before the
+    app's children, so at an equal z-index the drawer or dialog that raised it would paint its
+    dimming backdrop over the message confirming the action - and most of those actions happen
+    inside the drawer, so the confirmation would be swallowed every single time.
+  */
+  .z-page {
+    z-index: var(--z-page);
+  }
+
+  .z-header {
+    z-index: var(--z-header);
+  }
+
+  .z-overlay {
+    z-index: var(--z-overlay);
+  }
+
+  .z-toast {
+    z-index: var(--z-toast);
+  }
 }
 
 @keyframes rise {
@@ -289,4 +384,40 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+
+  /*
+    The loading ring is the one thing the blanket rule above must not touch.
+
+    Collapsing its duration turns the spin into a single instant tick, which
+    leaves a fully styled but motionless circle on screen - and a frozen circle
+    beside the words "Loading users..." reads as a stuck control, not as work in
+    progress. A loading indicator is the one place where the movement *is* the
+    message: it is what says "still working" rather than "finished" or "broken".
+
+    So the ring keeps turning. This is a deliberate exception to the preference
+    above, and it is scoped to this element alone - every other animation in the
+    app still respects it. A slowly rotating ring is a small, self-contained
+    indicator that stops the moment the request does, which is a far smaller
+    cost than an admin being unable to tell a live request from a hung one.
+  */
+  .loading-ring {
+    animation: loading-ring-spin 1s linear infinite !important;
+  }
 }
+
+/*
+  The ring's rotation, declared here rather than leaning on Tailwind's built-in
+  `spin` keyframes. The reduced-motion rule above has to name this animation
+  explicitly, and it must keep working if Tailwind's internal keyframe name ever
+  changes. Same 360-degree turn, one second per revolution, linear so it never
+  eases into a visible pause at the top of the circle.
+*/
+@keyframes loading-ring-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+

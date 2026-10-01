@@ -1,13 +1,19 @@
 import { useEffect, useRef } from "react";
 
-/** DOCU: An accessible modal: backdrop dismissal, Escape, scroll locking and
- *  focus moved into the panel on open. */
+import { IconButton } from "./icons";
+
+/**
+ * An accessible modal: backdrop dismissal, Escape, scroll locking and focus moved into the
+ * panel on open.
+ */
 const Modal = ({ isOpen, onClose, title, children, footer }) => {
     const panelRef = useRef(null);
 
-    /** In a ref, so the effect below depends only on isOpen. `onClose` is usually
-     *  an inline arrow with a new identity each render, and re-running would
-     *  refocus the panel and steal focus from whatever the user was typing into. */
+    /**
+     * In a ref, so the effect below depends only on isOpen. `onClose` is usually an inline
+     * arrow with a new identity each render, and re-running would refocus the panel and steal
+     * focus from whatever the user was typing into.
+     */
     const onCloseRef = useRef(onClose);
     useEffect(() => {
         onCloseRef.current = onClose;
@@ -22,7 +28,7 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
 
         document.addEventListener("keydown", onKeyDown);
 
-        /* Prevent the page behind the modal from scrolling. */
+        /** Prevent the page behind the modal from scrolling. */
         const previousOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
 
@@ -42,7 +48,7 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink/50 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-overlay flex items-center justify-center overflow-y-auto bg-ink/50 p-4 backdrop-blur-sm"
             onClick={onClose}
         >
             <div
@@ -51,20 +57,20 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
                 aria-modal="true"
                 aria-label={title}
                 tabIndex={-1}
-                /* Clicks inside the panel must not reach the backdrop. */
+                /** Clicks inside the panel must not reach the backdrop. */
                 onClick={(event) => event.stopPropagation()}
                 className="surface animate-pop-in w-full max-w-md p-6 outline-none"
             >
                 <div className="mb-4 flex items-start justify-between gap-4">
                     <h2 className="text-lg font-extrabold text-ink">{title}</h2>
-                    <button
-                        type="button"
+                    {/* The shared icon button, so the close control is the same
+                        size, icon and label in every dialog and drawer. */}
+                    <IconButton
+                        icon="close"
+                        label="Close dialog"
                         onClick={onClose}
-                        aria-label="Close dialog"
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xl leading-none text-ink-faint transition hover:bg-paper hover:text-ink"
-                    >
-                        &times;
-                    </button>
+                        className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-faint transition hover:bg-paper hover:text-ink"
+                    />
                 </div>
 
                 {children}

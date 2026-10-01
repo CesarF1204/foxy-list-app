@@ -1,0 +1,17 @@
+const DEFAULT_PAGE_SIZE = 5;
+
+const MAX_PAGE_SIZE = 100;
+
+const FIRST_PAGE = 1;
+
+const DEFAULT_USER_SORT_FIELD = 'createdAt';
+
+const DEFAULT_USER_SORT_DIRECTION = 'desc';
+
+export {
+    DEFAULT_PAGE_SIZE,
+    MAX_PAGE_SIZE,
+    FIRST_PAGE,
+    DEFAULT_USER_SORT_FIELD,
+    DEFAULT_USER_SORT_DIRECTION,
+};

@@ -1,13 +1,3 @@
-/**
- * Tests for the admin dashboard's components: the route guard, the task chart,
- * the users table and the profile editor.
- *
- * These drive the real components and assert on the DOM - the semantics a screen
- * reader reads and a keyboard user navigates, plus the counts an admin scans for.
- * The API's own rules are covered separately in `adminApi.test.js`; what is
- * checked here is that the screens hold up their end of the contract and never
- * contradict what the API would refuse.
- */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
@@ -23,15 +13,19 @@ import { RoleDialog, PasswordDialog } from "../src/components/Admin/UserDialogs"
 import { AppContextProvider } from "../src/contexts/AppContext";
 import AdminUsers from "../src/pages/AdminUsers";
 
-/* The session query is the guard's only input, so each test decides who is
- * signed in rather than reaching for a real sign-in. */
+/**
+ * The session query is the guard's only input, so each test decides who is signed in rather
+ * than reaching for a real sign-in.
+ */
 const validateToken = vi.fn();
 vi.mock("../src/api-client/auth", () => ({
     validateToken: () => validateToken(),
 }));
 
-/* The admin endpoints are mocked so each test decides what the server does; the
- * rules those endpoints enforce are covered in `adminApi.test.js`. */
+/**
+ * The admin endpoints are stubbed so each test decides what the server answers; the rules those
+ * endpoints enforce are the API's, covered by its own suite.
+ */
 const getAdminUsers = vi.fn();
 const getAdminUser = vi.fn();
 const getAdminStats = vi.fn();
@@ -68,9 +62,11 @@ const makeUser = (overrides = {}) => ({
     ...overrides,
 });
 
-/** A query client with retries turned off and no retry delay. The admin queries
- *  ask for one retry, which with React Query's default back-off would leave a
- *  rejected request pending past a test's timeout. */
+/**
+ * A query client with retries turned off and no retry delay. The admin queries ask for one
+ * retry, which with React Query's default back-off would leave a rejected request pending past
+ * a test's timeout.
+ */
 const makeClient = () =>
     new QueryClient({
         defaultOptions: { queries: { retry: false, retryDelay: 0 } },
@@ -110,7 +106,6 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-
 describe("reaching /admin", () => {
     it("shows the dashboard to an administrator", async () => {
         renderGuard(ADMIN);
@@ -119,7 +114,7 @@ describe("reaching /admin", () => {
     });
 
     it("waits for the session before deciding, so an admin is not bounced", async () => {
-        /* A session that never settles stands in for the token check in flight. */
+        /** A session that never settles stands in for the token check in flight. */
         validateToken.mockReturnValue(new Promise(() => {}));
 
         render(
@@ -244,7 +239,7 @@ describe("the users table", () => {
     it("shows every column the task asked for", () => {
         renderTable();
 
-        /* The sort glyph is decoration, so it is stripped before comparing. */
+        /** The sort glyph is decoration, so it is stripped before comparing. */
         const headers = within(screen.getByRole("table"))
             .getAllByRole("columnheader")
             .map((cell) => cell.textContent.replace(/[▲▼↕]/g, "").trim());
@@ -275,8 +270,10 @@ describe("the users table", () => {
             rows: [makeUser({ taskCounts: { total: 9, todo: 4, ongoing: 3, done: 2 } })],
         });
 
-        /* The per-board pills and the total are all in the single Tasks cell, so
-         * one cell holds the whole breakdown. */
+        /**
+         * The per-board pills and the total are all in the single Tasks cell, so one cell holds
+         * the whole breakdown.
+         */
         const cell = within(screen.getByRole("row", { name: /Ada Lovelace/ })).getAllByRole("cell")[3];
         expect(cell).toHaveTextContent("To Do: 4");
         expect(cell).toHaveTextContent("Ongoing: 3");
@@ -304,7 +301,7 @@ describe("the users table", () => {
             .getAllByRole("cell")
             .map((cell) => cell.textContent.trim());
 
-        /* The Tasks cell reads 0 for every board and for the total, not blanks. */
+        /** The Tasks cell reads 0 for every board and for the total, not blanks. */
         expect(cells).toContain("To Do: 0Ongoing: 0Done: 00");
     });
 
@@ -388,8 +385,10 @@ describe("the users table", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "Actions for Ada Lovelace" }));
 
-        /* The menu lives on the body, not inside the table: an absolutely
-         * positioned dropdown inside `overflow-x-auto` would be cut off. */
+        /**
+         * The menu lives on the body, not inside the table: an absolutely positioned dropdown
+         * inside `overflow-x-auto` would be cut off.
+         */
         const menu = screen.getByRole("menu");
         expect(document.body.contains(menu)).toBe(true);
         expect(screen.getByRole("table").contains(menu)).toBe(false);
@@ -401,9 +400,10 @@ describe("the users table", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "Actions for Ada Lovelace" }));
 
-        /* Measured from the trigger and applied inline; jsdom reports zero-sized
-         * rects, so this checks the coordinates are wired up rather than the exact
-         * pixels. */
+        /**
+         * Measured from the trigger and applied inline; jsdom reports zero-sized rects, so this
+         * checks the coordinates are wired up rather than the exact pixels.
+         */
         const menu = screen.getByRole("menu");
         expect(menu.style.top).not.toBe("");
         expect(menu.style.left).not.toBe("");
@@ -414,9 +414,11 @@ describe("the users table", () => {
         const onDelete = vi.fn();
         renderTable({ onDelete });
 
-        /* The menu is portalled to the body, so it sits outside the trigger's
-         * container. Pressing an entry must reach its own onClick, not be
-         * dismissed as a click elsewhere before that click fires. */
+        /**
+         * The menu is portalled to the body, so it sits outside the trigger's container.
+         * Pressing an entry must reach its own onClick, not be dismissed as a click elsewhere
+         * before that click fires.
+         */
         fireEvent.click(screen.getByRole("button", { name: "Actions for Ada Lovelace" }));
         fireEvent.mouseDown(screen.getByRole("menuitem", { name: "Delete user" }));
         fireEvent.click(screen.getByRole("menuitem", { name: "Delete user" }));
@@ -471,12 +473,101 @@ describe("the users table", () => {
         rows.forEach((row) => expect(row).toHaveClass("hover:bg-row-hover"));
     });
 
-    it("draws the kebab as a circle ringed with a border on hover", () => {
+    /**
+     * The kebab is a circle in every state, not only under the pointer: the ring is drawn at
+     * rest because a touch screen never sends a hover, so a trigger that appears only on hover
+     * is simply absent there. Asserting the shape on the rendered class list is what catches a
+     * regression to a bare icon or a rounded square - the CSS itself is not evaluated here.
+     */
+    it("draws the kebab as a circle that is ringed even at rest", () => {
         renderTable();
 
         const trigger = screen.getByRole("button", { name: "Actions for Ada Lovelace" });
-        expect(trigger).toHaveClass("rounded-full", "hover:border-ink", "cursor-pointer");
+        expect(trigger).toHaveClass("rounded-full", "cursor-pointer");
+
+        /**
+         * A resting ring, plus a full-ink one on hover: two borders, not a border that only
+         * exists in one of them.
+         */
+        expect(trigger).toHaveClass("border-2", "border-ink/15", "hover:border-ink");
+
+        /**
+         * Circular by construction: one fixed dimension, so `rounded-full` resolves to a true
+         * circle rather than a rounded rectangle.
+         */
+        expect(trigger).toHaveClass("h-9", "w-9");
+
+        /**
+         * No lift: the ring is the whole response, so a shadow here would compete with the
+         * row's own hover tint underneath it.
+         */
         expect(trigger.className).not.toMatch(/shadow/);
+    });
+
+    it("keeps the kebab a circle in its active and disabled states too", () => {
+        renderTable();
+
+        const trigger = screen.getByRole("button", { name: "Actions for Ada Lovelace" });
+        expect(trigger).toHaveClass("active:border-ink", "active:bg-fox-100");
+        expect(trigger).toHaveClass("disabled:opacity-50", "disabled:cursor-not-allowed");
+
+        /**
+         * Only colours move between states - the shape never does. Every state variant above
+         * sits on the same always-present `rounded-full`.
+         */
+        const shapeVariants = ["hover:", "active:", "disabled:", "focus-visible:"];
+        shapeVariants.forEach((variant) => {
+            const override = trigger.className
+                .split(" ")
+                .filter((name) => name.startsWith(variant));
+            expect(override.join(" ")).not.toMatch(/rounded-(?!full)/);
+        });
+    });
+
+    it("names the kebab for a screen reader and tells it it opens a menu", () => {
+        renderTable();
+
+        const trigger = screen.getByRole("button", { name: "Actions for Ada Lovelace" });
+        expect(trigger).toHaveAttribute("aria-haspopup", "menu");
+        expect(trigger).toHaveAttribute("title", "Row actions");
+        expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+        /**
+         * The dots are decoration: the button's own label is the name, so the icon is hidden
+         * rather than announced a second time.
+         */
+        const icon = trigger.querySelector("svg");
+        expect(icon).toHaveAttribute("aria-hidden", "true");
+    });
+
+    it("draws the kebab from the shared ReIcon entry, rotated into a vertical kebab", () => {
+        renderTable();
+
+        const icon = screen
+            .getByRole("button", { name: "Actions for Ada Lovelace" })
+            .querySelector("svg");
+
+        /**
+         * ReIcon draws its `More` across, and the shared registry turns it a quarter turn - the
+         * rotation belongs to the icon, not to this table.
+         */
+        expect(icon).toHaveClass("rotate-90");
+        expect(icon).not.toHaveAttribute("width", "0");
+    });
+
+    it("still opens the menu, so the new design costs no behaviour", () => {
+        renderTable();
+
+        const trigger = screen.getByRole("button", { name: "Actions for Ada Lovelace" });
+        fireEvent.click(trigger);
+
+        expect(trigger).toHaveAttribute("aria-expanded", "true");
+        expect(screen.getByRole("menuitem", { name: "View user" })).toBeInTheDocument();
+
+        fireEvent.click(trigger);
+
+        expect(trigger).toHaveAttribute("aria-expanded", "false");
+        expect(screen.queryByRole("menu")).not.toBeInTheDocument();
     });
 
     it("never renders a password, even if one were on the row", () => {
@@ -570,6 +661,13 @@ describe("editing a user", () => {
         });
         renderForm({ onSave });
 
+        /**
+         * Save is disabled until something changes, so the collision is staged on a real edit -
+         * which is also how it happens in the app.
+         */
+        fireEvent.change(screen.getByLabelText("Email"), {
+            target: { value: "taken@example.com" },
+        });
         fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
         expect(
@@ -581,6 +679,7 @@ describe("editing a user", () => {
         const onSave = vi.fn().mockRejectedValue({ message: "Could not save" });
         renderForm({ onSave });
 
+        fireEvent.change(screen.getByLabelText("First name"), { target: { value: "Augusta" } });
         fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
         expect(await screen.findByText("Could not save")).toBeInTheDocument();
@@ -591,6 +690,72 @@ describe("editing a user", () => {
 
         expect(screen.getByRole("button", { name: "Saving..." })).toBeDisabled();
         expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+    });
+
+    /**
+     * Save is gated on the form being dirty - different from the values it was seeded with - so
+     * it cannot offer to save a rename that renames nothing.
+     */
+    describe("with nothing changed", () => {
+        it("disables Save on entry, so there is no pointless request", () => {
+            renderForm();
+
+            expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
+        });
+
+        it("enables Save once a value is edited", () => {
+            renderForm();
+
+            fireEvent.change(screen.getByLabelText("First name"), { target: { value: "Augusta" } });
+
+            expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled();
+        });
+
+        it("enables Save whichever field was edited, including the email", () => {
+            renderForm();
+
+            fireEvent.change(screen.getByLabelText("Email"), {
+                target: { value: "augusta@example.com" },
+            });
+
+            expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled();
+        });
+
+        it("disables Save again once the value is typed back", () => {
+            renderForm();
+
+            const firstName = screen.getByLabelText("First name");
+            fireEvent.change(firstName, { target: { value: "Augusta" } });
+            expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled();
+
+            fireEvent.change(firstName, { target: { value: "Ada" } });
+
+            expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
+        });
+
+        it("is not fooled by focus alone - only an actual change counts", () => {
+            renderForm();
+
+            screen.getByLabelText("First name").focus();
+            screen.getByLabelText("Last name").focus();
+
+            expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
+        });
+
+        it("compares against the values the form actually loaded", () => {
+            /**
+             * A different account's values, to show the comparison is made against what is in
+             * the form rather than anything hardcoded.
+             */
+            renderForm({ user: makeUser({ firstName: "Grace", lastName: "Hopper" }) });
+
+            expect(screen.getByLabelText("First name")).toHaveValue("Grace");
+            expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
+
+            fireEvent.change(screen.getByLabelText("Last name"), { target: { value: "Murray" } });
+
+            expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled();
+        });
     });
 });
 
@@ -631,6 +796,59 @@ describe("the security-sensitive dialogs", () => {
         fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
         expect(onConfirm).not.toHaveBeenCalled();
+    });
+
+    /**
+     * The dialog opens on the account's current role, so confirming straight away would change
+     * nothing. The button says so rather than accepting a request that renames nobody.
+     */
+    describe("with the role unchanged", () => {
+        it("disables Change role on entry", () => {
+            renderRole();
+
+            expect(screen.getByRole("button", { name: "Change role" })).toBeDisabled();
+        });
+
+        it("enables it once a different role is picked", () => {
+            renderRole();
+
+            fireEvent.click(screen.getByRole("radio", { name: /Admin/ }));
+
+            expect(screen.getByRole("button", { name: "Change role" })).toBeEnabled();
+        });
+
+        it("disables it again if the original role is picked back", () => {
+            renderRole();
+
+            fireEvent.click(screen.getByRole("radio", { name: /Admin/ }));
+            fireEvent.click(screen.getByRole("radio", { name: /^User/ }));
+
+            expect(screen.getByRole("button", { name: "Change role" })).toBeDisabled();
+        });
+
+        it("cannot be fired while disabled", () => {
+            const onConfirm = vi.fn();
+            renderRole({ onConfirm });
+
+            fireEvent.click(screen.getByRole("button", { name: "Change role" }));
+
+            expect(onConfirm).not.toHaveBeenCalled();
+        });
+
+        it("opens on the account's actual role, whichever that is", () => {
+            renderRole({ role: "admin" });
+
+            expect(screen.getByRole("radio", { name: /Admin/ })).toBeChecked();
+            expect(screen.getByRole("button", { name: "Change role" })).toBeDisabled();
+        });
+
+        it("still disables it while a request is in flight", () => {
+            renderRole({ isPending: true });
+
+            fireEvent.click(screen.getByRole("radio", { name: /Admin/ }));
+
+            expect(screen.getByRole("button", { name: "Working..." })).toBeDisabled();
+        });
     });
 
     it("asks for a password twice, and never shows one", () => {
@@ -692,6 +910,95 @@ describe("the security-sensitive dialogs", () => {
 
         expect(screen.getByRole("dialog")).toHaveAttribute("aria-modal", "true");
     });
+
+    /**
+     * Whitespace is refused rather than trimmed. Trimming would store a different secret from
+     * the one on screen, and "password " against "password" is exactly the difference that only
+     * surfaces as a failed sign-in elsewhere.
+     */
+    describe("passwords containing spaces", () => {
+        const fill = (password, confirmation = password) => {
+            fireEvent.change(screen.getByLabelText("New password"), {
+                target: { value: password },
+            });
+            fireEvent.change(screen.getByLabelText("Confirm new password"), {
+                target: { value: confirmation },
+            });
+            fireEvent.click(screen.getByRole("button", { name: "Set password" }));
+        };
+
+        it.each([
+            ["a leading space", " leadingpass"],
+            ["a trailing space", "leadingpass "],
+            ["an internal space", "leading pass"],
+        ])("refuses %s", (_case, value) => {
+            const onConfirm = vi.fn();
+            render(<PasswordDialog user={makeUser()} onConfirm={onConfirm} onClose={() => {}} />);
+
+            fill(value);
+
+            expect(screen.getByText("Password cannot contain spaces")).toBeInTheDocument();
+            expect(onConfirm).not.toHaveBeenCalled();
+        });
+
+        it("leaves the typed value alone rather than rewriting it", () => {
+            const onConfirm = vi.fn();
+            render(<PasswordDialog user={makeUser()} onConfirm={onConfirm} onClose={() => {}} />);
+
+            fill(" leadingpass ");
+
+            /**
+             * The value the user typed is still the value in the box - nothing has silently
+             * trimmed it into something else.
+             */
+            expect(screen.getByLabelText("New password")).toHaveValue(" leadingpass ");
+        });
+
+        it("applies the same rule to the confirmation", () => {
+            const onConfirm = vi.fn();
+            render(<PasswordDialog user={makeUser()} onConfirm={onConfirm} onClose={() => {}} />);
+
+            fill("leadingpass", " leadingpass");
+
+            expect(screen.getByText("Password cannot contain spaces")).toBeInTheDocument();
+            expect(onConfirm).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * "Must differ from the current one" is the one rule the dialog cannot check: nobody typing
+     * into it knows the account's existing password. The API compares against the stored hash,
+     * and its refusal arrives here as
+     */
+    describe("when the API refuses the password", () => {
+        it("shows the reason beside the field, and announces it", () => {
+            render(
+                <PasswordDialog
+                    user={makeUser()}
+                    serverError="Your new password must be different from your current one."
+                    onConfirm={vi.fn()}
+                    onClose={() => {}}
+                />
+            );
+
+            expect(screen.getByRole("alert")).toHaveTextContent(
+                "Your new password must be different from your current one."
+            );
+        });
+
+        it("never repeats the password itself in the message", () => {
+            render(
+                <PasswordDialog
+                    user={makeUser()}
+                    serverError="Your new password must be different from your current one."
+                    onConfirm={vi.fn()}
+                    onClose={() => {}}
+                />
+            );
+
+            expect(document.body.textContent).not.toMatch(/hunter2/);
+        });
+    });
 });
 
 describe("the pager under the table", () => {
@@ -707,6 +1014,14 @@ describe("the pager under the table", () => {
                 {...props}
             />
         );
+
+    /** The page buttons currently on screen, in order, as their own text. */
+    const pageNumbers = () =>
+        screen
+            .getAllByRole("button")
+            .map((button) => button.getAttribute("aria-label") ?? "")
+            .filter((label) => label.startsWith("Page "))
+            .map((label) => label.replace("Page ", ""));
 
     it("calls the page-size select what it counts: rows, not pages", () => {
         renderPager();
@@ -742,7 +1057,90 @@ describe("the pager under the table", () => {
         renderPager();
 
         expect(screen.getByRole("button", { name: "Page 2" })).toHaveAttribute("aria-current", "page");
-        expect(screen.getByRole("button", { name: "Page 1" })).not.toHaveAttribute("aria-current");
+        expect(screen.getByRole("button", { name: "Page 3" })).not.toHaveAttribute("aria-current");
+    });
+
+    it("shows three consecutive pages, not the whole list", () => {
+        renderPager({ page: 1, pageCount: 10 });
+
+        expect(pageNumbers()).toEqual(["1", "2", "3"]);
+    });
+
+    it("slides the window forward as the admin pages through", () => {
+        renderPager({ page: 4, pageCount: 10 });
+
+        expect(pageNumbers()).toEqual(["4", "5", "6"]);
+    });
+
+    it("keeps the window on the last three pages once it reaches the end", () => {
+        const { unmount } = renderPager({ page: 8, pageCount: 10 });
+        expect(pageNumbers()).toEqual(["8", "9", "10"]);
+        unmount();
+
+        renderPager({ page: 9, pageCount: 10 });
+        expect(pageNumbers()).toEqual(["8", "9", "10"]);
+    });
+
+    it("never renders a page above the last one", () => {
+        renderPager({ page: 10, pageCount: 10 });
+
+        expect(pageNumbers()).toEqual(["8", "9", "10"]);
+    });
+
+    it("does not pad a short list out to three buttons", () => {
+        const { unmount } = renderPager({ page: 1, pageCount: 1 });
+        expect(pageNumbers()).toEqual(["1"]);
+        unmount();
+
+        renderPager({ page: 2, pageCount: 2 });
+        expect(pageNumbers()).toEqual(["1", "2"]);
+    });
+
+    it("walks the list one page at a time with the arrows", () => {
+        const onPage = vi.fn();
+        renderPager({ page: 4, pageCount: 10, onPage });
+
+        fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+        expect(onPage).toHaveBeenLastCalledWith(5);
+
+        fireEvent.click(screen.getByRole("button", { name: "Previous page" }));
+        expect(onPage).toHaveBeenLastCalledWith(3);
+    });
+
+    it("does not re-request the page already shown", () => {
+        const onPage = vi.fn();
+        renderPager({ page: 2, pageCount: 5, onPage });
+
+        fireEvent.click(screen.getByRole("button", { name: "Page 2" }));
+
+        expect(onPage).not.toHaveBeenCalled();
+    });
+
+    it("offers the pointer on every control, and refuses it while disabled", () => {
+        renderPager({ page: 1, pageCount: 5 });
+
+        const previous = screen.getByRole("button", { name: "Previous page" });
+        expect(previous).toHaveClass("cursor-pointer", "disabled:cursor-not-allowed");
+        expect(previous).toBeDisabled();
+
+        expect(screen.getByRole("button", { name: "Next page" })).toHaveClass("cursor-pointer");
+        expect(screen.getByRole("button", { name: "Page 2" })).toHaveClass("cursor-pointer");
+    });
+
+    it("offers the pointer on the page-size select too", () => {
+        const { unmount } = renderPager();
+
+        const select = screen.getByLabelText("Rows per page");
+        expect(select).toHaveClass("cursor-pointer", "disabled:cursor-not-allowed");
+        expect(select).toBeEnabled();
+        unmount();
+
+        /**
+         * The pager is locked while a page is in flight, and the select must not keep
+         * advertising a click it will refuse.
+         */
+        renderPager({ isDisabled: true });
+        expect(screen.getByLabelText("Rows per page")).toBeDisabled();
     });
 
     it("disables the ends rather than paging past them", () => {
@@ -793,8 +1191,10 @@ describe("the users page, driven through the API", () => {
         return view;
     };
 
-    /** Opens a row's kebab menu and picks one entry, the way an admin would:
-     *  the actions are only in the DOM once the menu is open. */
+    /**
+     * Opens a row's kebab menu and picks one entry, the way an admin would: the actions are
+     * only in the DOM once the menu is open.
+     */
     const chooseAction = (userName, entry) => {
         fireEvent.click(screen.getByRole("button", { name: `Actions for ${userName}` }));
         fireEvent.click(screen.getByRole("menuitem", { name: entry }));
@@ -803,9 +1203,13 @@ describe("the users page, driven through the API", () => {
     it("asks the API for the first page, with the filters it was given", async () => {
         await renderPage();
 
+        /**
+         * Five rows, not ten: `DEFAULT_PAGE_SIZE` in `constants/admin.js` is what the table
+         * asks for on load, and it matches the API's own default.
+         */
         expect(getAdminUsers).toHaveBeenCalledWith(
-            expect.objectContaining({ page: 1, pageSize: 10, sortBy: "createdAt", sortDir: "desc" }),
-            /* The second argument is the cancellation handle React Query supplies. */
+            expect.objectContaining({ page: 1, pageSize: 5, sortBy: "createdAt", sortDir: "desc" }),
+            /** The second argument is the cancellation handle React Query supplies. */
             expect.objectContaining({ signal: expect.anything() }),
         );
     });
@@ -873,8 +1277,10 @@ describe("the users page, driven through the API", () => {
 
         box.focus();
 
-        /* Typed the way a person types it: one character after another, with no
-         * pause in between, which is the case a per-keystroke fetch breaks. */
+        /**
+         * Typed the way a person types it: one character after another, with no pause in
+         * between, which is the case a per-keystroke fetch breaks.
+         */
         for (const letter of "john") {
             fireEvent.change(box, { target: { value: box.value + letter } });
         }
@@ -892,11 +1298,11 @@ describe("the users page, driven through the API", () => {
             fireEvent.change(box, { target: { value: box.value + letter } });
         }
 
-        /* Still typing: the box holds the word, but nothing has been requested. */
+        /** Still typing: the box holds the word, but nothing has been requested. */
         expect(box).toHaveValue("christopher");
         expect(getAdminUsers).not.toHaveBeenCalled();
 
-        /* Typing stops and the debounce elapses. */
+        /** Typing stops and the debounce elapses. */
         await waitFor(() =>
             expect(getAdminUsers).toHaveBeenCalledTimes(1),
             { timeout: 2000 },
@@ -916,7 +1322,7 @@ describe("the users page, driven through the API", () => {
             fireEvent.change(box, { target: { value: box.value + letter } });
         }
 
-        /* The previous rows stay on screen, undimmed, until a request is real. */
+        /** The previous rows stay on screen, undimmed, until a request is real. */
         expect(screen.queryByText("Loading users...")).not.toBeInTheDocument();
         expect(screen.getByText("Ada Lovelace")).toBeInTheDocument();
     });
@@ -935,8 +1341,10 @@ describe("the users page, driven through the API", () => {
 
         fireEvent.change(screen.getByLabelText("Search"), { target: { value: "grace" } });
 
-        /* Page 2 of a three page list has no page 2 in a one page result, so the
-         * new search lands on the first page rather than an empty table. */
+        /**
+         * Page 2 of a three page list has no page 2 in a one page result, so the new search
+         * lands on the first page rather than an empty table.
+         */
         await waitFor(() =>
             expect(getAdminUsers).toHaveBeenCalledWith(
                 expect.objectContaining({ search: "grace", page: 1 }),
@@ -965,9 +1373,11 @@ describe("the users page, driven through the API", () => {
 
         fireEvent.change(box, { target: { value: "" } });
 
-        /* Everyone is back, without the page being reloaded. The unfiltered first
-         * page is already in the cache from the initial load, so clearing is
-         * served from there rather than by another round trip. */
+        /**
+         * Everyone is back, without the page being reloaded. The unfiltered first page is
+         * already in the cache from the initial load, so clearing is served from there rather
+         * than by another round trip.
+         */
         await waitFor(() => expect(screen.getByText("Alan Turing")).toBeInTheDocument(), {
             timeout: 2000,
         });
@@ -978,8 +1388,10 @@ describe("the users page, driven through the API", () => {
         await renderPage();
         const box = screen.getByLabelText("Search");
 
-        /* "g" is answered slowly, "grace" quickly. The slow reply is the one that
-         * must not reach the table. */
+        /**
+         * "g" is answered slowly, "grace" quickly. The slow reply is the one that must not
+         * reach the table.
+         */
         getAdminUsers.mockImplementation(
             (params) =>
                 params.search === "g"
@@ -992,8 +1404,10 @@ describe("the users page, driven through the API", () => {
                     : Promise.resolve({ users: page({ rows: [makeUser({ firstName: "Grace" })] }) }),
         );
 
-        /* "g" is sent and left in flight, then the term moves on to "grace" while
-         * that first request is still on the wire. */
+        /**
+         * "g" is sent and left in flight, then the term moves on to "grace" while that first
+         * request is still on the wire.
+         */
         fireEvent.change(box, { target: { value: "g" } });
         await waitFor(() =>
             expect(getAdminUsers).toHaveBeenCalledWith(
@@ -1008,7 +1422,7 @@ describe("the users page, driven through the API", () => {
             timeout: 2000,
         });
 
-        /* Wait past the slow reply, then confirm it never landed. */
+        /** Wait past the slow reply, then confirm it never landed. */
         await new Promise((resolve) => setTimeout(resolve, 600));
 
         expect(screen.getByText("Grace Lovelace")).toBeInTheDocument();
@@ -1021,14 +1435,14 @@ describe("the users page, driven through the API", () => {
 
         chooseAction("Ada Lovelace", "Block user");
 
-        /* Nothing is sent until the confirmation is accepted. */
+        /** Nothing is sent until the confirmation is accepted. */
         expect(updateAdminUserStatus).not.toHaveBeenCalled();
         expect(screen.getByRole("dialog")).toHaveTextContent("will not be able to sign in");
 
         fireEvent.click(screen.getByRole("button", { name: "Block user" }));
 
         await waitFor(() => expect(updateAdminUserStatus).toHaveBeenCalled());
-        /* The payload is the first argument; the rest is React Query's context. */
+        /** The payload is the first argument; the rest is React Query's context. */
         expect(updateAdminUserStatus.mock.calls[0][0]).toEqual({
             userId: "u1",
             status: "blocked",
@@ -1056,10 +1470,47 @@ describe("the users page, driven through the API", () => {
         expect(dialog).toHaveTextContent("cannot be undone");
     });
 
+    /**
+     * An account with no tasks has nothing to count, and "and all 0 of its tasks" reads like a
+     * bug rather than a warning. The count is left out; the account itself going, and the fact
+     * that it cannot be undone, are not.
+     */
+    describe("deleting an account with no tasks", () => {
+        const renderWithoutTasks = async () => {
+            await renderPage(
+                page({
+                    rows: [makeUser({ taskCounts: { total: 0, todo: 0, ongoing: 0, done: 0 } })],
+                })
+            );
+            chooseAction("Ada Lovelace", "Delete user");
+            return screen.getByRole("dialog");
+        };
+
+        it("says the account is removed permanently, with no task count", async () => {
+            const dialog = await renderWithoutTasks();
+
+            expect(dialog).toHaveTextContent(
+                "This removes the account permanently. It cannot be undone."
+            );
+        });
+
+        it("does not mention a task count at all", async () => {
+            const dialog = await renderWithoutTasks();
+
+            expect(dialog).not.toHaveTextContent("of its tasks");
+        });
+
+        it("still warns that it cannot be undone", async () => {
+            const dialog = await renderWithoutTasks();
+
+            expect(dialog).toHaveTextContent("cannot be undone");
+        });
+    });
+
     it("refuses to let an admin delete their own account from the table", async () => {
         await renderPage(page({ rows: [{ ...makeUser(), _id: ADMIN._id }] }));
 
-        /* The admin's own row still opens, but offers nothing destructive. */
+        /** The admin's own row still opens, but offers nothing destructive. */
         fireEvent.click(
             screen.getByRole("button", { name: `Actions for ${ADMIN.firstName} ${ADMIN.lastName}` })
         );
@@ -1110,11 +1561,8 @@ describe("the users page, driven through the API", () => {
 });
 
 /**
- * The table's own loading state. Every trigger below ends in the same place - a
- * circular indicator inside the table area - because they all surface as one
- * `isFetching` on one query; what each test pins down is that the trigger
- * reaches that state, and that the surrounding layout does not move while it is
- * there.
+ * The table's own loading state. Every trigger below ends in the same place - a circular
+ * indicator inside the table area - because they all surface as one
  */
 describe("the users table while it is fetching", () => {
     const ROWS = [makeUser(), makeUser({ _id: "u2", firstName: "Alan", lastName: "Turing" })];
@@ -1130,8 +1578,10 @@ describe("the users table while it is fetching", () => {
         ...overrides,
     });
 
-    /** A promise plus the handles that settle it, so a test can hold a request
-     *  open and look at the screen while it is genuinely in flight. */
+    /**
+     * A promise plus the handles that settle it, so a test can hold a request open and look at
+     * the screen while it is genuinely in flight.
+     */
     const deferred = () => {
         let resolve;
         let reject;
@@ -1143,8 +1593,10 @@ describe("the users table while it is fetching", () => {
         return { promise, resolve, reject };
     };
 
-    /** Mounts the page, then makes every later request hang until the test
-     *  settles it, so the loading state can be asserted mid-request. */
+    /**
+     * Mounts the page, then makes every later request hang until the test settles it, so the
+     * loading state can be asserted mid-request.
+     */
     const renderPendingPage = async (rows = page()) => {
         validateToken.mockResolvedValue({ user: ADMIN });
         getAdminUsers.mockResolvedValue({ users: rows });
@@ -1175,7 +1627,7 @@ describe("the users table while it is fetching", () => {
 
         fireEvent.change(screen.getByLabelText("Role"), { target: { value: "admin" } });
 
-        /* The words, not just the motion, so the state is readable. */
+        /** The words, not just the motion, so the state is readable. */
         expect(await screen.findByText("Loading users...")).toBeInTheDocument();
         expect(
             screen.getAllByRole("status").some((node) => /Loading users/.test(node.textContent)),
@@ -1205,8 +1657,10 @@ describe("the users table while it is fetching", () => {
         fireEvent.change(screen.getByLabelText("Role"), { target: { value: "admin" } });
         await screen.findByText("Loading users...");
 
-        /* Nothing is removed and nothing is replaced by a full page loader: the
-         * rows are still there to read, and the controls are still usable. */
+        /**
+         * Nothing is removed and nothing is replaced by a full page loader: the rows are still
+         * there to read, and the controls are still usable.
+         */
         expect(screen.getByRole("table")).toBeInTheDocument();
         expect(screen.getByLabelText("Search")).toBeInTheDocument();
         expect(screen.getByLabelText("Role")).toBeEnabled();
@@ -1225,8 +1679,10 @@ describe("the users table while it is fetching", () => {
             fireEvent.change(box, { target: { value: box.value + letter } });
         }
 
-        /* Still inside the debounce: the request has not been made, so there is
-         * nothing to report as loading. */
+        /**
+         * Still inside the debounce: the request has not been made, so there is nothing to
+         * report as loading.
+         */
         expect(screen.queryByText("Loading users...")).not.toBeInTheDocument();
         expect(screen.getByLabelText(TABLE)).toHaveAttribute("aria-busy", "false");
     });
@@ -1239,7 +1695,7 @@ describe("the users table while it is fetching", () => {
             fireEvent.change(box, { target: { value: box.value + letter } });
         }
 
-        /* Only once the pause is over and the request is real. */
+        /** Only once the pause is over and the request is real. */
         expect(
             await screen.findByText("Loading users...", undefined, { timeout: 2000 }),
         ).toBeInTheDocument();
@@ -1268,8 +1724,10 @@ describe("the users table while it is fetching", () => {
         const { promise, resolve } = await renderPendingPage();
 
         fireEvent.change(screen.getByLabelText("Search"), { target: { value: "john" } });
-        /* Wait for the debounce to actually fire, rather than guessing at a
-         * pause long enough to cover it. */
+        /**
+         * Wait for the debounce to actually fire, rather than guessing at a pause long enough
+         * to cover it.
+         */
         await waitFor(() =>
             expect(getAdminUsers).toHaveBeenCalledWith(
                 expect.objectContaining({ search: "john" }),
@@ -1315,8 +1773,10 @@ describe("the users table while it is fetching", () => {
         fireEvent.change(screen.getByLabelText("Role"), { target: { value: "admin" } });
         expect(await screen.findByText("Loading users...")).toBeInTheDocument();
 
-        /* The admin changes their mind before the first request came back. The
-         * state must not flicker off and on as the first one is abandoned. */
+        /**
+         * The admin changes their mind before the first request came back. The state must not
+         * flicker off and on as the first one is abandoned.
+         */
         fireEvent.change(screen.getByLabelText("Account status"), { target: { value: "blocked" } });
 
         expect(screen.getByText("Loading users...")).toBeInTheDocument();
@@ -1329,5 +1789,210 @@ describe("the users table while it is fetching", () => {
         expect(screen.queryByText("Stale Lovelace")).not.toBeInTheDocument();
         expect(screen.queryByText("Loading users...")).not.toBeInTheDocument();
     });
-});
 
+    /**
+     * The remaining triggers, and the states a request can end in that are not the plain
+     * success above. Each has to reach the same loading state and then leave it, whatever the
+     * API answers.
+     */
+
+    it("shows it for a role filter on its own, and for a status filter typed over it", async () => {
+        const { promise, resolve } = await renderPendingPage();
+        const second = deferred();
+
+        fireEvent.change(screen.getByLabelText("Role"), { target: { value: "user" } });
+        expect(await screen.findByText("Loading users...")).toBeInTheDocument();
+
+        /** The second trigger lands while the first is still in flight. */
+        getAdminUsers.mockReturnValue(second.promise);
+        fireEvent.change(screen.getByLabelText("Account status"), { target: { value: "blocked" } });
+        expect(screen.getByText("Loading users...")).toBeInTheDocument();
+
+        second.resolve({ users: page() });
+        resolve({ users: page({ rows: [makeUser({ firstName: "Superseded" })] }) });
+        await promise.catch(() => {});
+
+        await waitFor(() => expect(screen.queryByText("Loading users...")).not.toBeInTheDocument());
+        expect(getAdminUsers).toHaveBeenLastCalledWith(
+            expect.objectContaining({ role: "user", status: "blocked", page: 1 }),
+            expect.objectContaining({ signal: expect.anything() }),
+        );
+    });
+
+    it("shows it for a search combined with a single filter", async () => {
+        const { promise, resolve } = await renderPendingPage();
+
+        fireEvent.change(screen.getByLabelText("Search"), { target: { value: "john" } });
+        await waitFor(() =>
+            expect(getAdminUsers).toHaveBeenCalledWith(
+                expect.objectContaining({ search: "john" }),
+                expect.anything(),
+            ),
+            { timeout: 2000 },
+        );
+
+        fireEvent.change(screen.getByLabelText("Role"), { target: { value: "admin" } });
+
+        expect(await screen.findByText("Loading users...")).toBeInTheDocument();
+        expect(screen.getByLabelText("Search")).toHaveValue("john");
+
+        resolve({ users: page() });
+        await promise;
+
+        expect(getAdminUsers).toHaveBeenLastCalledWith(
+            expect.objectContaining({ search: "john", role: "admin", status: "", page: 1 }),
+            expect.anything(),
+        );
+        await waitFor(() => expect(screen.queryByText("Loading users...")).not.toBeInTheDocument());
+    });
+
+    it("leaves the loading state for an empty result and shows the empty state instead", async () => {
+        const { promise, resolve } = await renderPendingPage();
+
+        fireEvent.change(screen.getByLabelText("Role"), { target: { value: "admin" } });
+        expect(await screen.findByText("Loading users...")).toBeInTheDocument();
+
+        /**
+         * Nothing matched: the request succeeded, so the spinner goes and the table is replaced
+         * by the empty state, not left spinning forever.
+         */
+        resolve({ users: page({ rows: [], total: 0, pageCount: 0 }) });
+        await promise;
+
+        expect(await screen.findByText("No users match")).toBeInTheDocument();
+        expect(screen.queryByText("Loading users...")).not.toBeInTheDocument();
+        expect(screen.getByLabelText(TABLE)).toHaveAttribute("aria-busy", "false");
+    });
+
+    it("keeps it up for a slow answer, and drops it the moment the rows land", async () => {
+        await renderPendingPage();
+        getAdminUsers.mockImplementation(
+            () =>
+                new Promise((answer) =>
+                    setTimeout(
+                        () => answer({ users: page({ rows: [makeUser({ firstName: "Slow" })] }) }),
+                        800,
+                    ),
+                ),
+        );
+
+        fireEvent.change(screen.getByLabelText("Role"), { target: { value: "admin" } });
+        expect(await screen.findByText("Loading users...")).toBeInTheDocument();
+
+        /**
+         * Half way through the slow reply it is still genuinely loading, so the indicator must
+         * still be there - not dropped by a rerender.
+         */
+        await new Promise((pass) => setTimeout(pass, 400));
+        expect(screen.getByText("Loading users...")).toBeInTheDocument();
+
+        expect(await screen.findByText("Slow Lovelace", undefined, { timeout: 2000 })).toBeInTheDocument();
+        expect(screen.queryByText("Loading users...")).not.toBeInTheDocument();
+    });
+
+    it("locks the pager while a page is in flight, so a second click cannot race it", async () => {
+        const { promise, resolve } = await renderPendingPage(page({ total: 30, pageCount: 3 }));
+
+        fireEvent.click(screen.getByRole("button", { name: "Page 2" }));
+        expect(await screen.findByText("Loading users...")).toBeInTheDocument();
+
+        /**
+         * The pager stays on screen, but refuses a second change while the first is unanswered.
+         * The filters stay usable throughout.
+         */
+        expect(screen.getByRole("button", { name: "Page 3" })).toBeDisabled();
+        expect(screen.getByLabelText("Rows per page")).toBeDisabled();
+        expect(screen.getByLabelText("Role")).toBeEnabled();
+
+        resolve({ users: page({ page: 2, total: 30, pageCount: 3 }) });
+        await promise;
+
+        await waitFor(() => expect(screen.getByRole("button", { name: "Page 3" })).toBeEnabled());
+        expect(screen.queryByText("Loading users...")).not.toBeInTheDocument();
+    });
+
+    it("does not show it for a change that never reaches the API", async () => {
+        await renderPendingPage();
+        getAdminUsers.mockClear();
+
+        /**
+         * Local UI only: opening a row's menu, then the drawer for that user. Neither is a
+         * request for the table's rows, so the table must not claim to be loading.
+         */
+        fireEvent.click(
+            screen.getByRole("button", { name: `Actions for ${ROWS[0].firstName} ${ROWS[0].lastName}` }),
+        );
+        expect(screen.getByRole("menu")).toBeInTheDocument();
+        expect(screen.queryByText("Loading users...")).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("menuitem", { name: "View user" }));
+        expect(await screen.findByRole("dialog")).toBeInTheDocument();
+        expect(screen.queryByText("Loading users...")).not.toBeInTheDocument();
+        expect(screen.getByLabelText(TABLE)).toHaveAttribute("aria-busy", "false");
+
+        /** Only the single-user read was sent, not another page of the table. */
+        expect(getAdminUsers).not.toHaveBeenCalled();
+    });
+
+    /**
+     * The indicator has to actually move. A visible but motionless circle reads as a
+     * decoration, or worse as a stuck control, so the classes that carry the animation are
+     * pinned here rather than left to a visual check. jsdom applies no CSS, so this asserts the
+     * intent - `animate-spin` is Tailwind's rotating keyframe, verified to compile in the build
+     * output.
+     */
+    it("spins: the indicator carries the animation and a visible ring", async () => {
+        const { promise, resolve } = await renderPendingPage();
+
+        fireEvent.change(screen.getByLabelText("Role"), { target: { value: "admin" } });
+        await screen.findByText("Loading users...");
+
+        const spinner = document.querySelector(".animate-spin");
+        expect(spinner).not.toBeNull();
+
+        /**
+         * A full circle with a border, so the rotation is perceptible, and a heavier top edge
+         * so the direction of travel is readable.
+         */
+        expect(spinner).toHaveClass("rounded-full");
+        expect(spinner).toHaveClass("border-fox-200");
+        expect(spinner).toHaveClass("border-t-fox-500");
+        expect(spinner).toHaveClass("h-5", "w-5");
+
+        /** Decorative: the words beside it carry the meaning for a screen reader. */
+        expect(spinner).toHaveAttribute("aria-hidden", "true");
+
+        resolve({ users: page() });
+        await promise;
+    });
+
+    it("dims the rows while it spins, then restores them", async () => {
+        const { promise, resolve } = await renderPendingPage();
+
+        /**
+         * The rows are not replaced while loading, they are dimmed, so the card never changes
+         * height and the pager below it never moves.
+         */
+        /**
+         * The table sits inside the scroll region, which sits inside the wrapper that carries
+         * the dimming.
+         */
+        const opacityOf = () =>
+            screen.getByRole("table").closest("div").parentElement.className;
+        expect(opacityOf()).toContain("opacity-100");
+
+        fireEvent.change(screen.getByLabelText("Role"), { target: { value: "admin" } });
+        await screen.findByText("Loading users...");
+
+        expect(opacityOf()).toContain("opacity-60");
+        /** The overlay itself is click-through, so the controls stay usable. */
+        expect(document.querySelector(".animate-spin").closest("[role='status']")).toHaveClass(
+            "pointer-events-none",
+        );
+
+        resolve({ users: page() });
+        await promise;
+
+        await waitFor(() => expect(opacityOf()).toContain("opacity-100"));
+    });
+});

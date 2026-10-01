@@ -1,9 +1,9 @@
-/** The ".js" is deliberate: `scripts/toast-verify.mjs` loads this file in plain
- *  Node, which does not resolve extensionless specifiers the way Vite does. */
 import { BOARD_LABELS, DEFAULT_BOARD } from "../constants/boards.js";
 import { TOAST_TITLE_LIMIT, TOAST_TYPES } from "../constants/toast.js";
 
-/** DOCU: Collapses whitespace and clips an over-long title. Returns null if there is nothing to show. */
+/**
+ * Collapses whitespace and clips an over-long title. Returns null if there is nothing to show.
+ */
 const shortTitle = (title) => {
     const clean = (title ?? "").trim().replace(/\s+/g, " ");
 
@@ -15,11 +15,10 @@ const shortTitle = (title) => {
 };
 
 /**
- * DOCU: The SUCCESS toast for a task that changed board. Kept away from React so
- * the mutation layer and the verify script share one wording. Returns null when
- * the move did not change board: a reorder is already visible, and an unknown
- * destination is rejected rather than read as "moved to undefined".
- * @returns {object|null} a toast for `showToast`, or null if there is nothing to say
+ * The SUCCESS toast for a task that changed board. Kept away from React so the mutation layer
+ * and the verify script share one wording. Returns null when the move did not change board: a
+ * reorder is already visible, and an unknown destination is rejected rather than read as "moved
+ * to undefined".
  */
 const statusMoveToast = ({ title, from, to }) => {
     const label = BOARD_LABELS[to];
@@ -38,10 +37,8 @@ const statusMoveToast = ({ title, from, to }) => {
 export { statusMoveToast, taskActionToast, shortTitle, BOARD_LABELS, TOAST_TITLE_LIMIT };
 
 /**
- * DOCU: The SUCCESS toast for a create, edit or delete. Same shape and title
- * clipping as `statusMoveToast`, so the wording cannot drift between the three.
- * @param {"created"|"updated"|"deleted"} action - what happened to the task
- * @returns {object} a toast for `showToast`
+ * The SUCCESS toast for a create, edit or delete. Same shape and title clipping as
+ * `statusMoveToast`, so the wording cannot drift between the three.
  */
 const taskActionToast = (action, title) => {
     const verbs = {

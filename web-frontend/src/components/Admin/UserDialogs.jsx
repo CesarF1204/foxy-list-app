@@ -2,31 +2,24 @@ import { useState } from "react";
 
 import Modal from "../Modal";
 import { USER_ROLES, ROLE_META } from "../../constants/roles";
-import { PASSWORD_MIN_LENGTH, VALIDATION_MESSAGES } from "../../constants/validation";
-import FormField from "../FormField";
+import {
+    PASSWORD_MIN_LENGTH,
+    hasPasswordSpaces,
+    VALIDATION_MESSAGES,
+} from "../../constants/validation";
+import PasswordField from "../PasswordField";
 import { getFullName } from "../../helpers/globalHelper";
 
 /**
- * DOCU: The dialogs the user drawer raises, kept apart from the drawer itself so
- * each file stays readable. Every one of them confirms something destructive or
- * security-sensitive: a block, an unblock, a delete, a role change and a
- * password reset. None of them decides whether the change is allowed - each posts
- * to its own endpoint, and the API validates the role, the status and the
- * password again before anything is written.
- *
- * The password dialog is the reason this file is worth reading on its own: the
- * value is typed, sent once and never read back, the inputs are cleared the
- * moment the API confirms, and no password is ever displayed or transmitted.
+ * The shared confirmation shell. Destructive actions use the danger button, and the confirm
+ * button is disabled while the request is in flight, so a slow mutation cannot be fired twice.
  */
-
-/** DOCU: The shared confirmation shell. Destructive actions use the danger
- *  button, and the confirm button is disabled while the request is in flight, so
- *  a slow mutation cannot be fired twice. */
 export const UserConfirmDialog = ({
     title,
     confirmLabel,
     variant = "primary",
     isPending,
+    isDisabled = false,
     onConfirm,
     onClose,
     children,
@@ -43,7 +36,7 @@ export const UserConfirmDialog = ({
                 <button
                     type="button"
                     onClick={onConfirm}
-                    disabled={isPending}
+                    disabled={isPending || isDisabled}
                     className={`btn ${variant === "danger" ? "btn-danger" : "btn-primary"}`}
                 >
                     {isPending ? "Working..." : confirmLabel}
@@ -56,18 +49,22 @@ export const UserConfirmDialog = ({
 );
 
 /**
- * DOCU: Changes a user's role. The options come from `USER_ROLES`, the same list
- * the API validates against, so a role the app does not support is never offered
- * here and would be rejected there.
+ * Changes a user's role. The options come from `USER_ROLES`, the same list the API validates
+ * against, so a role the app does not support is never offered here and would be rejected
+ * there.
  */
 export const RoleDialog = ({ user, role, isPending, onConfirm, onClose }) => {
     const [choice, setChoice] = useState(role);
+
+    /** Nothing to confirm while the chosen role is the one already in force. */
+    const isUnchanged = choice === role;
 
     return (
         <UserConfirmDialog
             title={`Make ${getFullName(user)} ${ROLE_META[choice]?.label.toLowerCase()}?`}
             confirmLabel="Change role"
             isPending={isPending}
+            isDisabled={isUnchanged}
             onClose={onClose}
             onConfirm={() => onConfirm(choice)}
         >
@@ -102,28 +99,42 @@ export const RoleDialog = ({ user, role, isPending, onConfirm, onClose }) => {
     );
 };
 
-/** DOCU: Sets a new password. The field is a password input, is never pre-filled
- *  with anything, and the API answers with a message rather than the user, so
- *  there is nothing to show afterwards. The inputs are cleared on success, so a
- *  closed dialog never leaves a password in the DOM. */
-export const PasswordDialog = ({ user, isPending, onConfirm, onClose }) => {
+/**
+ * Sets a new password. The field is a password input, is never pre-filled with anything, and
+ * the API answers with a message rather than the user, so there is nothing to show afterwards.
+ * The inputs are cleared on success, so a closed dialog never leaves a password in the DOM.
+ */
+export const PasswordDialog = ({ user, isPending, serverError, onConfirm, onClose }) => {
     const [password, setPassword] = useState("");
     const [confirmation, setConfirmation] = useState("");
     const [error, setError] = useState("");
     /** Which field the message belongs to, so it lands beside the right input. */
     const [errorField, setErrorField] = useState("password");
 
-    /* The same rules the sign-up form applies, so an admin cannot set a password
-     * the app would then refuse at sign-in. */
+    /**
+     * The same rules the sign-up form applies, so an admin cannot set a password the app would
+     * then refuse at sign-in. The rules themselves live in `newPasswordRules`, but a dialog
+     * cannot use react-hook-form's `register`, so it applies the same conditions in order.
+     */
     const validate = () => {
         if (!password) return [VALIDATION_MESSAGES.password.required, "password"];
         if (password.length < PASSWORD_MIN_LENGTH) {
             return [VALIDATION_MESSAGES.passwordTooShort, "password"];
         }
-        if (password !== confirmation) return ["Passwords do not match", "confirmation"];
+        if (hasPasswordSpaces(password)) {
+            return [VALIDATION_MESSAGES.passwordHasSpaces, "password"];
+        }
+        if (!confirmation) return [VALIDATION_MESSAGES.confirmPassword.required, "confirmation"];
+        if (hasPasswordSpaces(confirmation)) {
+            return [VALIDATION_MESSAGES.passwordHasSpaces, "confirmation"];
+        }
+        if (password !== confirmation) {
+            return [VALIDATION_MESSAGES.passwordsDoNotMatch, "confirmation"];
+        }
         return ["", ""];
     };
 
+    /** Submits the new password. */
     const submit = async () => {
         const [problem, field] = validate();
         setError(problem);
@@ -164,10 +175,9 @@ export const PasswordDialog = ({ user, isPending, onConfirm, onClose }) => {
                     it at their next sign-in. It is never displayed again after this.
                 </p>
 
-                <FormField
+                <PasswordField
                     id="admin-new-password"
                     label="New password"
-                    type="password"
                     autoComplete="new-password"
                     placeholder={`At least ${PASSWORD_MIN_LENGTH} characters`}
                     value={password}
@@ -178,10 +188,9 @@ export const PasswordDialog = ({ user, isPending, onConfirm, onClose }) => {
                     }}
                 />
 
-                <FormField
+                <PasswordField
                     id="admin-confirm-password"
                     label="Confirm new password"
-                    type="password"
                     autoComplete="new-password"
                     placeholder="Re-enter the new password"
                     value={confirmation}
@@ -191,6 +200,17 @@ export const PasswordDialog = ({ user, isPending, onConfirm, onClose }) => {
                         setError("");
                     }}
                 />
+
+                {/* The API's refusal, announced and pinned to the password box -
+                    * the same treatment `UserProfileForm` gives a rejected email.
+                    *  It sits here rather than on a field's `error` so that a
+                    *  message arriving before the first submit is not overwritten by
+                    *  the next keystroke, which clears the local errors. */}
+                {serverError && (
+                    <span className="text-xs font-bold text-red-600" role="alert">
+                        {serverError}
+                    </span>
+                )}
             </div>
         </Modal>
     );

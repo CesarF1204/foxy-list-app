@@ -1,33 +1,74 @@
+import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import connectDB from './config/db.js';
-import authRoutes from './routes/authRoutes.js';
-import cookieParser from "cookie-parser";
+import cookieParser from 'cookie-parser';
+import apiRoutes from './routes/api.routes.js';
+import { errorMiddleware } from './middleware/errorMiddleware.js';
+import { connectDB, disconnectDB } from './config/db.js';
+import { HTTP_STATUS, HTTP_METHODS } from './constants/http.js';
+import { ROUTE_NOT_FOUND_MESSAGE } from './constants/messages.js';
 
-/* Loads .env file contents into process.env by default. */
+/**
+ * Loaded here, after the imports above: every module below reads process.env lazily,
+ * inside a function or a handler, so none of them depends on it being set at load time.
+ */
 dotenv.config();
-
-/* Connect to database */
-connectDB();
 
 const app = express();
 
-// Allowed methods and headers ensure the frontend can perform all necessary API call
-app.use( cors({
-        origin: "http://localhost:5175",
+/** A request with no Origin header (curl, the tests) is not subject to CORS. */
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+app.use(
+    cors({
+        origin(origin, callback) {
+            if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+            return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+        },
+        methods: HTTP_METHODS,
         credentials: true,
-        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-        allowedHeaders: ["Content-Type", "Authorization"],
     })
 );
 
-app.use( express.json() ); // Parse JSON bodies
-app.use(cookieParser()); // Parse cookies from incoming requests (required for reading JWT stored in cookies).
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-// Mount all authentication-related routes under /api.
-// This includes login, register, validate_token, logout, etc.
-app.use( '/api', authRoutes );
+/** A liveness probe for a container or a load balancer. */
+app.get('/', (req, res) => {
+    res.status(HTTP_STATUS.OK).json({ message: 'Foxy List API is running' });
+});
 
-const PORT = process.env.PORT || 3000;
-app.listen( PORT, () => console.log( `Server running on port ${ PORT }` ) );
+apiRoutes(app);
+
+/** Unknown API routes answer with JSON, never the default HTML error page. */
+app.use('/api', (req, res) => {
+    res.status(HTTP_STATUS.NOT_FOUND).json({
+        message: `${ROUTE_NOT_FOUND_MESSAGE}: ${req.method} ${req.originalUrl}`,
+    });
+});
+
+app.use(errorMiddleware);
+
+/** Connect before listening, so the API is never reachable with no database behind it. */
+await connectDB();
+
+const PORT = process.env.PORT || 5000;
+
+const server = app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
+/** Closes the server and the database connection on a clean shutdown. */
+const shutdown = async (signal) => {
+    console.log(`\n${signal} received, shutting down`);
+    server.close();
+    await disconnectDB();
+    process.exit(0);
+};
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));

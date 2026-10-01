@@ -11,7 +11,7 @@ import AddTask from "./AddTask";
 import DeleteTask from "./DeleteTask";
 import { InlineLoader, EmptyState, ErrorState } from "../Feedback";
 
-/** DOCU: Renders the three task boards with drag and drop between them. */
+/** Renders the three task boards with drag and drop between them. */
 const TaskBoard = () => {
     const { data, isError, error, refetch } = useQuery(getTasksQueryOptions());
     const [pendingDelete, setPendingDelete] = useState(null);
@@ -20,8 +20,10 @@ const TaskBoard = () => {
         data?.tasks
     );
 
-    /** One stable handler for every card, so the memo on TaskCard is not broken
-     *  by a fresh closure per row. The card passes its own task in. */
+    /**
+     * One stable handler for every card, so the memo on TaskCard is not broken by a fresh
+     * closure per row. The card passes its own task in.
+     */
     const handleSave = useCallback(
         (task, title, description) => renameTask(task, title, description),
         [renameTask]
@@ -29,8 +31,10 @@ const TaskBoard = () => {
 
     const handleDelete = useCallback((task) => setPendingDelete(task), []);
 
-    /** Stable identity matters: every board slice is memoised on `tasks`, so
-     *  dragging one card must not hand every other card a new array. */
+    /**
+     * Stable identity matters: every board slice is memoised on `tasks`, so dragging one card
+     * must not hand every other card a new array.
+     */
     const boardTasks = useMemo(
         () => Object.fromEntries(boards.map((board) => [board, getBoardTasks(tasks, board)])),
         [boards, tasks]
@@ -38,7 +42,7 @@ const TaskBoard = () => {
 
     const handleDragEnd = useCallback(
         ({ source, destination, draggableId }) => {
-            /* Dropped outside any board, or back exactly where it started. */
+            /** Dropped outside any board, or back exactly where it started. */
             if (!destination) return;
             if (
                 source.droppableId === destination.droppableId &&
@@ -105,22 +109,12 @@ const TaskBoard = () => {
                                             </span>
                                         </header>
 
-                                        {/* The hint talks about a card waiting to be
-                                            grabbed, so it needs a card to talk about. */}
-                                        {!(board === DEFAULT_BOARD && tasksOnBoard.length === 0) && (
-                                            <p className="mb-3 px-1 text-[0.7rem] font-bold text-ink-faint">
-                                                {meta.hint}
-                                            </p>
-                                        )}
-
-                                        {board === DEFAULT_BOARD && tasksOnBoard.length === 0 && (
-                                            <p
-                                                className="mb-3 rounded-2xl border-2 border-dashed border-ink-faint/60 bg-paper/60 px-3 py-4 text-center text-xs font-bold text-ink-soft"
-                                                role="status"
-                                            >
-                                                {meta.emptyHint}
-                                            </p>
-                                        )}
+                                        {/* Always rendered, even on an empty board, so the
+                                            hint line keeps the same height in every
+                                            column and the empty states line up. */}
+                                        <p className="mb-3 px-1 text-[0.7rem] font-bold text-ink-faint">
+                                            {meta.hint}
+                                        </p>
 
                                         <div className="flex flex-1 flex-col gap-2">
                                             {tasksOnBoard.map((task, index) => (
@@ -137,10 +131,13 @@ const TaskBoard = () => {
                                             {/* The gap the card will drop into. */}
                                             {provided.placeholder}
 
-                                            {tasksOnBoard.length === 0 && board !== DEFAULT_BOARD && (
+                                            {/* One shared placeholder, same copy shape in
+                                                every column, so the three empty blocks
+                                                match in height and size. */}
+                                            {tasksOnBoard.length === 0 && (
                                                 <EmptyState
-                                                    title={`Nothing in ${meta.label.toLowerCase()}`}
-                                                    description="Drag a card here when you start or finish it."
+                                                    title={meta.emptyTitle}
+                                                    description={meta.emptyDescription}
                                                 />
                                             )}
 
@@ -168,8 +165,10 @@ const TaskBoard = () => {
     );
 };
 
-/** DOCU: Entry point for the task board. The query lives in a child so the drag
- *  and drop context is not torn down every time the data refreshes. */
+/**
+ * Entry point for the task board. The query lives in a child so the drag and drop context is
+ * not torn down every time the data refreshes.
+ */
 const Task = (props) => (
     <Suspense fallback={<InlineLoader label="Loading your tasks..." />}>
         <TaskBoard {...props} />

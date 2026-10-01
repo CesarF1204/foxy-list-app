@@ -1,7 +1,6 @@
 /**
- * DOCU: The app footer. Rendered by `AppShell`, which also decides which pages
- * get one: only the board does. The year is read at render time so the notice
- * rolls over on its own.
+ * The app footer. Rendered by `AppShell`, which also decides which pages get one: only the
+ * board does. The year is read at render time so the notice rolls over on its own.
  */
 const Footer = () => {
     const year = new Date().getFullYear();

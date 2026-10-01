@@ -3,13 +3,14 @@ import { useState } from "react";
 import Drawer from "../Drawer";
 import { getFullName, getInitials } from "../../helpers/globalHelper";
 import { BOARD_META, BOARDS, BOARD_LABELS } from "../../constants/boards";
-import { ROLE_META, ACCOUNT_STATUS_META } from "../../constants/roles";
+import { ROLE_META, ACCOUNT_STATUS_META, isAdmin } from "../../constants/roles";
 import { TOAST_TYPES } from "../../constants/toast";
 import { RoleBadge, StatusBadge } from "./Badges";
 import UserProfileForm from "./UserProfileForm";
+import DeleteUserWarning from "./DeleteUserWarning";
 import { UserConfirmDialog, RoleDialog, PasswordDialog } from "./UserDialogs";
 
-/** DOCU: One labelled row of the read-only detail list. */
+/** One labelled row of the read-only detail list. */
 const DetailRow = ({ label, children }) => (
     <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-3">
         <dt className="w-32 shrink-0 text-xs font-extrabold tracking-wide text-ink-soft uppercase">
@@ -19,8 +20,10 @@ const DetailRow = ({ label, children }) => (
     </div>
 );
 
-/** DOCU: The per-board task counts, as a labelled list rather than a bare row of
- *  numbers, so "12 To Do" is read aloud instead of "12, 3, 7". */
+/**
+ * The per-board task counts, as a labelled list rather than a bare row of numbers, so "12 To
+ * Do" is read aloud instead of "12, 3, 7".
+ */
 const TaskCounts = ({ counts }) => (
     <ul className="grid grid-cols-4 gap-2">
         <li className="rounded-2xl border-2 border-ink bg-white p-2 text-center">
@@ -49,43 +52,60 @@ const TaskCounts = ({ counts }) => (
 );
 
 /**
- * DOCU: The one place a single user is inspected and changed. It opens as a
- * drawer over the table, so the row it was opened from stays visible behind it.
- *
- * Every sensitive action is confirmed, and each one is a separate request: the
- * profile, the role, the status and the password have four endpoints between
- * them, so no single call here can change two things at once. Role, status and
- * password each validate server-side, so a request crafted outside the UI is
- * refused by the same rules.
- *
- * The actions that would lock an admin out - demoting, blocking or deleting
- * yourself - are hidden on your own row, and the API refuses them too. The UI
- * hiding them is a convenience; the check that holds is the one in the API.
+ * The one place a single user is inspected and changed. It opens as a drawer over the table, so
+ * the row it was opened from stays visible behind it.
  */
 const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [dialog, setDialog] = useState(null);
+    const [dialogError, setDialogError] = useState("");
+
+    /** Opens a dialog, clearing any message the previous one left behind. */
+    const openDialog = (name) => {
+        setDialogError("");
+        setDialog(name);
+    };
 
     if (!user) return null;
 
+    /** The account on screen, and whether it is the caller's own. */
     const isSelf = currentUser?._id === user._id;
     const isBlocked = user.status === "blocked";
+
+    /**
+     * Which controls this drawer may offer, decided from the caller's role rather than from a
+     * prop, so a caller cannot widen them by forgetting to pass something. `isAdmin` is the
+     * same utility the navbar and the route guards use, so there is one definition of an admin
+     * in the app.
+     */
+    const isViewerAdmin = isAdmin(currentUser);
+    const canEditProfile = true;
+    const canSetPassword = true;
+    const canChangeRole = isViewerAdmin;
+    /**
+     * The self-lock-out guard stays on top of the role check: an admin opening their own
+     * account still cannot demote, block or delete themselves. The API refuses it as well, so
+     * the two agree.
+     */
+    const canBlock = isViewerAdmin && !isSelf;
+    const canDelete = isViewerAdmin && !isSelf;
+
     const isPending = actions.isMutating;
 
     /**
-     * DOCU: Runs one action, reports the outcome as a toast, and closes the
-     * dialog on success. The message names the account from the row the admin
-     * was looking at, never from anything the request carried, so a message can
-     * never claim a change that did not happen.
-     * @returns {Promise<boolean>} whether the action succeeded
+     * Runs one action, reports the outcome as a toast, and closes the dialog on success. The
+     * message names the account from the row the admin was looking at, never from anything the
+     * request carried, so a message can never claim a change that did not happen.
      */
-    const run = async (work, successToast) => {
+    const run = async (work, successToast, onError) => {
         try {
             await work();
             showToast(successToast);
             setDialog(null);
             return true;
         } catch (error) {
+            if (onError) return onError(error);
+
             showToast({ message: error.message, type: TOAST_TYPES.error });
             return false;
         }
@@ -114,27 +134,50 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
                     </div>
                 </div>
 
-                {isEditing ? (
-                    <UserProfileForm
-                        user={user}
-                        isPending={isPending}
-                        onCancel={() => setIsEditing(false)}
-                        onSave={(values) =>
-                            run(
-                                () => actions.saveProfile({ userId: user._id, ...values }),
-                                actions.toasts.profileSaved({ ...user, ...values }),
-                            ).then((saved) => saved && setIsEditing(false))
-                        }
-                    />
-                ) : (
-                    <button
-                        type="button"
-                        onClick={() => setIsEditing(true)}
-                        disabled={isPending}
-                        className="btn btn-neutral self-start"
-                    >
-                        Edit name and email
-                    </button>
+                {(canEditProfile || canSetPassword) && (
+                    <div className="flex flex-wrap items-start gap-2">
+                        {canEditProfile &&
+                            (isEditing ? (
+                                <UserProfileForm
+                                    user={user}
+                                    isPending={isPending}
+                                    onCancel={() => setIsEditing(false)}
+                                    onSave={(values) =>
+                                        run(
+                                            () =>
+                                                actions.saveProfile({
+                                                    userId: user._id,
+                                                    ...values,
+                                                }),
+                                            actions.toasts.profileSaved({
+                                                ...user,
+                                                ...values,
+                                            }),
+                                        ).then((saved) => saved && setIsEditing(false))
+                                    }
+                                />
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsEditing(true)}
+                                    disabled={isPending}
+                                    className="btn btn-neutral"
+                                >
+                                    Edit name and email
+                                </button>
+                            ))}
+
+                        {canSetPassword && !isEditing && (
+                            <button
+                                type="button"
+                                disabled={isPending}
+                                onClick={() => openDialog("password")}
+                                className="btn btn-neutral"
+                            >
+                                Set new password
+                            </button>
+                        )}
+                    </div>
                 )}
 
                 <dl className="flex flex-col gap-2.5">
@@ -154,59 +197,60 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
 
                 {/* ------------------------------ actions ------------------------------ */}
 
-                <div className="flex flex-wrap gap-2 border-t-2 border-paper-deep pt-4">
-                    <button
-                        type="button"
-                        disabled={isPending}
-                        onClick={() => setDialog("role")}
-                        className="btn btn-neutral"
-                    >
-                        Change role
-                    </button>
-
-                    <button
-                        type="button"
-                        disabled={isPending}
-                        onClick={() => setDialog("password")}
-                        className="btn btn-neutral"
-                    >
-                        Set new password
-                    </button>
-
-                    {!isSelf && (
-                        <>
+                {(canChangeRole || canBlock || canDelete) && (
+                    <div className="flex flex-wrap gap-2 border-t-2 border-paper-deep pt-4">
+                        {canChangeRole && (
                             <button
                                 type="button"
                                 disabled={isPending}
-                                onClick={() => setDialog(isBlocked ? "unblock" : "block")}
+                                onClick={() => openDialog("role")}
+                                className="btn btn-neutral"
+                            >
+                                Change role
+                            </button>
+                        )}
+
+                        {canBlock && (
+                            <button
+                                type="button"
+                                disabled={isPending}
+                                onClick={() => openDialog(isBlocked ? "unblock" : "block")}
                                 className={`btn ${isBlocked ? "btn-primary" : "btn-neutral"}`}
                             >
                                 {isBlocked ? "Unblock user" : "Block user"}
                             </button>
+                        )}
 
+                        {canDelete && (
                             <button
                                 type="button"
                                 disabled={isPending}
-                                onClick={() => setDialog("delete")}
+                                onClick={() => openDialog("delete")}
                                 className="btn btn-danger"
                             >
                                 Delete user
                             </button>
-                        </>
-                    )}
+                        )}
 
-                    {isSelf && (
-                        <p className="w-full text-xs font-semibold text-ink-faint">
-                            This is your own account, so the actions that would lock you out of
-                            the dashboard are hidden here. The API refuses them as well.
-                        </p>
-                    )}
-                </div>
+                        {/* Said once, and only where it is true: a plain user simply
+                            has no administrative controls and nothing to explain. */}
+                        {isViewerAdmin && isSelf && (
+                            <p className="w-full text-xs font-semibold text-ink-faint">
+                                This is your own admin account, so the actions that would lock you out
+                                of the dashboard are hidden here.
+                            </p>
+                        )}
+                    </div>
+                )}
             </Drawer>
 
             {/* ------------------------------ dialogs ------------------------------ */}
 
-            {dialog === "role" && (
+            {/* The dialogs ride on the same capabilities as the buttons that open them.
+                `dialog` can only be set by a rendered button, so this is belt and
+                braces - but it means no admin dialog exists in the tree for a
+                caller that has no business opening one. */}
+                {canChangeRole && dialog === "role" && (
                 <RoleDialog
                     user={user}
                     role={user.role}
@@ -221,21 +265,26 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
                 />
             )}
 
-            {dialog === "password" && (
+            {canSetPassword && dialog === "password" && (
                 <PasswordDialog
                     user={user}
                     isPending={isPending}
+                    serverError={dialogError}
                     onClose={() => setDialog(null)}
                     onConfirm={(password) =>
                         run(
                             () => actions.changePassword({ userId: user._id, password }),
                             actions.toasts.passwordChanged(user),
+                            (problem) => {
+                                setDialogError(problem.message);
+                                return false;
+                            },
                         )
                     }
                 />
             )}
 
-            {dialog === "block" && (
+            {canBlock && dialog === "block" && (
                 <UserConfirmDialog
                     title={`Block ${getFullName(user)}?`}
                     confirmLabel="Block user"
@@ -255,7 +304,7 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
                 </UserConfirmDialog>
             )}
 
-            {dialog === "unblock" && (
+            {canBlock && dialog === "unblock" && (
                 <UserConfirmDialog
                     title={`Unblock ${getFullName(user)}?`}
                     confirmLabel="Unblock user"
@@ -273,7 +322,7 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
                 </UserConfirmDialog>
             )}
 
-            {dialog === "delete" && (
+            {canDelete && dialog === "delete" && (
                 <UserConfirmDialog
                     title={`Delete ${getFullName(user)}?`}
                     confirmLabel="Delete permanently"
@@ -281,8 +330,6 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
                     isPending={isPending}
                     onClose={() => setDialog(null)}
                     onConfirm={async () => {
-                        /* The account is gone, so there is nothing left to show it
-                         * in: the drawer closes and the table refetches. */
                         await run(
                             () => actions.deleteUser(user._id),
                             actions.toasts.deleted(user),
@@ -290,9 +337,7 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
                         closeOnDelete();
                     }}
                 >
-                    This removes the account and all{" "}
-                    <span className="font-extrabold text-ink">{user.taskCounts?.total ?? 0}</span> of
-                    its tasks. It cannot be undone.
+                    <DeleteUserWarning user={user} />
                 </UserConfirmDialog>
             )}
         </>
@@ -300,4 +345,3 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
 };
 
 export default UserDrawer;
-

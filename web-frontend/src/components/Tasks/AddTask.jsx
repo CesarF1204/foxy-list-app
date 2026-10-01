@@ -1,21 +1,22 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+import Icon from "../icons/Icon";
 
 /**
- * DOCU: The "add a task" composer at the foot of the To Do column. Collapsed to
- * a single button until clicked. Submits on Enter from the title and Cmd/Ctrl
- * Enter from the note, and stays open so several can be added in a row.
- *
- * The fields are mirrored into a ref so a submit can empty them synchronously;
- * state only settles on the next render, and a second submit arriving first
- * would otherwise re-add the same task.
+ * The "add a task" composer at the foot of the To Do column. Collapsed to a single button until
+ * clicked. Submits on Enter from the title and Cmd/Ctrl + Enter from the note, then closes itself
+ * and on a click outside, so the new card is what you are left looking at.
  */
 const AddTask = ({ onAdd }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
 
-    /* Read and cleared synchronously by submit, so it always holds the truth. */
+    /** Read and cleared synchronously by submit, so it always holds the truth. */
     const draft = useRef({ title: "", description: "" });
+
+    /** The composer itself, so an outside click can be told apart from a click inside it. */
+    const composerRef = useRef(null);
 
     const submit = () => {
         const { title: currentTitle, description: currentDescription } = draft.current;
@@ -29,7 +30,8 @@ const AddTask = ({ onAdd }) => {
 
         onAdd({ title: currentTitle, description: currentDescription });
 
-        /* Stays open so several tasks can be added in a row. */
+        /** Close once the task is handed off, so the column shows the new task right away. */
+        setIsOpen(false);
     };
 
     const handleTitleChange = (value) => {
@@ -49,6 +51,26 @@ const AddTask = ({ onAdd }) => {
         setDescription("");
     };
 
+    /** Close on a click outside the composer, or on Escape. */
+    useEffect(() => {
+        if (!isOpen) return undefined;
+
+        const onPointerDown = (event) => {
+            if (!composerRef.current?.contains(event.target)) close();
+        };
+        const onKeyDown = (event) => {
+            if (event.key === "Escape") close();
+        };
+
+        document.addEventListener("mousedown", onPointerDown);
+        document.addEventListener("keydown", onKeyDown);
+
+        return () => {
+            document.removeEventListener("mousedown", onPointerDown);
+            document.removeEventListener("keydown", onKeyDown);
+        };
+    }, [isOpen]);
+
     if (!isOpen) {
         return (
             <button
@@ -56,16 +78,17 @@ const AddTask = ({ onAdd }) => {
                 onClick={() => setIsOpen(true)}
                 className="btn btn-primary mt-auto w-full"
             >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
-                </svg>
+                <Icon name="add" size={18} />
                 Add a task
             </button>
         );
     }
 
     return (
-        <div className="animate-pop-in mt-auto flex flex-col gap-2 rounded-2xl border-2 border-ink bg-white p-3 shadow-card">
+        <div
+            ref={composerRef}
+            className="animate-pop-in mt-auto flex flex-col gap-2 rounded-2xl border-2 border-ink bg-white p-3 shadow-card"
+        >
             <input
                 type="text"
                 autoFocus

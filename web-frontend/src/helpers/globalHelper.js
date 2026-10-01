@@ -1,17 +1,13 @@
-import {
-    DEMO_AVATAR_URL,
-    DEMO_USER_ID_PREFIX,
-    DISPLAY_NAME_FALLBACK,
-    INITIALS_FALLBACK,
-} from "../constants/user";
+import { DISPLAY_NAME_FALLBACK, INITIALS_FALLBACK } from "../constants/user";
 
-/** DOCU: The user's display name. The API stores the names separately, so this
- *  is the only place that knows how to combine them. */
+/**
+ * The user's display name. The API stores the names separately, so this is the only place that
+ * knows how to combine them.
+ */
 const getFullName = (user) =>
     [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() || DISPLAY_NAME_FALLBACK;
 
-/** DOCU: The avatar initials, falling back to the email then "?" so the avatar
- *  is never blank. */
+/** The avatar initials, falling back to the email then "?" so the avatar is never blank. */
 const getInitials = (user) => {
     const fromName = `${user?.firstName?.[0] ?? ""}${user?.lastName?.[0] ?? ""}`;
     if (fromName) return fromName.toUpperCase();
@@ -20,16 +16,7 @@ const getInitials = (user) => {
     return fromEmail ? fromEmail.toUpperCase() : INITIALS_FALLBACK;
 };
 
-/**
- * DOCU: The avatar image for a user, or "" when they have none. Only the
- * throwaway mock account (see `src/mock/sampleData.js`) gets a picture; real
- * accounts keep the initials.
- * @returns {string} an image URL, or "" to fall back to the initials
- */
-const getAvatarImage = (user) =>
-    user?._id?.startsWith(DEMO_USER_ID_PREFIX) ? DEMO_AVATAR_URL : "";
-
-/** DOCU: Today's date, formatted for the navbar. */
+/** Today's date, formatted for the navbar. */
 const getTodayLabel = (date = new Date()) =>
     date.toLocaleDateString(undefined, {
         weekday: "long",
@@ -37,4 +24,4 @@ const getTodayLabel = (date = new Date()) =>
         day: "numeric",
     });
 
-export { getFullName, getInitials, getAvatarImage, getTodayLabel };
+export { getFullName, getInitials, getTodayLabel };
