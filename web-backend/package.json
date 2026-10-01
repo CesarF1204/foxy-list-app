@@ -12,6 +12,7 @@
     "test:tasks": "node tests/api-tasks.test.js",
     "test:admin": "node tests/api-admin.test.js",
     "test:integration": "node tests/integration.test.js",
+    "test:docs": "node tests/api-docs.test.js",
     "seed:admin": "node tests/seed-admin.js"
   },
   "keywords": [],
@@ -25,6 +26,7 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.10.3",
+    "swagger-ui-express": "^5.0.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {

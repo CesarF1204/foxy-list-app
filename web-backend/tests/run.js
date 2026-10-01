@@ -11,6 +11,7 @@ import {
     selfLockOutAndDelete,
 } from './api-admin.test.js';
 import { run as integration, adminContract, errorContract } from './integration.test.js';
+import { documentation } from './api-docs.test.js';
 
 /** Runs every suite against a server that is already listening. */
 const main = async () => {
@@ -54,6 +55,13 @@ const main = async () => {
      * any suite that ran later would be holding a stale one.
      */
     await selfService();
+
+    /**
+     * Last, because it is the only suite that reads nothing and writes nothing: it probes the
+     * running server with no session and no body, so running it after the others means every
+     * refusal it sees is one a cold client would also see.
+     */
+    await documentation();
 
     console.log(
         `\n===== ${state.checks - state.failures}/${state.checks} checks passed, ${state.failures} failed =====`
