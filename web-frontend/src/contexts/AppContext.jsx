@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { validateToken } from "../api-client/auth";
-import { VALIDATE_TOKEN_KEY } from "../constants/queryKeys";
+import { getSessionQueryOptions } from "../queryOptions/sessionQueryOptions";
 import { AppContext } from "./appContextObject";
 import Toast from "../components/Toast";
 
@@ -20,12 +19,7 @@ const AppContextProvider = ({ children }) => {
     const closeToast = useCallback(() => setToast(undefined), []);
 
     /** Check whether the user has a valid session cookie. */
-    const { data, isLoading, isError } = useQuery({
-        queryKey: VALIDATE_TOKEN_KEY,
-        queryFn: validateToken,
-        retry: false,
-        staleTime: Infinity,
-    });
+    const { data, isLoading, isError } = useQuery(getSessionQueryOptions());
 
     /** isError here means there is no usable session. */
     const isAuthenticated = Boolean(data?.user) && !isError;

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { updateOwnProfile, updateOwnPassword } from "../api-client/users";
-import { VALIDATE_TOKEN_KEY } from "../constants/queryKeys";
+import { cacheSessionUser } from "../queryOptions/sessionQueryOptions";
 import { TOAST_TYPES } from "../constants/toast";
 import { getFullName } from "../helpers/globalHelper";
 
@@ -11,11 +11,13 @@ const useOwnAccountActions = () => {
 
     /**
      * The saved row *is* the new session, so the session cache is the place that has to learn
-     * about it.
+     * about it. The response is written straight in rather than refetched: the navbar, the
+     * greeting and this drawer all read the session, and a refetch would only hand back the
+     * row that is already in hand.
      */
     const profileMutation = useMutation({
         mutationFn: updateOwnProfile,
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: VALIDATE_TOKEN_KEY }),
+        onSuccess: (saved) => cacheSessionUser(queryClient, saved?.user),
     });
 
     /**

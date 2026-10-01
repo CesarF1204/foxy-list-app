@@ -9,6 +9,7 @@ import {
     deleteAdminUser,
 } from "../api-client/admin";
 import { ADMIN_STATS_KEY, ADMIN_USERS_KEY, adminUserKey } from "../constants/queryKeys";
+import { cacheSessionUser } from "../queryOptions/sessionQueryOptions";
 import { TOAST_TYPES } from "../constants/toast";
 import { getFullName } from "../helpers/globalHelper";
 
@@ -20,9 +21,12 @@ const adminActionToast = (message) => ({ message, type: TOAST_TYPES.success });
 
 /**
  * Every admin write, in one hook, so no screen can forget to refresh the dashboard. After a
- * confirmed change it does two things: it invalidates the users family and the stats, because a
- * rename, a role change, a block and a delete each change what both admin screens show, and it
- * drops the returned row into the single-user cache so a drawer left open updates immediately.
+ * confirmed change it does three things: it invalidates the users family and the stats, because
+ * a rename, a role change, a block and a delete each change what both admin screens show; it
+ * drops the returned row into the single-user cache so a drawer left open updates immediately;
+ * and it offers the row to the session cache, because an admin editing *their own* account from
+ * the users table is also the person behind the navbar - without that, their own rename would
+ * leave the navbar and the greeting showing the old name until the next reload.
  */
 const useAdminActions = () => {
     const queryClient = useQueryClient();
@@ -44,6 +48,8 @@ const useAdminActions = () => {
     /** The shared post-success routine: cache the row, then refresh the screens. */
     const onUserSaved = ({ user }) => {
         cacheUser(user);
+        /* A no-op unless the saved row is the account behind the session. */
+        cacheSessionUser(queryClient, user);
         refresh();
     };
 
