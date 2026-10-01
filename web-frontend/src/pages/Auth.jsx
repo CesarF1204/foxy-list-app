@@ -17,6 +17,7 @@ import {
 } from "../constants/validation";
 import AuthLayout from "../components/AuthLayout";
 import FormField from "../components/FormField";
+import PasswordField from "../components/PasswordField";
 import useAuthMascotMood from "../hooks/useAuthMascotMood";
 import { fieldErrorToast } from "../helpers/mascotMood";
 
@@ -203,10 +204,9 @@ const Auth = () => {
                     })}
                 />
 
-                <FormField
+                <PasswordField
                     id="password"
                     label="Password"
-                    type="password"
                     autoComplete={isRegisterMode ? "new-password" : "current-password"}
                     placeholder="At least 6 characters"
                     error={errors.password}
@@ -220,10 +220,9 @@ const Auth = () => {
                 />
 
                 {isRegisterMode && (
-                    <FormField
+                    <PasswordField
                         id="confirmPassword"
                         label="Confirm password"
-                        type="password"
                         autoComplete="new-password"
                         placeholder="Re-enter your password"
                         error={errors.confirmPassword}

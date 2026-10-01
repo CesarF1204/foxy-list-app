@@ -12,6 +12,7 @@ import { ROUTES } from "../../constants/routes";
 import { isAdmin } from "../../constants/roles";
 import LogOut from "./LogOut";
 import ProfileDrawer from "./ProfileDrawer";
+import Icon from "../icons/Icon";
 
 /**
  * The two states of a navigation entry, so the navbar and the account menu
@@ -271,15 +272,7 @@ const Navbar = ({ user }) => {
                     </div>
                 ) : (
                     <Link to={ROUTES.login} className={`${CONTROL_ICON} ml-auto text-ink!`} aria-label="Sign in">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path
-                                d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"
-                                stroke="currentColor"
-                                strokeWidth="2.2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        </svg>
+                        <Icon name="signIn" size={18} />
                     </Link>
                 )}
                 </div>

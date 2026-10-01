@@ -3,7 +3,7 @@ import { useState } from "react";
 import Modal from "../Modal";
 import { USER_ROLES, ROLE_META } from "../../constants/roles";
 import { PASSWORD_MIN_LENGTH, VALIDATION_MESSAGES } from "../../constants/validation";
-import FormField from "../FormField";
+import PasswordField from "../PasswordField";
 import { getFullName } from "../../helpers/globalHelper";
 
 /**
@@ -164,10 +164,9 @@ export const PasswordDialog = ({ user, isPending, onConfirm, onClose }) => {
                     it at their next sign-in. It is never displayed again after this.
                 </p>
 
-                <FormField
+                <PasswordField
                     id="admin-new-password"
                     label="New password"
-                    type="password"
                     autoComplete="new-password"
                     placeholder={`At least ${PASSWORD_MIN_LENGTH} characters`}
                     value={password}
@@ -178,10 +177,9 @@ export const PasswordDialog = ({ user, isPending, onConfirm, onClose }) => {
                     }}
                 />
 
-                <FormField
+                <PasswordField
                     id="admin-confirm-password"
                     label="Confirm new password"
-                    type="password"
                     autoComplete="new-password"
                     placeholder="Re-enter the new password"
                     value={confirmation}

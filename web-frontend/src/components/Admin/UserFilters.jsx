@@ -1,24 +1,9 @@
 import { USER_ROLES, ROLE_META, ACCOUNT_STATUSES, ACCOUNT_STATUS_META } from "../../constants/roles";
+import SelectField from "../SelectField";
 
-/** DOCU: The label on a select, and the "no filter" option above it. */
-const SelectLabel = ({ htmlFor, label, children, value, onChange }) => (
-    <div className="flex min-w-40 flex-1 flex-col gap-1.5">
-        <label
-            htmlFor={htmlFor}
-            className="text-xs font-extrabold tracking-wide text-ink-soft uppercase"
-        >
-            {label}
-        </label>
-        <select
-            id={htmlFor}
-            value={value}
-            onChange={(event) => onChange(event.target.value)}
-            className="field py-2! text-sm"
-        >
-            {children}
-        </select>
-    </div>
-);
+/** DOCU: The classes both filters share, so the two are declared once. */
+const FILTER_WRAPPER = "flex min-w-40 flex-1 flex-col gap-1.5";
+const FILTER_SELECT = "py-2! text-sm";
 
 /**
  * DOCU: The search box, the two filters and the clear button above the users
@@ -27,7 +12,9 @@ const SelectLabel = ({ htmlFor, label, children, value, onChange }) => (
  * because each one is a deliberate choice.
  *
  * Every control is a labelled form field, so the whole bar is reachable and
- * announced by keyboard and screen reader without any extra wiring.
+ * announced by keyboard and screen reader without any extra wiring. The two
+ * selects are built on the shared `SelectField`, which is what gives them the
+ * app's ReIcon chevron instead of the operating system's own arrow.
  */
 const UserFilters = ({ search, role, status, onSearch, onRole, onStatus, onClear, resultCount }) => {
     const hasFilters = Boolean(search || role || status);
@@ -52,20 +39,29 @@ const UserFilters = ({ search, role, status, onSearch, onRole, onStatus, onClear
                     />
                 </div>
 
-                <SelectLabel htmlFor="admin-filter-role" label="Role" value={role} onChange={onRole}>
+                <SelectField
+                    id="admin-filter-role"
+                    label="Role"
+                    wrapperClassName={FILTER_WRAPPER}
+                    className={FILTER_SELECT}
+                    value={role}
+                    onChange={(event) => onRole(event.target.value)}
+                >
                     <option value="">All roles</option>
                     {USER_ROLES.map((value_) => (
                         <option key={value_} value={value_}>
                             {ROLE_META[value_].label}
                         </option>
                     ))}
-                </SelectLabel>
+                </SelectField>
 
-                <SelectLabel
-                    htmlFor="admin-filter-status"
+                <SelectField
+                    id="admin-filter-status"
                     label="Account status"
+                    wrapperClassName={FILTER_WRAPPER}
+                    className={FILTER_SELECT}
                     value={status}
-                    onChange={onStatus}
+                    onChange={(event) => onStatus(event.target.value)}
                 >
                     <option value="">Any status</option>
                     {ACCOUNT_STATUSES.map((value_) => (
@@ -73,7 +69,7 @@ const UserFilters = ({ search, role, status, onSearch, onRole, onStatus, onClear
                             {ACCOUNT_STATUS_META[value_].label}
                         </option>
                     ))}
-                </SelectLabel>
+                </SelectField>
 
                 <button
                     type="button"

@@ -5,6 +5,7 @@ import { getInitials, getFullName } from "../../helpers/globalHelper";
 import { USER_COLUMNS, SORT_DIRECTIONS } from "../../constants/admin";
 import { BOARD_META, BOARDS, BOARD_LABELS } from "../../constants/boards";
 import { RoleBadge, StatusBadge } from "./Badges";
+import Icon from "../icons/Icon";
 
 /** DOCU: A date as a short value, with the full timestamp available on hover. */
 const formatDate = (value) => {
@@ -57,8 +58,8 @@ const TaskCountsCell = ({ counts }) => (
 );
 
 /**
- * DOCU: The sort state of a column header, as a drawn icon rather than a
- * character.
+ * DOCU: The sort state of a column header, as one of the app's standard icons
+ * rather than a character.
  *
  * The header is `text-xs` uppercase, and a text glyph at a fraction of that
  * landed at roughly 8px - at that size the arrows are a hairline, and `↕`
@@ -67,59 +68,28 @@ const TaskCountsCell = ({ counts }) => (
  * see. Drawn at a fixed 16px in the same 24-unit grid as every other icon in the
  * app, it stays legible at any table width and any zoom level.
  *
- * Three states, each distinguishable without colour: both chevrons when the
- * column is unsorted, one filled chevron pointing the way the column is sorted
- * when it is the active one. The icon is decorative - `aria-sort` on the
- * `<th>` is what actually carries the order to a screen reader - but the button
- * names the state in its `title` so it is also a pointer user can read.
+ * Three states, each distinguishable without colour: two arrows when the column
+ * is unsorted, one filled chevron pointing the way the column is sorted when it
+ * is the active one. The icon is decorative - `aria-sort` on the `<th>` is what
+ * actually carries the order to a screen reader - but the button names the
+ * state in its `title` so it is also a pointer user can read.
  */
-const SortIndicator = ({ isActive, isAscending }) => {
-    const strokeProps = {
-        stroke: "currentColor",
-        strokeWidth: 2.6,
-        strokeLinecap: "round",
-        strokeLinejoin: "round",
-    };
-
-    if (!isActive) {
-        return (
-            <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-                /* Faint, because an unsorted column is an offer, not the state. */
-                className="shrink-0 text-ink-faint"
-                focusable="false"
-            >
-                <path d="M7 10.5 12 5.5l5 5" {...strokeProps} />
-                <path d="M7 13.5 12 18.5l5-5" {...strokeProps} />
-            </svg>
-        );
-    }
-
-    return (
-        <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden="true"
+const SortIndicator = ({ isActive, isAscending }) =>
+    isActive ? (
+        <Icon
+            name={isAscending ? "sortAscending" : "sortDescending"}
+            size={16}
             /* The active column is the one the eye should land on first. */
-            className="shrink-0 text-fox-500"
-            focusable="false"
-        >
-            <path
-                d={isAscending ? "M6 14.5 12 8.5l6 6" : "M6 9.5 12 15.5l6-6"}
-                fill="currentColor"
-                stroke="currentColor"
-                strokeWidth={1.4}
-                strokeLinejoin="round"
-            />
-        </svg>
+            className="text-fox-500"
+        />
+    ) : (
+        <Icon
+            name="sortNone"
+            size={16}
+            /* Faint, because an unsorted column is an offer, not the state. */
+            className="text-ink-faint"
+        />
     );
-};
 
 /** DOCU: A sortable column header. Only the columns the API can sort are
  *  buttons, and the header cell carries `aria-sort`, so the table's order is
@@ -296,12 +266,10 @@ const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
                     "cursor-pointer border-2 border-transparent hover:border-ink hover:bg-white hover:text-ink"
                 }`}
             >
-                {/* Three stacked dots: the kebab, drawn like the other icons. */}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <circle cx="12" cy="5" r="2" />
-                    <circle cx="12" cy="12" r="2" />
-                    <circle cx="12" cy="19" r="2" />
-                </svg>
+                {/* Three stacked dots: the kebab. The rotation lives in the shared
+                    icon registry, so this control and every other overflow menu
+                    in the app are the same mark. */}
+                <Icon name="rowActions" size={16} />
             </button>
 
             {/* Portalled to the body so the table's scroll container cannot clip
@@ -317,60 +285,29 @@ const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
                         className="animate-pop-in fixed z-50 overflow-hidden rounded-2xl border-2 border-ink bg-white shadow-pop"
                     >
                         <ul className="py-1.5">
+                            {/* Each entry pairs the app's standard icon for the
+                                action with its name in words, so the mark is a
+                                recognition aid and never the only label. */}
                             <MenuItem onClick={() => choose(onView)}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                    <path
-                                        d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinejoin="round"
-                                    />
-                                    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
-                                </svg>
+                                <Icon name="view" size={16} />
                                 View user
                             </MenuItem>
 
                             {canManage && (
                                 <MenuItem onClick={() => choose(onToggleStatus)}>
-                                    <svg
-                                        width="16"
-                                        height="16"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        aria-hidden="true"
-                                    >
-                                        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-                                        {isBlocked && (
-                                            <path
-                                                d="m8 12 3 3 5-6"
-                                                stroke="currentColor"
-                                                strokeWidth="2"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                            />
-                                        )}
-                                    </svg>
+                                    {/* Two icons, not one that changes shape: the
+                                        words beside them already say which way
+                                        this goes, and a mark that swapped with
+                                        the state would be a different glyph each
+                                        time the row was re-rendered. */}
+                                    <Icon name={isBlocked ? "unblock" : "block"} size={16} />
                                     {isBlocked ? "Unblock" : "Block"} user
                                 </MenuItem>
                             )}
 
                             {canManage && (
                                 <MenuItem tone="danger" onClick={() => choose(onDelete)}>
-                                    <svg
-                                        width="16"
-                                        height="16"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        />
-                                    </svg>
+                                    <Icon name="remove" size={16} />
                                     Delete user
                                 </MenuItem>
                             )}

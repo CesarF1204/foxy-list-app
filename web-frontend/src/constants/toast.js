@@ -18,11 +18,14 @@ const TOAST_STYLES = {
     INFO: "bg-ink",
 };
 
-/** DOCU: The glyph shown at the start of each toast. */
+/** DOCU: The icon shown at the start of each toast, named rather than drawn.
+ *  These are keys of the shared `ICONS` registry, not components, so this
+ *  module stays plain data and the toast picks up whatever glyph the app
+ *  standardises on. */
 const TOAST_ICONS = {
-    SUCCESS: "✓",
-    ERROR: "!",
-    INFO: "i",
+    SUCCESS: "toastSuccess",
+    ERROR: "toastError",
+    INFO: "toastInfo",
 };
 
 /** DOCU: How long each type stays on screen, in ms. Errors last longer because

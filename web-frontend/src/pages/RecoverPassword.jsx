@@ -11,6 +11,8 @@ import { MASCOT_HOLD_MS } from "../constants/mascot";
 import { EMAIL_PATTERN, PASSWORD_MIN_LENGTH, VALIDATION_MESSAGES } from "../constants/validation";
 import AuthLayout from "../components/AuthLayout";
 import FormField from "../components/FormField";
+import PasswordField from "../components/PasswordField";
+import Icon from "../components/icons/Icon";
 import useAuthMascotMood from "../hooks/useAuthMascotMood";
 import { fieldErrorToast } from "../helpers/mascotMood";
 
@@ -125,15 +127,18 @@ const RecoverPassword = () => {
                     <li key={number} className="flex items-center gap-2">
                         <span
                             aria-current={step === number ? "step" : undefined}
-                            className={`flex h-7 w-7 items-center justify-center rounded-full border-2 border-ink text-xs font-extrabold transition ${
+                            className={`flex h-7 w-7 items-center justify-center rounded-full border-2 border-ink transition ${
                                 step === number
                                     ? "bg-fox-400 text-white"
                                     : step > number
                                       ? "bg-done text-white"
-                                      : "bg-white text-ink-faint"
+                                      : "bg-white text-xs font-extrabold text-ink-faint"
                             }`}
                         >
-                            {step > number ? "✓" : number}
+                            {/* A finished step is the app's tick, not a `✓`
+                                character - the same mark a completed task card
+                                wears, so "done" looks the same everywhere. */}
+                            {step > number ? <Icon name="check" size={14} /> : <span>{number}</span>}
                         </span>
                         {number === 1 && (
                             <span className="h-0.5 w-8 rounded-full bg-ink/20" aria-hidden="true" />
@@ -188,10 +193,9 @@ const RecoverPassword = () => {
                     )}
                     noValidate
                 >
-                    <FormField
+                    <PasswordField
                         id="password"
                         label="New password"
-                        type="password"
                         autoComplete="new-password"
                         placeholder="At least 6 characters"
                         error={errors.password}
@@ -204,10 +208,9 @@ const RecoverPassword = () => {
                         })}
                     />
 
-                    <FormField
+                    <PasswordField
                         id="confirmPassword"
                         label="Confirm new password"
-                        type="password"
                         autoComplete="new-password"
                         placeholder="Re-enter your new password"
                         error={errors.confirmPassword}

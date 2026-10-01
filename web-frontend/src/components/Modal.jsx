@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
 
+import { IconButton } from "./icons";
+
 /** DOCU: An accessible modal: backdrop dismissal, Escape, scroll locking and
  *  focus moved into the panel on open. */
 const Modal = ({ isOpen, onClose, title, children, footer }) => {
@@ -57,14 +59,14 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
             >
                 <div className="mb-4 flex items-start justify-between gap-4">
                     <h2 className="text-lg font-extrabold text-ink">{title}</h2>
-                    <button
-                        type="button"
+                    {/* The shared icon button, so the close control is the same
+                        size, icon and label in every dialog and drawer. */}
+                    <IconButton
+                        icon="close"
+                        label="Close dialog"
                         onClick={onClose}
-                        aria-label="Close dialog"
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xl leading-none text-ink-faint transition hover:bg-paper hover:text-ink"
-                    >
-                        &times;
-                    </button>
+                        className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-faint transition hover:bg-paper hover:text-ink"
+                    />
                 </div>
 
                 {children}

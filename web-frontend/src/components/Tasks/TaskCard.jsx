@@ -3,6 +3,7 @@ import { Draggable } from "@hello-pangea/dnd";
 
 import { CARD_BOARD_META } from "../../constants/boards";
 import { TEMP_ID_PREFIX } from "../../constants/tasks";
+import Icon from "../icons/Icon";
 import EditTask from "./EditTask";
 
 /** DOCU: The two actions available on a task: edit and delete. */
@@ -25,15 +26,7 @@ const CardActions = ({ task, onEdit, onDelete }) => {
                 title="Edit task"
                 className={buttonClass}
             >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path
-                        d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    />
-                </svg>
+                <Icon name="edit" size={14} />
             </button>
 
             <button
@@ -44,15 +37,7 @@ const CardActions = ({ task, onEdit, onDelete }) => {
                 title="Delete task"
                 className={`${buttonClass} hover:bg-red-500/15 hover:text-red-600`}
             >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path
-                        d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    />
-                </svg>
+                <Icon name="remove" size={14} />
             </button>
         </div>
     );
@@ -115,10 +100,10 @@ const TaskCard = ({ task, board, index, onSave, onDelete }) => {
                                 <div className="flex items-start gap-1.5">
                                     {meta.check && (
                                         <span
-                                            className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-done text-[0.6rem] font-extrabold text-white"
+                                            className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-done text-white"
                                             aria-hidden="true"
                                         >
-                                            ✓
+                                            <Icon name="check" size={11} />
                                         </span>
                                     )}
                                     <p

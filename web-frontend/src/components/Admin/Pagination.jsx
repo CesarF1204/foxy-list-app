@@ -1,4 +1,6 @@
 import { PAGE_SIZE_OPTIONS } from "../../constants/admin";
+import { IconButton } from "../icons";
+import SelectField from "../SelectField";
 
 /** DOCU: How many page numbers the pager shows at once. Three keeps the row of
  * buttons the same length whether there are four pages or four hundred, which is
@@ -49,42 +51,47 @@ const Pagination = ({ page, pageCount, total, pageSize, onPage, onPageSize, isDi
 
             <div className="flex flex-wrap items-center gap-2">
                 <div className="flex shrink-0 items-center gap-2">
-                    <label
-                        htmlFor="admin-page-size"
-                        className="text-xs font-extrabold tracking-wide whitespace-nowrap text-ink-soft uppercase"
-                    >
-                        Rows per page
-                    </label>
-                    <select
+                    <SelectField
                         id="admin-page-size"
+                        label="Rows per page"
+                        /* A horizontal pair rather than the filters' stacked
+                           one: the label sits beside a small picker. */
+                        wrapperClassName="flex shrink-0 items-center gap-2"
+                        /* Kept on one line: the pager row is a flex line, and a
+                         * wrapped "Rows per page" would misalign the select. */
+                        labelClassName="whitespace-nowrap"
+                        /* `w-auto`, not the `.field` full width: beside its label
+                         * the select should be as wide as the largest option, not
+                         * stretch. The pointer and the `disabled:` state are
+                         * written out here rather than left to the `select.field`
+                         * rules in index.css, because every other control in
+                         * this pager declares them in `buttonClass` too - the
+                         * pager is the one place the pointer is load-bearing, and
+                         * a reader should not have to cross the app to learn that
+                         * a greyed-out control refuses the click. The pointer is
+                         * deliberately *not* on `.field` itself, which every text
+                         * input also uses and which must keep its text caret. */
+                        className="w-auto cursor-pointer py-1.5! text-xs disabled:cursor-not-allowed"
                         value={pageSize}
                         disabled={isDisabled}
                         onChange={(event) => onPageSize(Number(event.target.value))}
-                        /* `w-auto`, not the `.field` full width: beside its label the
-                         * select should be as wide as the largest option, not stretch.
-                         * The pointer is scoped to this select rather than added to
-                         * `.field`, which every text input in the app also uses and
-                         * which must keep the text caret. `disabled:` covers the
-                         * fetch in flight, matching the pager's own buttons. */
-                        className="field w-auto cursor-pointer py-1.5! text-xs disabled:cursor-not-allowed"
                     >
                         {PAGE_SIZE_OPTIONS.map((size) => (
                             <option key={size} value={size}>
                                 {size}
                             </option>
                         ))}
-                    </select>
+                    </SelectField>
                 </div>
 
-                <button
-                    type="button"
-                    className={buttonClass}
+                <IconButton
+                    icon="previous"
+                    label="Previous page"
+                    size={16}
                     onClick={() => goTo(page - 1)}
                     disabled={isDisabled || page === 1}
-                    aria-label="Previous page"
-                >
-                    &larr;
-                </button>
+                    className={buttonClass}
+                />
 
                 {pages.map((value) => (
                     <button
@@ -102,15 +109,14 @@ const Pagination = ({ page, pageCount, total, pageSize, onPage, onPageSize, isDi
                     </button>
                 ))}
 
-                <button
-                    type="button"
-                    className={buttonClass}
+                <IconButton
+                    icon="next"
+                    label="Next page"
+                    size={16}
                     onClick={() => goTo(page + 1)}
                     disabled={isDisabled || page === pageCount}
-                    aria-label="Next page"
-                >
-                    &rarr;
-                </button>
+                    className={buttonClass}
+                />
             </div>
         </nav>
     );

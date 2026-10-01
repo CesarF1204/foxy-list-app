@@ -12,6 +12,7 @@ export {
     CARD_BOARD_META,
 } from "./boards";
 export { TEMP_ID_PREFIX } from "./tasks";
+export { ICONS, DEFAULT_ICON_SIZE, DEFAULT_ICON_STROKE_WIDTH } from "./icons";
 export {
     PAGE_SIZE_OPTIONS,
     DEFAULT_PAGE_SIZE,

@@ -7,11 +7,18 @@ import {
     TOAST_STYLES,
     TOAST_TYPES,
 } from "../constants/toast";
+import { Icon, IconButton } from "./icons";
 
 /**
  * DOCU: A transient notification. The API returns validation errors as an array
  * of strings, so the message is normalised to text. Errors stay on screen longer
  * than successes; durations, styles and icons live in `src/constants/toast.js`.
+ *
+ * The leading mark and the dismiss control are the app's standard ReIcon icons
+ * like everything else, so a toast looks the same as the rest of the UI. The
+ * status mark is decorative: the toast's own `role` ("alert" for an error,
+ * "status" for the rest) is what announces it, and the message text carries
+ * the meaning, so a screen reader is not read a glyph as well.
  */
 const Toast = ({ message, type = TOAST_DEFAULT_TYPE, onClose }) => {
     const isError = type === TOAST_TYPES.error;
@@ -37,18 +44,18 @@ const Toast = ({ message, type = TOAST_DEFAULT_TYPE, onClose }) => {
             role={isError ? "alert" : "status"}
             aria-live={isError ? "assertive" : "polite"}
         >
-            <span aria-hidden="true" className="leading-5">
-                {TOAST_ICONS[type] ?? TOAST_ICONS[TOAST_DEFAULT_TYPE]}
-            </span>
+            <Icon
+                name={TOAST_ICONS[type] ?? TOAST_ICONS[TOAST_DEFAULT_TYPE]}
+                size={20}
+                className="mt-px"
+            />
             <p className="flex-1 leading-5">{text}</p>
-            <button
-                type="button"
+            <IconButton
+                icon="close"
+                label="Dismiss notification"
                 onClick={onClose}
-                aria-label="Dismiss notification"
-                className="pointer-events-auto -mt-0.5 -mr-1 rounded px-1 text-white/80 transition hover:text-white"
-            >
-                &times;
-            </button>
+                className="pointer-events-auto -mt-0.5 -mr-1 cursor-pointer rounded px-1 text-white/80 transition hover:text-white"
+            />
         </div>
     );
 };

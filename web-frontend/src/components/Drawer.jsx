@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
 
+import { IconButton } from "./icons";
+
 /**
  * DOCU: A side panel, used by the admin user drawer. It follows the same rules
  * as `Modal` - Escape closes it, the page behind cannot scroll, focus moves in
@@ -66,14 +68,14 @@ const Drawer = ({ isOpen, onClose, title, children, footer }) => {
             >
                 <div className="mb-4 flex items-start justify-between gap-4">
                     <h2 className="text-lg font-extrabold text-ink">{title}</h2>
-                    <button
-                        type="button"
+                    {/* The same shared icon button `Modal` uses, so "close" is
+                        one control in one shape across the whole app. */}
+                    <IconButton
+                        icon="close"
+                        label="Close panel"
                         onClick={onClose}
-                        aria-label="Close panel"
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xl leading-none text-ink-faint transition hover:bg-paper-deep hover:text-ink"
-                    >
-                        &times;
-                    </button>
+                        className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-faint transition hover:bg-paper-deep hover:text-ink"
+                    />
                 </div>
 
                 <div className="flex flex-1 flex-col gap-5">{children}</div>

@@ -274,7 +274,7 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
                             has no administrative controls and nothing to explain. */}
                         {isViewerAdmin && isSelf && (
                             <p className="w-full text-xs font-semibold text-ink-faint">
-                                This is your own account, so the actions that would lock you out
+                                This is your own admin account, so the actions that would lock you out
                                 of the dashboard are hidden here.
                             </p>
                         )}

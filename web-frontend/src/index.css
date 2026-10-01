@@ -191,6 +191,63 @@
     color: var(--color-ink-faint);
   }
 
+  /*
+    The dropdown list.
+
+    A `<select>`'s popup is the one surface in this app the page cannot build
+    itself: the browser draws it in a separate window, outside the document, so
+    no layout of ours reaches it. What can be reached is the `option` elements
+    inside it, and that is enough to stop the popup looking like a different
+    application - which is what it looked like before these rules: the operating
+    system's grey rows, its own highlight blue, and its default font, all of
+    which clash with the paper-and-fox palette the rest of the app is built on.
+
+    Three declarations do the work, and all three are honoured by the desktop
+    engines that render the popup (Chrome, Edge, Firefox, Safari):
+
+      - the row's own background and text colour, which is what replaces the
+        grey-and-blue;
+      - `accent-color` on the select, which is what tints the *highlighted* row.
+        That row is drawn by the engine rather than by us, so this is a request
+        rather than a guarantee, and an engine that ignores it keeps its system
+        highlight - the closed control still looks right either way, because the
+        arrow on top of it is ours;
+      - the font, so the rows match the body copy instead of falling back to the
+        platform UI font.
+
+    `padding` on an `option` is honoured inconsistently - Firefox and Chrome take
+    it, Safari largely ignores it - so it is a nicety rather than a guarantee,
+    and the popup is never the only place an option's label appears.
+  */
+  select.field {
+    accent-color: var(--color-fox-400);
+
+    /* A select is a menu, not a text field: the pointer should say so, and the
+       arrow we draw on top of it is not itself clickable. */
+    cursor: pointer;
+  }
+
+  select.field:disabled {
+    cursor: not-allowed;
+  }
+
+  select.field option {
+    background-color: white;
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* The row that is currently chosen. Declared for the engines that let the
+     popup honour a per-row background at all; where it is ignored, the
+     `accent-color` above is what marks the row instead. */
+  select.field option:checked {
+    background-color: var(--color-fox-100);
+    color: var(--color-ink);
+  }
+
   /* Long unbroken words (URLs, tokens) must not blow out a card's width. */
   .break-anywhere {
     overflow-wrap: anywhere;
