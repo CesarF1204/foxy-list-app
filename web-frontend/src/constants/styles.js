@@ -1,6 +1,6 @@
 /**
- * Shared control styles for the app navbar: fixing the box model in one place
- * keeps every navbar control the same size.
+ * Shared control styles for the app navbar: fixing the box model in one place keeps every
+ * navbar control the same size.
  */
 
 /** The common shape of every navbar control. */
@@ -18,4 +18,23 @@ const CONTROL_BUTTON_SUBTLE = `${CONTROL_BASE} border-2 border-ink bg-white text
 /** A small square icon button, sized to match CONTROL_BASE's height. */
 const CONTROL_ICON = `${CONTROL_BASE} w-10 px-0 border-2 border-ink bg-white text-ink hover:bg-fox-50`;
 
-export { CONTROL_BASE, CONTROL_BUTTON, CONTROL_BUTTON_SUBTLE, CONTROL_ICON };
+/**
+ * The matching `--z-*` tokens and the `z-page` / `z-header` / `z-overlay` / `z-toast` classes
+ * live in `src/index.css`; this is the same scale, kept here where the other shared values are
+ * so the ordering can be asserted rather than eyeballed. Only the relative order is meaningful,
+ * and the gaps are headroom for a layer to be slotted in later.
+ */
+const LAYERS = {
+    page: 10,
+    header: 30,
+    overlay: 50,
+    toast: 60,
+};
+
+export {
+    CONTROL_BASE,
+    CONTROL_BUTTON,
+    CONTROL_BUTTON_SUBTLE,
+    CONTROL_ICON,
+    LAYERS,
+};

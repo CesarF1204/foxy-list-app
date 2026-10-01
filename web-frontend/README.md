@@ -8,25 +8,21 @@ Configuration lives in environment variables, never in the source. `.env` is git
 listed in the table below, and every value is set by you. On a fresh clone:
 
 ```bash
-# create web-frontend/.env and set the VITE_MOCK_SAMPLE_* values listed below
+# create web-frontend/.env and set VITE_API_BASE_URL
 npm run dev
 ```
 
-Every value in `.env` is yours to choose, and so is the code: there is no
-hardcoded credential anywhere in `src/`. If a variable is missing, the app says
-which one it needs instead of silently falling back to a default.
+The value is yours to choose, and so is the code: there is no hardcoded
+credential or API address anywhere in `src/`. If the variable is missing the app
+says so, rather than silently answering with fake data.
 
 | Variable | Used by | Required |
 | --- | --- | --- |
-| `VITE_MOCK_SAMPLE_FIRST_NAME` | `src/mock/sampleData.js` | yes, for the mock |
-| `VITE_MOCK_SAMPLE_LAST_NAME` | `src/mock/sampleData.js` | yes, for the mock |
-| `VITE_MOCK_SAMPLE_EMAIL` | `src/mock/sampleData.js` | yes, for the mock |
-| `VITE_MOCK_SAMPLE_PASSWORD` | `src/mock/sampleData.js` | yes, for the mock |
-| `VITE_MOCK_SAMPLE_ADMIN_FIRST_NAME` | `src/mock/sampleData.js` | yes, to reach `/admin` |
-| `VITE_MOCK_SAMPLE_ADMIN_LAST_NAME` | `src/mock/sampleData.js` | yes, to reach `/admin` |
-| `VITE_MOCK_SAMPLE_ADMIN_EMAIL` | `src/mock/sampleData.js` | yes, to reach `/admin` |
-| `VITE_MOCK_SAMPLE_ADMIN_PASSWORD` | `src/mock/sampleData.js` | yes, to reach `/admin` |
-| `VITE_API_BASE_URL` | `src/api-client/client.js` | only when `MOCK_MODE` is off |
+| `VITE_API_BASE_URL` | `src/api-client/client.js` | yes |
+
+It is the single place the backend's address is defined. Every request in the
+app is made against it, so pointing the app at another environment is a one
+line change here and nothing else.
 
 ### Never put a secret in a `VITE_` variable
 
@@ -43,71 +39,56 @@ or sent to the browser.
 
 ## Running it
 
+The app needs the backend running, because every screen reads from it.
+
 ```bash
+# terminal 1 - the API
+cd ../web-backend && npm start
+
+# terminal 2 - this app
 npm install
 npm run dev
 ```
 
-No backend is needed. The app runs on local mock data out of the box.
+There is no in-browser stand-in for the API any more. If the backend is down,
+requests fail and the app says so; it never invents data to fill a screen.
 
-### Sample logins
+### Accounts
 
-The mock seeds two accounts, and the sign-in page shows both with a button that
-fills the form in. Their values come from `.env` via the `VITE_MOCK_SAMPLE_*` and
-`VITE_MOCK_SAMPLE_ADMIN_*` variables above, so check your own `.env` for them.
-Invent throwaway local accounts - never point these at real ones.
+Create one through **Register** on the sign-in screen. The register endpoint
+gives every new account the `user` role, so it reaches the board but not
+`/admin`.
 
-| Account | Role | Reaches |
-| --- | --- | --- |
-| **Sample admin** | `admin` | The board **and** `/admin` |
-| **Sample user** | `user` | The board only |
+The **first account created on an empty database** is promoted to `admin`
+automatically, which is how a fresh deployment gets its first administrator.
+On a database that already has users, promote one deliberately:
 
-The administrator is seeded rather than registered, because the register endpoint
-gives every new account the `user` role - exactly as a real deployment would need
-a migration or a bootstrap step to create its first admin. It has a few tasks of
-its own, so its row in the users table is not all zeroes.
+```bash
+cd ../web-backend && npm run seed:admin you@example.com
+```
 
-If `/admin` refuses you while signed in as the sample admin, the browser is
-holding a mock database seeded before roles existed. That is handled: the mock
-fills in the missing `role` and `status` fields on the next load. To start over
-instead, run `resetMockData()` from the console, or clear the
-`foxylist:mock:*` keys in localStorage.
+If `/admin` refuses you while signed in as an administrator, check the account's
+role in the database rather than in the browser: the frontend holds no copy of
+anything.
 
-## The mock layer (temporary)
+## Talking to the API
 
-`src/mock/` is a **temporary** frontend-only mock, so the UI and the Tasks
-feature can be tested end-to-end without a backend. It signs in, and serves and
-mutates tasks, entirely in the browser.
+Every request goes through `src/api-client/client.js`. It holds the base URL,
+adds the session cookie, parses the response and turns a failure into one
+readable message. Components never call `fetch`.
 
-| File | Role |
+| File | Calls |
 | --- | --- |
-| `src/mock/index.js` | The `MOCK_MODE` switch and the public entry point |
-| `src/mock/sampleData.js` | The sample account and the sample task board |
-| `src/mock/mockStore.js` | The in-browser stand-in for the REST API |
-| `src/mock/SampleCredentialsHint.jsx` | The sample-credentials hint on the sign-in page |
+| `client.js` | The one request function every other file goes through |
+| `auth.js` | `validate_token` |
+| `users.js` | Register, sign in, sign out, password recovery |
+| `tasks.js` | The board: list, create, move, edit, delete |
+| `admin.js` | Stats, the users table, and every user management action |
 
-The switch lives in one place, `MOCK_MODE` in `src/mock/index.js`, and it is
-honoured in a single bypass at the top of `apiRequest` in
-`src/api-client/client.js`. The real `fetch` call below that bypass is
-untouched.
-
-### Sample tasks
-
-19 tasks across the three boards, with all four priorities, and due dates
-spread over overdue, due today, upcoming and undated. Due dates are generated
-relative to the day you open the app, so the board is never stale. The mix
-includes long and short titles, long and empty descriptions, and tasks
-belonging only to the sample user.
-
-### Going back to the real API
-
-1. Set `MOCK_MODE = false` in `src/mock/index.js`.
-2. Uncomment `VITE_API_BASE_URL` in `.env`.
-
-That is all. Nothing else changes: `api-client`, the queries, the mutations and
-every component already talk to the real API contract. Deleting `src/mock/`
-outright, plus its one import in `client.js` and the two imports in
-`src/pages/Auth.jsx`, works too.
+Failures arrive as an `ApiRequestError` carrying both a message written for the
+user and the HTTP status, so a caller can tell "you are signed out" (401) from
+"not allowed" (403) without parsing text. Validation errors arrive as a list,
+one entry per field, and are joined for the toast.
 
 ## Routes
 
@@ -124,9 +105,11 @@ admin screens, which it only offers to an administrator, so a desktop reaches
 both directly. Below that breakpoint the same two links move into the account
 menu behind the avatar, keeping a phone's navbar to the brand alone - never
 both at once, and never neither. The Dashboard sits above Admin Overview
-wherever the pair appears.
-Signing in with the mock's **sample admin** account does so - see
-[Sample logins](#sample-logins).
+wherever the pair appears. An administrator is offered these links; a plain user
+is not. The entry names the admin *section*, not the single overview screen, so
+it stays filled and marked current on both `/admin/overview` and
+`/admin/users`; the Overview and Users tabs below it are what move within that
+section. See [Accounts](#accounts) for how to get an administrator account.
 
 ### Managing a user
 
@@ -147,8 +130,8 @@ change with it.
 ### Where the authorization lives
 
 `RequireAdmin` in `src/components/RouteGuards.jsx` keeps the routes and the navbar
-link tidy, and **the API is the boundary that holds**: `src/api-client/adminApi.js`
-defines the rules once, and both fake API layers call into it.
+link tidy, and **the API is the boundary that holds**: `requireAdmin` in
+`web-backend/middleware/adminMiddleware.js` guards the whole admin router.
 
 - Every admin request re-checks the caller's role and account status. A missing
   session is a `401`, a signed-in non-admin is a `403`, and a blocked account is
@@ -157,9 +140,13 @@ defines the rules once, and both fake API layers call into it.
   request cannot invent a role or grant itself one.
 - An email must be well formed and unique, case-insensitively.
 - An admin cannot demote, block or delete their own account.
-- Passwords are never returned by any endpoint, and the mock stores its
-  throwaway plaintext copy only because a browser stand-in has no hashing to do.
-  A real API hashes there and stores nothing else.
+- Passwords are never returned by any endpoint. The API hashes them with bcrypt
+  and stores nothing else.
+- Passwords may not contain spaces, and a new one may not equal the current one.
+  Both rules are enforced by the API as well - the forms apply the space rule up
+  front so the user hears about it immediately, and the API is what actually
+  holds. The "must differ" rule can only be checked server-side, by comparing
+  against the stored hash, so the current password is never sent or displayed.
 
 The task counts are computed from the real task records on every request, and
 only the three real boards are counted, so `total = todo + ongoing + done` always
@@ -169,7 +156,10 @@ holds.
 
 All three happen in the API: the browser sends a query string and receives one
 page of rows, so the table behaves the same with ten users and with ten thousand.
-The search box is debounced; changing a filter returns to page 1.
+The search box is debounced; changing a filter returns to page 1. The table shows
+five rows per page to begin with, which is `DEFAULT_PAGE_SIZE` here and the same
+constant in the API - the picker renders the `pageSize` the API reported, so the
+two defaults have to agree.
 
 Every one of those triggers - the debounced search, either filter, a sort and a
 page change - shows the same circular indicator *inside* the table while its
@@ -179,14 +169,6 @@ loading. Each filter state is its own query key, so a slow earlier response can
 never land on top of a newer one, and React Query aborts the request that has
 been superseded.
 
-### The mock data
-
-The mock seeds a sample admin and a sample user, plus twelve extra accounts, with
-a mix of roles, one blocked account and a few tasks each, so the table, the
-filters, the pager and the statistics have something real to act on.
-`npm run verify:mock` exercises all of it end to end, including the refusals above
-and the migration that upgrades a database seeded before roles existed.
-
 ## Scripts
 
 | Command | Does |
@@ -194,17 +176,18 @@ and the migration that upgrades a database seeded before roles existed.
 | `npm run dev` | Starts the dev server |
 | `npm run build` | Builds for production |
 | `npm run lint` | Runs ESLint |
+| `npm test` | Runs the Vitest suite |
 | `npm run verify` | Checks the drag-and-drop ordering maths |
-| `npm run verify:mock` | End-to-end checks of the mock layer's auth and task flows |
+| `npm run verify:tasks` | Checks the task board's ordering rules in Node |
 
 ## Notes
 
-- Mock data is stored in `localStorage` under `foxylist:mock:*`, so it survives a
-  reload but is namespaced away from anything a real backend would use. It
-  re-seeds with the sample account on first load; deleting or editing a sample
-  task sticks.
-- `resetMockData()` in `src/mock/mockStore.js` wipes the mock database and
-  session, so the next read re-seeds a fresh sample board.
+- The app keeps no copy of the data. Users, tasks and statistics all come from
+  the API on demand, and the query cache is cleared on sign out so the next
+  person starts clean.
+- React Query still caches in memory while a session lasts. That is a cache, not
+  a source of truth: every mutation invalidates the affected queries and the
+  board re-reads from the API.
 
 ---
 

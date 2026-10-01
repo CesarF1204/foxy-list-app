@@ -3,10 +3,10 @@ import { MASCOT_SHEETS, MASCOT_LABEL } from "../constants/mascot";
 import { BOARDS, BOARD_META } from "../constants/boards";
 
 /**
- * DOCU: The two-column shell shared by the auth screens. The form is on the left
- * on desktop with the mascot and pitch on the right; on small screens the mascot
- * moves above the form. `mascotReaction` pins the fox's expression so a form can
- * react to its own state; pass null for the default cursor tracking.
+ * The two-column shell shared by the auth screens. The form is on the left on desktop with the
+ * mascot and pitch on the right; on small screens the mascot moves above the form.
+ * `mascotReaction` pins the fox's expression so a form can react to its own state; pass null
+ * for the default cursor tracking.
  */
 const AuthLayout = ({ title, subtitle, children, footer, mascotReaction = null }) => (
     <div className="flex flex-1 items-center justify-center px-4 py-10">

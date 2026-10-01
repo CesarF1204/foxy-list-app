@@ -3,16 +3,14 @@ import { useEffect, useState } from "react";
 import { MASCOT_HOLD_MS, MASCOT_MOODS } from "../constants/mascot";
 
 /**
- * DOCU: Turns a form's mood into a mascot expression that plays once and then
- * clears, rather than freezing the fox in alarm for as long as the mood lasts.
- * Returns the expression name for `ControlledMascot`, or null for the idle head.
- *
- * `token` re-plays an unchanged mood, so two failures in a row both look alive;
- * pass something that changes per attempt (a submit counter).
+ * Turns a form's mood into a mascot expression that plays once and then clears, rather than
+ * freezing the fox in alarm for as long as the mood lasts.
  */
 const useMascotReaction = (mood, token = 0) => {
-    /** The played reaction travels with the mood and token that caused it, so
-     *  the timer knows what it is clearing and render can spot a new mood. */
+    /**
+     * The played reaction travels with the mood and token that caused it, so the timer knows
+     * what it is clearing and render can spot a new mood.
+     */
     const [played, setPlayed] = useState({ mood: null, token, reaction: null, hold: 0 });
 
     /** Reduced motion users get the face, just held far more briefly. */
@@ -35,8 +33,10 @@ const useMascotReaction = (mood, token = 0) => {
         });
     }
 
-    /** Only clears an expired face, in a callback not the effect body, so it
-     *  never causes a cascading render. */
+    /**
+     * Only clears an expired face, in a callback not the effect body, so it never causes a
+     * cascading render.
+     */
     useEffect(() => {
         if (!played.reaction || !played.hold) {
             return undefined;

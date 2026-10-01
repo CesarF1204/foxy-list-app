@@ -5,8 +5,8 @@ import { BUILDER_SHEETS, BUILDER_LABEL } from "../constants/mascot";
 import { ROUTES } from "../constants/routes";
 
 /**
- * DOCU: Shown for any URL that does not match a route. The builder stands in
- * rather than the app's own fox, so a dead end does not look like the product.
+ * Shown for any URL that does not match a route. The builder stands in rather than the app's
+ * own fox, so a dead end does not look like the product.
  */
 const NotFound = () => {
     const { isAuthenticated } = useAppContext();

@@ -1,24 +1,29 @@
-import express from "express";
-const router = express.Router();
-
+import express from 'express';
+import authMiddleware from '../middleware/authMiddleware.js';
+import { asyncHandler } from '../middleware/errorMiddleware.js';
 import {
-    getUserTasks,
+    getAllTasks,
+    getTaskById,
     createTask,
     moveTask,
     updateTask,
     deleteTask,
-} from "../controllers/taskController.js";
+} from '../controllers/taskController.js';
 
-// Get all Tasks of a User
-router.get("/", getUserTasks);
+/** Every task route needs a signed-in user, so the middleware guards the whole router. */
+const router = express.Router();
 
-// Create a task for a User
-router.post("/", createTask);
+router.use(authMiddleware);
 
-// Change status of a Task
-router.put("/move", moveTask);
+router.get('/', asyncHandler(getAllTasks));
 
-// Delete a Task
-router.route("/:id").patch(updateTask).delete(deleteTask);
+router.post('/', asyncHandler(createTask));
+
+/** Declared before /:id so "move" is never captured as an id. */
+router.put('/move', asyncHandler(moveTask));
+
+router.get('/:id', asyncHandler(getTaskById));
+router.patch('/:id', asyncHandler(updateTask));
+router.delete('/:id', asyncHandler(deleteTask));
 
 export default router;

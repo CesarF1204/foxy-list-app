@@ -1,13 +1,8 @@
 /**
- * DOCU: One summary number on the overview. Built from the shared `.surface` card
- * and the board accent colours rather than a new visual language, and the accent
- * is a small bar plus a coloured dot beside the value, never the only cue: the
- * label and the value are both text, so the card reads without colour.
- * @param {object} props
- * @param {string} props.label - what the number counts
- * @param {number} props.value - the count
- * @param {string} props.accent - a tailwind background class for the bar
- * @param {string} props.hint - a short qualifier
+ * One summary number on the overview. Built from the shared `.surface` card and the board
+ * accent colours rather than a new visual language, and the accent is a small bar plus a
+ * coloured dot beside the value, never the only cue: the label and the value are both text, so
+ * the card reads without colour.
  */
 const StatCard = ({ label, value, accent, hint }) => (
     <div className="surface animate-rise flex flex-col gap-1 p-4">
@@ -18,9 +13,11 @@ const StatCard = ({ label, value, accent, hint }) => (
     </div>
 );
 
-/** DOCU: The grey block shown while the totals are still loading, in the exact
- *  shape of the card it replaces so the page does not jump when the numbers
- *  arrive. Marked aria-hidden and paired with the loader's own status message. */
+/**
+ * The grey block shown while the totals are still loading, in the exact shape of the card it
+ * replaces so the page does not jump when the numbers arrive. Marked aria-hidden and paired
+ * with the loader's own status message.
+ */
 const StatCardSkeleton = () => (
     <div
         aria-hidden="true"

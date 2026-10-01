@@ -1,19 +1,24 @@
 {
   "name": "web-backend",
   "version": "1.0.0",
+  "description": "Foxy List API - the todo task board backend",
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "test": "node tests/run.js",
+    "test:auth": "node tests/api-auth.test.js",
+    "test:tasks": "node tests/api-tasks.test.js",
+    "test:admin": "node tests/api-admin.test.js",
+    "test:integration": "node tests/integration.test.js",
+    "seed:admin": "node tests/seed-admin.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
-    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^18.0.4",
@@ -23,7 +28,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
     "nodemon": "^3.1.14"
   }
 }

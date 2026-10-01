@@ -1,14 +1,4 @@
-/**
- * A check of the toast raised when a task changes board. <br>
- * The copy itself is a pure function in src/helpers/taskToasts.js and is
- * imported here for real, so the wording on screen and the wording checked
- * here can never drift apart. Run with: npm run verify:toast
- *
- * The two mistakes this guards against are the two that are easy to make in a
- * move handler: announcing a move the server refused (or one that only
- * reordered a card on the board it was already on), and saying the same thing
- * twice for a single change.
- */
+/** A check of the toast raised when a task changes board. */
 
 import { statusMoveToast, taskActionToast } from "../src/helpers/taskToasts.js";
 import { TOAST_TITLE_LIMIT } from "../src/constants/toast.js";
@@ -127,9 +117,11 @@ check(
 
 console.log("\nOne move, one toast:");
 
-/** What the mutation layer does: onMutate reads the card off the board, onSuccess
- *  builds the toast from that and the requested destination. Running two moves of
- *  the same card covers the case where the second origin is the first target. */
+/**
+ * What the mutation layer does: onMutate reads the card off the board, onSuccess builds the
+ * toast from that and the requested destination. Running two moves of the same card covers the
+ * case where the second origin is the first target.
+ */
 const runMove = (board, { taskId, newStatus }, serverSucceeds) => {
     const context = board.tasks.find((task) => task._id === taskId);
     const before = { fromStatus: context?.status, title: context?.title };
@@ -204,7 +196,7 @@ check("an unknown action raises nothing", taskActionToast("archived", TITLE) ===
 
 check(
     "a long title is clipped in an action toast too",
-    /* The title is cut to the limit; the rest is the fixed verb suffix. */
+    /** The title is cut to the limit; the rest is the fixed verb suffix. */
     taskActionToast("updated", "a".repeat(80)).message ===
         `"${"a".repeat(TOAST_TITLE_LIMIT - 1)}…" updated successfully`
 );

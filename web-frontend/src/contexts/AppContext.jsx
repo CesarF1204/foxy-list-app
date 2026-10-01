@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { validateToken } from "../api-client/auth";
-import { VALIDATE_TOKEN_KEY } from "../constants/queryKeys";
+import { getSessionQueryOptions } from "../queryOptions/sessionQueryOptions";
 import { AppContext } from "./appContextObject";
 import Toast from "../components/Toast";
 
@@ -10,8 +9,8 @@ const AppContextProvider = ({ children }) => {
     const queryClient = useQueryClient();
 
     /**
-     * DOCU: Shows a toast notification. The id lets the toast restart its
-     * timer when the same message is shown twice in a row.
+     * Shows a toast notification. The id lets the toast restart its timer when the same message
+     * is shown twice in a row.
      */
     const showToast = useCallback((toastMessage) => {
         setToast({ ...toastMessage, id: Date.now() });
@@ -19,18 +18,13 @@ const AppContextProvider = ({ children }) => {
 
     const closeToast = useCallback(() => setToast(undefined), []);
 
-    /* Check whether the user has a valid session cookie. */
-    const { data, isLoading, isError } = useQuery({
-        queryKey: VALIDATE_TOKEN_KEY,
-        queryFn: validateToken,
-        retry: false,
-        staleTime: Infinity,
-    });
+    /** Check whether the user has a valid session cookie. */
+    const { data, isLoading, isError } = useQuery(getSessionQueryOptions());
 
-    /* isError here means there is no usable session. */
+    /** isError here means there is no usable session. */
     const isAuthenticated = Boolean(data?.user) && !isError;
 
-    /** DOCU: Clears every cached query so the next user starts clean. */
+    /** Clears every cached query so the next user starts clean. */
     const clearSession = useCallback(() => {
         queryClient.clear();
     }, [queryClient]);
@@ -39,10 +33,8 @@ const AppContextProvider = ({ children }) => {
         <AppContext.Provider
             value={{
                 showToast,
-                /** The toast on screen, or undefined. Exposed so anything reacting
-                 *  to app state (the auth mascot) reads one source rather than
-                 *  re-deriving it. A snapshot of right now, not a log. */
                 toast,
+                closeToast,
                 user: data?.user,
                 isAuthenticated,
                 isAuthLoading: isLoading,

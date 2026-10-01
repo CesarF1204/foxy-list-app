@@ -17,7 +17,7 @@ import {
     MASCOT_SQUASH_MS,
 } from "../constants/mascot";
 
-/* background-size 300% makes each cell a clean 0/50/100% step on both axes. */
+/** background-size 300% makes each cell a clean 0/50/100% step on both axes. */
 const cell = (index) => ({
     backgroundPosition: `${(index % 3) * 50}% ${Math.floor(index / 3) * 50}%`,
 });
@@ -33,14 +33,10 @@ const layer = {
 };
 
 /**
- * DOCU: The `page-mascot` fox, extended so a parent can pin its expression. The
- * library only changes faces on click, which is no use on a form that has to say
- * "that field is wrong". Same sheets, cursor tracking and click squash, plus:
- *
- * - `reaction`: an expression name to hold on screen, or null for the default
- *   behaviour. Takes precedence over the click faces while pinned.
- *
- * Static pages such as the 404 should use the library's `Mascot` instead.
+ * The `page-mascot` fox, extended so a parent can pin its expression. The library only changes
+ * faces on click, which is no use on a form that has to say "that field is wrong". Same sheets,
+ * cursor tracking and click squash, plus: - `reaction`: an expression name to hold on screen,
+ * or null for the default behaviour. Takes precedence over the click faces while pinned.
  */
 const ControlledMascot = ({
     directions,
@@ -112,7 +108,7 @@ const ControlledMascot = ({
         };
     }, []);
 
-    /* Timers outlive the boop that set them, so unmounting must cancel them. */
+    /** Timers outlive the boop that set them, so unmounting must cancel them. */
     useEffect(
         () => () => {
             timersRef.current.forEach(window.clearTimeout);
@@ -151,22 +147,26 @@ const ControlledMascot = ({
             return;
         }
 
-        /** Easing is per keyframe; easing the effect itself would reinterpret
-         *  every offset and front-load the bounce. */
+        /**
+         * Easing is per keyframe; easing the effect itself would reinterpret every offset and
+         * front-load the bounce.
+         */
         squashRef.current?.animate(MASCOT_SQUASH, {
             duration: MASCOT_SQUASH_MS,
             easing: "linear",
         });
     };
 
-    /** A pinned reaction always wins. An unrecognised name falls back to the
-     *  default behaviour rather than leaving a blank cell on screen. */
+    /**
+     * A pinned reaction always wins. An unrecognised name falls back to the default behaviour
+     * rather than leaving a blank cell on screen.
+     */
     const pinned = MASCOT_REACTIONS.includes(pinnedReaction) ? pinnedReaction : null;
     const shown = pinned ?? reaction;
     const showing = Boolean(shown);
     const reactionIndex = Math.max(MASCOT_REACTIONS.indexOf(shown ?? ""), 0);
 
-    /* Inline styles so the file drops into any project without a CSS framework. */
+    /** Inline styles so the file drops into any project without a CSS framework. */
     return (
         <button
             ref={buttonRef}

@@ -1,204 +1,93 @@
-import jwt from "jsonwebtoken";
-import Task from "../models/Task.js";
-import User from "../models/User.js";
+import * as taskService from '../services/taskService.js';
+import { parseBody, parseId } from '../helpers/validationHelper.js';
+import { createTaskSchema, updateTaskSchema, moveTaskSchema } from '../utils/validationSchemas.js';
+import { HTTP_STATUS } from '../constants/http.js';
 
 /**
- * Returns all tasks belonging to the authenticated user.
- * Authentication is handled via the `session` cookie containing a JWT.
+ * DOCU: Returns every task belonging to the signed-in user.
+ * Last Updated Date: October 1, 2026
+ * @function getAllTasks
+ * @param {object} req - Request, carrying the user from authMiddleware
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { tasks }
+ * @author Cesar
  */
-export const getUserTasks = async (req, res) => {
-    try {
-        const token = req.cookies.session;
-        if (!token) return res.status(401).json({ message: "Not authenticated" });
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.sub);
-        if (!user) return res.status(401).json({ message: "Invalid token" });
-
-        const tasks = await Task.find({ userId: user._id });
-        return res.json({ tasks });
-
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Server error" });
-    }
+export const getAllTasks = async (req, res) => {
+    res.status(HTTP_STATUS.OK).json({ tasks: await taskService.getAllTasks(req.user._id) });
 };
 
 /**
- * Creates a new task for the authenticated user.
- * Tasks are ordered within their board based on existing items.
+ * DOCU: Returns one task owned by the signed-in user.
+ * Last Updated Date: October 1, 2026
+ * @function getTaskById
+ * @param {object} req - Request
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { task }
+ * @author Cesar
+ */
+export const getTaskById = async (req, res) => {
+    const taskId = parseId('Task id', req.params.id);
+
+    res.status(HTTP_STATUS.OK).json({ task: await taskService.getTaskById(req.user._id, taskId) });
+};
+
+/**
+ * DOCU: Creates a task on the default board for the signed-in user.
+ * Last Updated Date: October 1, 2026
+ * @function createTask
+ * @param {object} req - Request
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { task }
+ * @author John Vincent, Updated by: Cesar
  */
 export const createTask = async (req, res) => {
-    try {
-        const token = req.cookies.session;
-        if (!token) return res.status(401).json({ message: "Not authenticated" });
+    const data = parseBody(req.body, createTaskSchema);
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.sub);
-        if (!user) return res.status(401).json({ message: "Invalid token" });
-
-        const { title, description } = req.body;
-        if (!title || !title.trim()) {
-            return res.status(400).json({ message: "Title is required" });
-        }
-
-        // Determine the next order index for the "todo" board
-        const siblings = await Task.find({ userId: user._id, status: "todo" });
-
-        const task = await Task.create({
-            userId: user._id,
-            title: title.trim(),
-            description: description?.trim() ?? "",
-            status: "todo",
-            order: siblings.length,
-            createdAt: new Date().toISOString()
-        });
-
-        return res.json({ task });
-
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Server error" });
-    }
+    res.status(HTTP_STATUS.CREATED).json({ task: await taskService.createTask(req.user._id, data) });
 };
 
 /**
- * Moves a task to a different board or position.
- * Handles reordering within the target board and normalizing the old board.
+ * DOCU: Moves a task to another board or position.
+ * Last Updated Date: October 1, 2026
+ * @function moveTask
+ * @param {object} req - Request
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { task }
+ * @author John Vincent, Updated by: Cesar
  */
 export const moveTask = async (req, res) => {
-    try {
-        const token = req.cookies.session;
-        if (!token) return res.status(401).json({ message: "Not authenticated" });
+    const data = parseBody(req.body, moveTaskSchema);
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.sub);
-        if (!user) return res.status(401).json({ message: "Invalid token" });
-
-        const { taskId, newStatus, newIndex } = req.body;
-        if (!["todo", "ongoing", "done"].includes(newStatus)) {
-            return res.status(400).json({ message: "Unknown board" });
-        }
-
-        const task = await Task.findOne({ _id: taskId, userId: user._id });
-        if (!task) return res.status(404).json({ message: "Task not found" });
-
-        const previousStatus = task.status;
-
-        // Build the target board list excluding the moving task
-        const targetBoardTasks = await Task.find({
-            userId: user._id,
-            status: newStatus,
-            _id: { $ne: taskId }
-        }).sort({ order: 1 });
-
-        // Insert the task at the requested index
-        const insertIndex = Math.max(0, Math.min(newIndex ?? targetBoardTasks.length, targetBoardTasks.length));
-        targetBoardTasks.splice(insertIndex, 0, task);
-
-        // Reassign order values in the target board
-        for (let i = 0; i < targetBoardTasks.length; i++) {
-            targetBoardTasks[i].order = i;
-            await targetBoardTasks[i].save();
-        }
-
-        // Update the task's board
-        task.status = newStatus;
-        await task.save();
-
-        // Normalize the old board if the task moved between boards
-        if (previousStatus !== newStatus) {
-            const oldBoardTasks = await Task.find({
-                userId: user._id,
-                status: previousStatus
-            }).sort({ order: 1 });
-
-            for (let i = 0; i < oldBoardTasks.length; i++) {
-                oldBoardTasks[i].order = i;
-                await oldBoardTasks[i].save();
-            }
-        }
-
-        return res.json({ task });
-
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Server error" });
-    }
+    res.status(HTTP_STATUS.OK).json({ task: await taskService.moveTask(req.user._id, data) });
 };
 
 /**
- * Updates a task's title or description.
- * Only fields provided in the request body are modified.
+ * DOCU: Renames or re-describes a task.
+ * Last Updated Date: October 1, 2026
+ * @function updateTask
+ * @param {object} req - Request
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { task }
+ * @author John Vincent, Updated by: Cesar
  */
 export const updateTask = async (req, res) => {
-    try {
-        const token = req.cookies.session;
-        if (!token) return res.status(401).json({ message: "Not authenticated" });
+    const taskId = parseId('Task id', req.params.id);
+    const data = parseBody(req.body, updateTaskSchema);
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.sub);
-        if (!user) return res.status(401).json({ message: "Invalid token" });
-
-        const task = await Task.findOne({ _id: req.params.id, userId: user._id });
-        if (!task) return res.status(404).json({ message: "Task not found" });
-
-        const { title, description } = req.body;
-
-        if (title !== undefined) {
-            if (!title.trim()) {
-                return res.status(400).json({ message: "Title cannot be empty" });
-            }
-            task.title = title.trim();
-        }
-
-        if (description !== undefined) {
-            task.description = description.trim();
-        }
-
-        await task.save();
-        return res.json({ task });
-
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Server error" });
-    }
+    res.status(HTTP_STATUS.OK).json({ task: await taskService.updateTask(req.user._id, taskId, data) });
 };
 
 /**
- * Deletes a task and reorders remaining tasks in the same board.
+ * DOCU: Deletes a task owned by the signed-in user.
+ * Last Updated Date: October 1, 2026
+ * @function deleteTask
+ * @param {object} req - Request
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with the deleted id
+ * @author John Vincent, Updated by: Cesar
  */
 export const deleteTask = async (req, res) => {
-    try {
-        const token = req.cookies.session;
-        if (!token) return res.status(401).json({ message: "Not authenticated" });
+    const taskId = parseId('Task id', req.params.id);
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.sub);
-        if (!user) return res.status(401).json({ message: "Invalid token" });
-
-        const task = await Task.findOne({ _id: req.params.id, userId: user._id });
-        if (!task) return res.status(404).json({ message: "Task not found" });
-
-        const removedStatus = task.status;
-
-        await Task.deleteOne({ _id: task._id });
-
-        // Reorder remaining tasks in the same board
-        const siblings = await Task.find({
-            userId: user._id,
-            status: removedStatus
-        }).sort({ order: 1 });
-
-        for (let i = 0; i < siblings.length; i++) {
-            siblings[i].order = i;
-            await siblings[i].save();
-        }
-
-        return res.json({ _id: task._id });
-
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Server error" });
-    }
+    res.status(HTTP_STATUS.OK).json(await taskService.deleteTask(req.user._id, taskId));
 };

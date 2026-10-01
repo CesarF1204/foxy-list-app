@@ -1,60 +1,64 @@
-import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+import jwt from 'jsonwebtoken';
+import User from '../schemas/userSchema.js';
+import { AUTH_COOKIE_NAME } from '../config/cookies.js';
+import { isActive } from '../constants/roles.js';
+import { HTTP_STATUS } from '../constants/http.js';
+import {
+    GENERIC_ERROR_MESSAGE,
+    NO_TOKEN_MESSAGE,
+    INVALID_TOKEN_MESSAGE,
+    EXPIRED_TOKEN_MESSAGE,
+    ACCOUNT_GONE_MESSAGE,
+    BLOCKED_ACCOUNT_MESSAGE,
+} from '../constants/messages.js';
 
-export const authenticate = async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-
-    // Check whether the Authorization header exists
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        message: "Authentication required. Please provide a token.",
-      });
-    }
-
-    // Extract the token from "Bearer <token>"
-    const token = authHeader.split(" ")[1];
+/**
+ * DOCU: Authenticates a request from the session cookie and attaches req.user.
+ * Last Updated Date: October 1, 2026
+ * @function authMiddleware
+ * @param {object} req - Request
+ * @param {object} res - Response
+ * @param {Function} next - Passes control to the next handler
+ * @author John Vincent, Updated by: Kate, Cesar
+ */
+const authMiddleware = async (req, res, next) => {
+    const token = req.cookies?.[AUTH_COOKIE_NAME];
 
     if (!token) {
-      return res.status(401).json({
-        message: "Invalid authorization header.",
-      });
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({ message: NO_TOKEN_MESSAGE });
     }
 
-    // Verify the token's signature and expiration
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    /* A bad token is a 401; anything failing after this point is a server fault. */
+    let decoded;
+    try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+        const message =
+            error.name === 'TokenExpiredError' ? EXPIRED_TOKEN_MESSAGE : INVALID_TOKEN_MESSAGE;
 
-    // Retrieve the current user from MongoDB
-    const user = await User.findById(decoded.sub);
-
-    if (!user) {
-      return res.status(401).json({
-        message: "User account no longer exists.",
-      });
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({ message });
     }
 
-    // Attach the authenticated user to the request
-    req.user = {
-      id: user._id.toString(),
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role,
-    };
+    try {
+        const user = await User.findById(decoded.sub).lean();
 
-    // Continue to the next middleware or controller
-    next();
-  } catch (error) {
-    const invalidExpiredNames = ["TokenExpiredError", "JsonWebTokenError", "NotBeforeError"];
-    if (invalidExpiredNames.includes(error.name)) {
-      return res.status(401).json({
-        message: "Invalid or expired token.",
-      });
+        if (!user) {
+            return res.status(HTTP_STATUS.UNAUTHORIZED).json({ message: ACCOUNT_GONE_MESSAGE });
+        }
+
+        /* The user is read on every request, so a block bites immediately. */
+        if (!isActive(user)) {
+            return res.status(HTTP_STATUS.FORBIDDEN).json({ message: BLOCKED_ACCOUNT_MESSAGE });
+        }
+
+        req.user = user;
+        req.token = token;
+        return next();
+    } catch (error) {
+        console.error('authMiddleware: failed to resolve the request user:', error);
+        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: GENERIC_ERROR_MESSAGE });
     }
-
-    console.error("Authentication error:", error.message);
-    return res.status(500).json({
-      message: "Internal server error.",
-    });
-  }
 };
+
+export default authMiddleware;
+

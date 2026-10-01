@@ -1,19 +1,9 @@
 import { BOARDS, BOARD_META, BOARD_LABELS } from "../../constants/boards";
 
 /**
- * DOCU: How the tasks on every board are spread, drawn with plain divs rather
- * than a charting library. The app has no chart dependency and this needs three
- * numbers, so adding one would be the larger cost; a flex row of coloured
- * segments is the whole thing.
- *
- * Accessibility is handled in two layers. The bar itself is a single graphic
- * with a spoken summary, and underneath it sits a real list - one row per board
- * with the board's name, its count and its share - which is what a screen reader
- * reads and what a sighted user scans. Each board also keeps its own colour from
- * the shared board tokens, so the chart matches the task board it summarises.
- *
- * @param {object} props
- * @param {{todo: number, ongoing: number, done: number}} props.counts
+ * How the tasks on every board are spread, drawn with plain divs rather than a charting
+ * library. The app has no chart dependency and this needs three numbers, so adding one would be
+ * the larger cost; a flex row of coloured segments is the whole thing.
  */
 const TaskStatusChart = ({ counts }) => {
     const total = BOARDS.reduce((sum, board) => sum + (counts?.[board] ?? 0), 0);

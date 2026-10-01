@@ -1,7 +1,7 @@
 /**
- * Every constant the app shares, re-exported from one entry point. Each area
- * keeps its own module, and importing it directly is equally fine. Nothing here
- * may import from `src/` at large: these are the values every layer agrees on.
+ * Every constant the app shares, re-exported from one entry point. Each area keeps its own
+ * module, and importing it directly is equally fine. Nothing here may import from `src/` at
+ * large: these are the values every layer agrees on.
  */
 
 export {
@@ -12,6 +12,7 @@ export {
     CARD_BOARD_META,
 } from "./boards";
 export { TEMP_ID_PREFIX } from "./tasks";
+export { ICONS, DEFAULT_ICON_SIZE, DEFAULT_ICON_STROKE_WIDTH } from "./icons";
 export {
     PAGE_SIZE_OPTIONS,
     DEFAULT_PAGE_SIZE,
@@ -73,8 +74,6 @@ export {
     TOAST_TITLE_LIMIT,
 } from "./toast";
 export {
-    DEMO_AVATAR_URL,
-    DEMO_USER_ID_PREFIX,
     DISPLAY_NAME_FALLBACK,
     INITIALS_FALLBACK,
 } from "./user";
@@ -82,11 +81,16 @@ export {
     EMAIL_PATTERN,
     NAME_PATTERN,
     PASSWORD_MIN_LENGTH,
+    PASSWORD_NO_SPACES_PATTERN,
+    hasPasswordSpaces,
     VALIDATION_MESSAGES,
+    newPasswordRules,
+    confirmPasswordRules,
 } from "./validation";
 export {
     CONTROL_BASE,
     CONTROL_BUTTON,
     CONTROL_BUTTON_SUBTLE,
     CONTROL_ICON,
+    LAYERS,
 } from "./styles";

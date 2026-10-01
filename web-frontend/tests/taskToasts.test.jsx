@@ -1,14 +1,3 @@
-/**
- * Integration tests for the task notification system.
- *
- * Unlike scripts/toast-verify.mjs, which checks the wording in isolation, this
- * mounts the *real* AppContextProvider and the *real* useTasks hook, drives
- * them through the public actions, and asserts on the toast that actually
- * reaches the DOM. That is deliberate: the bug these tests exist for was in
- * the wiring, not the copy, and testing the message string alone would never
- * have caught it.
- */
-
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, waitFor, act, cleanup } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -17,7 +6,7 @@ import { AppContextProvider } from "../src/contexts/AppContext";
 import { useTasks } from "../src/hooks/useTasks";
 import { TASKS_KEY } from "../src/constants/queryKeys";
 
-/* The api-client module is mocked so each test decides what the server does. */
+/** The api-client module is mocked so each test decides what the server does. */
 const moveTask = vi.fn();
 const createTask = vi.fn();
 const editTask = vi.fn();
@@ -245,7 +234,7 @@ describe("exactly one toast per action", () => {
     });
 
     it("shows one toast per action when the same action is repeated", async () => {
-        /* Only one toast is ever on screen at a time, so the count stays 1. */
+        /** Only one toast is ever on screen at a time, so the count stays 1. */
         moveTask.mockResolvedValue({ task: makeTask({ status: "ongoing" }) });
         const api = mountBoard([makeTask()]);
 
@@ -368,27 +357,25 @@ describe("the toast itself", () => {
         await settle();
 
         const text = screen.getByRole("status").textContent;
-        /* Not the literal ellipsis glyph: any non-ASCII char proves the title was clipped. */
+        /** Not the literal ellipsis glyph: any non-ASCII char proves the title was clipped. */
         expect(text).toMatch(/[^\x20-\x7E]/);
         expect(text.length).toBeLessThan(90);
     });
 });
 describe("the bug this suite was written for", () => {
     /*
-     * Regression guard for the original defect. The previous board used to be
-     * read inside `onMutate`, which React Query awaits inside its async
-     * `execute()` - so it ran a microtask *after* the optimistic write had put
-     * the card on its new board. `from` then equalled `to`, the move was
-     * mistaken for a same-board reorder, and no toast was ever shown.
-     *
-     * This drives the real hook and asserts the toast really reaches the DOM,
-     * which is the only form of that check that would have caught it.
+     * Regression guard for the original defect. The previous board used to be read inside
+     * `onMutate`, which React Query awaits inside its async `execute()` - so it ran a microtask
+     * *after* the optimistic write had put the card on its new board. `from` then equalled
+     * `to`, the move was mistaken for a same-board reorder, and no toast was ever shown. This
+     * drives the real hook and asserts the toast really reaches the DOM, which is the only form
+     * of that check that would have caught it.
      */
     it("still announces a move whose optimistic write happens first", async () => {
         moveTask.mockResolvedValue({ task: makeTask({ status: "ongoing" }) });
         const api = mountBoard([makeTask({ status: "todo" })]);
 
-        /* The card is on the todo board when the action starts... */
+        /** The card is on the todo board when the action starts... */
         expect(queryClient.getQueryData(TASKS_KEY).tasks[0].status).toBe("todo");
 
         await act(async () => {
@@ -396,7 +383,7 @@ describe("the bug this suite was written for", () => {
         });
         await settle();
 
-        /* ...and the toast names the board it came from, not the one it is on. */
+        /** ...and the toast names the board it came from, not the one it is on. */
         expect(screen.getByRole("status")).toHaveTextContent("moved to Ongoing");
     });
 

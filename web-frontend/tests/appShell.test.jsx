@@ -1,8 +1,3 @@
-/**
- * Tests for the app shell's footer rule, driving the real `AppShell` and
- * `Footer` through a memory router at each route and asserting on the DOM.
- */
-
 import { describe, it, expect, afterEach } from "vitest";
 import { render, screen, cleanup } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
@@ -51,8 +46,10 @@ describe("the footer on the not-found pages", () => {
         expect(footer()).not.toBeInTheDocument();
     });
 
-    /** The `*` catch-all renders NotFound for every unmatched URL, so the footer
-     *  has to be gone on all of them, not just the paths someone enumerated. */
+    /**
+     * The `*` catch-all renders NotFound for every unmatched URL, so the footer has to be gone
+     * on all of them, not just the paths someone enumerated.
+     */
     it.each(["/nope", "/some/deep/unknown/path", "/task/999", "/settings/profile"])(
         "is not rendered on the unknown path %s",
         (path) => {
@@ -100,7 +97,7 @@ describe("the shell frame", () => {
     it("keeps the page above the footer on a footer-bearing route", () => {
         const { container } = renderAt(ROUTES.board);
 
-        /* flex-1 on the content wrapper is what pushes the footer to the bottom. */
+        /** flex-1 on the content wrapper is what pushes the footer to the bottom. */
         const column = container.firstChild;
         expect(column).toHaveClass("min-h-screen", "flex-col");
         expect(column.lastElementChild.tagName).toBe("FOOTER");

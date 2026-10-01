@@ -1,194 +1,136 @@
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import User from "../models/User.js";
-import { registerUserSchema } from "../validators/userValidator.js";
+import * as authService from '../services/authService.js';
+import { parseBody } from '../helpers/validationHelper.js';
+import {
+    registerSchema,
+    signInSchema,
+    forgotPasswordSchema,
+    resetPasswordSchema,
+    updateUserProfileSchema,
+    updateUserPasswordSchema,
+} from '../utils/validationSchemas.js';
+import { HTTP_STATUS } from '../constants/http.js';
 
-const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
-
-// Validates the user's session by reading the JWT stored in the `session` cookie.
-// If the cookie is missing, the user is not authenticated.
-// The token is verified using the server's JWT secret.
-// The decoded token contains the user's ID (`sub`), which is used to fetch the user from the database.
-// If the user exists, return their public profile information.
-// Any verification failure (missing cookie, invalid token, expired token) results in a 401 response.
-export const validateToken = async (req, res) => {
-  try {
-    const token = req.cookies.session;
-
-    if (!token) {
-      return res.status(401).json({ message: "No token provided." });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    const user = await User.findById(decoded.sub).select("-password");
-
-    if (!user) {
-      return res.status(401).json({ message: "User not found." });
-    }
-
-    return res.status(200).json({
-      user: {
-        id: user._id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    return res.status(401).json({ error: error.message, message: "Invalid or expired token." });
-  }
-};
-
-/* Register a new user */
+/**
+ * DOCU: Registers a new account.
+ * Last Updated Date: October 1, 2026
+ * @function register
+ * @param {object} req - Request
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { message, user }
+ * @author Cesar
+ */
 export const register = async (req, res) => {
-  try {
-    if (!req.body) {
-      return res.status(400).json({
-        message: "All required fields must be provided.",
-      });
-    }
+    const data = parseBody(req.body, registerSchema);
+    const user = await authService.register(data);
 
-    /** Validate request body */
-    const validate = registerUserSchema.safeParse(req.body);
-
-    if (!validate.success) {
-      return res.status(400).json({
-        message: validate.error.issues[0].message,
-      });
-    }
-
-    const { email, firstName, lastName, password } = validate.data;
-
-    /** Verify if user already exist */
-    const existingUser = await User.findOne({ email: email.trim().toLowerCase() });
-
-    if (existingUser) {
-      return res.status(409).json({
-        message: "Email is already registered.",
-      });
-    }
-
-    /**
-     *  Generate a salt and hash the password
-     *  This is to encrypt the password before saving on the database
-     */
-    const salt = await bcrypt.genSalt(SALT_ROUNDS);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    /** Create a new user record on the database */
-    const user = await User.create({
-      email,
-      password: hashedPassword,
-      firstName,
-      lastName,
-    });
-
-    return res.status(201).json({
-      message: "User registered successfully.",
-      user: {
-        id: user._id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    console.error("Registration error:", error.message);
-    return res.status(500).json({
-      message: "Internal server error.",
-    });
-  }
+    res.status(HTTP_STATUS.CREATED).json({ message: 'User registered successfully.', user });
 };
 
-// Log in an existing user
-export const login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+/**
+ * DOCU: Signs a user in and sets the session cookie.
+ * Last Updated Date: October 1, 2026
+ * @function signIn
+ * @param {object} req - Request
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { message, token, user }
+ * @author Cesar
+ */
+export const signIn = async (req, res) => {
+    const data = parseBody(req.body, signInSchema);
+    const { user, token } = await authService.signIn(data);
 
-    if (!email || !password) {
-      return res.status(400).json({
-        message: "Email and password are required.",
-      });
-    }
+    authService.setSessionCookie(res, token);
 
-    const user = await User.findOne({
-      email: email.trim().toLowerCase(),
-    }).select("+password");
-
-    if (!user) {
-      return res.status(401).json({
-        message: "Invalid email or password.",
-      });
-    }
-
-    // Compare the submitted password with the stored hash
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        message: "Invalid email or password.",
-      });
-    }
-
-    // Create a JWT token
-    const token = jwt.sign(
-      {
-        sub: user._id.toString(),
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: process.env.JWT_EXPIRES_IN || "1h",
-      }
-    );
-
-    // Stores the JWT in an HTTP-only cookie named `session`.
-    // - httpOnly: prevents JavaScript from accessing the cookie (protects against XSS attacks).
-    // - sameSite: 'lax' allows the cookie to be sent on same-site navigation (safe default).
-    // - secure: false for local development; must be true in production (HTTPS required).
-    // - maxAge: sets the cookie expiration (1 hour in this case).
-    // The frontend will automatically send this cookie with every request, enabling session-based auth.
-    res.cookie("session", token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: false,
-      maxAge: 60 * 60 * 1000,
-    });
-
-    return res.status(200).json({
-      message: "Login successful.",
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    console.error("Login error:", error.message);
-    return res.status(500).json({
-      message: "Internal server error.",
-    });
-  }
+    res.status(HTTP_STATUS.OK).json({ message: 'Login successful.', token, user });
 };
 
-// Log out an existing user
-export const logout = async (req, res) => {
-    try {
-        // Clear the session cookie
-        res.clearCookie("session", {
-            httpOnly: true,
-            secure: false,
-            sameSite: "lax",
-        });
+/**
+ * DOCU: Signs a user out by clearing the session cookie.
+ * Last Updated Date: October 1, 2026
+ * @function logOut
+ * @param {object} req - Request
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { message }
+ * @author Cesar
+ */
+export const logOut = async (req, res) => {
+    authService.clearSessionCookie(res);
 
-        return res.json({ message: "Signed out" });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Server error" });
-    }
+    res.status(HTTP_STATUS.OK).json({ message: 'Signed out' });
+};
+
+/**
+ * DOCU: Returns the account behind the current session cookie.
+ * Last Updated Date: October 1, 2026
+ * @function validateToken
+ * @param {object} req - Request, already carrying the user
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { user }
+ * @author Cesar
+ */
+export const validateToken = async (req, res) => {
+    res.status(HTTP_STATUS.OK).json({ user: authService.toPublicUser(req.user) });
+};
+
+/**
+ * DOCU: Starts password recovery.
+ * Last Updated Date: October 1, 2026
+ * @function forgotPassword
+ * @param {object} req - Request
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { message }
+ * @author Cesar
+ */
+export const forgotPassword = async (req, res) => {
+    const data = parseBody(req.body, forgotPasswordSchema);
+
+    res.status(HTTP_STATUS.OK).json({ message: await authService.forgotPassword(data) });
+};
+
+/**
+ * DOCU: Completes password recovery.
+ * Last Updated Date: October 1, 2026
+ * @function resetPassword
+ * @param {object} req - Request
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { message }
+ * @author Cesar
+ */
+/**
+ * DOCU: Updates the signed-in user's own profile fields.
+ *
+ * The account comes from the verified session, never from the request, so
+ * there is nothing in the body or the path that could name a different user.
+ * Last Updated Date: October 1, 2026
+ * @function updateProfile
+ * @param {object} req - Request, already carrying the user
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { user }
+ * @author Cesar
+ */
+export const updateProfile = async (req, res) => {
+    const data = parseBody(req.body, updateUserProfileSchema);
+
+    res.status(HTTP_STATUS.OK).json({ user: await authService.updateOwnProfile(req.user, data) });
+};
+
+/**
+ * DOCU: Sets a new password on the signed-in user's own account.
+ * Last Updated Date: October 1, 2026
+ * @function updatePassword
+ * @param {object} req - Request, already carrying the user
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { message }
+ * @author Cesar
+ */
+export const updatePassword = async (req, res) => {
+    const data = parseBody(req.body, updateUserPasswordSchema);
+
+    res.status(HTTP_STATUS.OK).json({ message: await authService.setOwnPassword(req.user, data) });
+};
+
+export const resetPassword = async (req, res) => {
+    const data = parseBody(req.body, resetPasswordSchema);
+
+    res.status(HTTP_STATUS.OK).json({ message: await authService.resetPassword(data) });
 };
