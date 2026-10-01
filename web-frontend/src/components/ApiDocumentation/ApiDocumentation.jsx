@@ -5,7 +5,7 @@ import { getOpenApiSpecQueryOptions } from "../../queryOptions/docsQueryOptions"
 import { groupOperationsByTag, readSpecSummary } from "../../helpers/openapiHelper";
 import { API_BASE_URL } from "../../api-client/client";
 import { OPENAPI_PATH } from "../../api-client/docs";
-import { FullScreenLoader, ErrorState, EmptyState } from "../Feedback";
+import { FullScreenLoader, ErrorState, EmptyState, Spinner } from "../Feedback";
 import { useDebouncedValue, SEARCH_DEBOUNCE_MS } from "../../hooks/useDebouncedValue";
 import ApiGroup from "./ApiGroup";
 
@@ -56,9 +56,23 @@ const ApiDocumentation = () => {
     const toggleEndpoint = (key) =>
         setOpenKey((current) => (current === key ? null : key));
 
-    const { data: spec, isLoading, isError, error, refetch } = useQuery(
+    const { data: spec, isLoading, isFetching, isError, error, refetch } = useQuery(
         getOpenApiSpecQueryOptions()
     );
+
+    /**
+     * Whether a search is still being worked out.
+     *
+     * The list is filtered in the page rather than fetched, so "in flight" here is the gap
+     * between the term in the box and the term the list is filtered by: a keystroke that has
+     * not yet been committed by the debounce, or a document being refetched behind the
+     * filter. Both are work the reader is waiting on, so both are what the box reports.
+     *
+     * Reading it as a difference between two states rather than as a separate flag means it
+     * cannot disagree with them: the moment the term settles, the spinner goes, with no
+     * effect to forget to run.
+     */
+    const isSearching = filterInput !== filter || (isFetching && !isLoading);
 
     /**
      * Grouping is a pure function of the document, so it is memoised rather than recomputed
@@ -115,14 +129,43 @@ const ApiDocumentation = () => {
                 <label className="sr-only" htmlFor="api-docs-filter">
                     Filter endpoints
                 </label>
-                <input
-                    id="api-docs-filter"
-                    type="search"
-                    value={filterInput}
-                    onChange={(event) => setFilterInput(event.target.value)}
-                    placeholder="Filter by method, path or description"
-                    className="field max-w-sm"
-                />
+
+                {/* The box and its spinner, in a `relative` wrapper rather than one element:
+                    the ring is positioned against the field's own box, and it is rendered
+                    inside it so the two can never be separated by a wrap on a narrow screen.
+                    The wrapper keeps `max-w-sm` from the input, so the field is exactly as
+                    wide as it was before the spinner existed. */}
+                <div className="relative w-full max-w-sm">
+                    <input
+                        id="api-docs-filter"
+                        type="search"
+                        value={filterInput}
+                        onChange={(event) => setFilterInput(event.target.value)}
+                        placeholder="Filter by method, path or description"
+                        /** `aria-busy` states the search is unfinished; the words beside the
+                            ring say the same thing to anyone who cannot see it spin. */
+                        aria-busy={isSearching}
+                        className={`field ${isSearching ? "pr-11!" : ""}`}
+                    />
+
+                    {isSearching && (
+                        /** The app's one spinner, at its smallest size, in the app's own
+                            colours - the same ring the full-page loader and the refresh
+                            overlay use, so this reads as the product's loading state and
+                            not as decoration invented for this field. `pointer-events-none`
+                            because the box is still typed into while it spins, and
+                            `right-4` clears the field's own padding. `role="status"` wraps a
+                            live region around it, so the state is announced once rather
+                            than on every keystroke. */
+                        <span
+                            className="pointer-events-none absolute inset-y-0 right-4 flex items-center"
+                            role="status"
+                        >
+                            <span className="sr-only">Searching the documentation...</span>
+                            <Spinner size="xs" />
+                        </span>
+                    )}
+                </div>
                 <button
                     type="button"
                     onClick={() => refetch()}

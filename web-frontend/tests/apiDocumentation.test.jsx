@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent, waitFor, within, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 
@@ -238,6 +238,128 @@ describe("the endpoint list", () => {
         /** One address each, so either can be copied out of the page whole. */
         expect(await screen.findByText(/\/openapi\.json$/)).toBeInTheDocument();
         expect(screen.getByText(/\/api-docs$/)).toBeInTheDocument();
+    });
+});
+
+describe("the search box while a search is being worked out", () => {
+    it("is not searching when nothing has been typed", async () => {
+        renderViewer();
+        await screen.findByRole("heading", { name: "Widgets" });
+
+        expect(screen.getByLabelText("Filter endpoints")).toHaveAttribute("aria-busy", "false");
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+
+    it("shows the ring inside the box the moment a term is typed, before the list changes", async () => {
+        renderViewer();
+        await screen.findByRole("heading", { name: "Widgets" });
+        const box = screen.getByLabelText("Filter endpoints");
+
+        fireEvent.change(box, { target: { value: "health" } });
+
+        /** The list has not been re-filtered yet - the debounce is still running. */
+        expect(screen.getByRole("heading", { name: "Widgets" })).toBeInTheDocument();
+        expect(screen.getByRole("status")).toHaveTextContent("Searching the documentation");
+        expect(box).toHaveAttribute("aria-busy", "true");
+    });
+
+    it("takes the ring away once the term has settled", async () => {
+        renderViewer();
+        await screen.findByRole("heading", { name: "Widgets" });
+        const box = screen.getByLabelText("Filter endpoints");
+
+        fireEvent.change(box, { target: { value: "health" } });
+        expect(screen.getByRole("status")).toBeInTheDocument();
+
+        /** The timeout covers the debounce: the box settles when the list does. */
+        await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument(), {
+            timeout: 2000,
+        });
+        expect(screen.getByText("/health")).toBeInTheDocument();
+        expect(box).toHaveAttribute("aria-busy", "false");
+    });
+
+    it("spins on every keystroke, so a word typed fast is never shown unannounced", async () => {
+        renderViewer();
+        await screen.findByRole("heading", { name: "Widgets" });
+        const box = screen.getByLabelText("Filter endpoints");
+
+        /** Typed the way a person types it: no pause, so the debounce never lands mid-word. */
+        for (const letter of "health") {
+            fireEvent.change(box, { target: { value: box.value + letter } });
+            expect(screen.getByRole("status")).toBeInTheDocument();
+        }
+
+        await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument(), {
+            timeout: 2000,
+        });
+    });
+
+    it("uses the app's own ring, at field size, inside the field's own box", async () => {
+        renderViewer();
+        await screen.findByRole("heading", { name: "Widgets" });
+        const box = screen.getByLabelText("Filter endpoints");
+
+        fireEvent.change(box, { target: { value: "health" } });
+
+        /** The same colours and classes every other loader in the product uses. */
+        const ring = document.querySelector(".animate-spin");
+        expect(ring).toHaveClass("rounded-full");
+        expect(ring).toHaveClass("border-fox-200");
+        expect(ring).toHaveClass("border-t-fox-500");
+        expect(ring).toHaveClass("h-4", "w-4");
+
+        /** Decorative: the words beside it are what a screen reader announces. */
+        expect(ring).toHaveAttribute("aria-hidden", "true");
+
+        /**
+         * Positioned against the field rather than laid out after it, so the ring cannot be
+         * pushed onto its own line on a narrow screen, and it cannot steal the click that
+         * puts the caret in the box.
+         */
+        const holder = ring.closest('[role="status"]');
+        expect(holder).toHaveClass("absolute");
+        expect(holder).toHaveClass("pointer-events-none");
+        expect(holder.parentElement).toHaveClass("relative");
+        expect(holder.parentElement.contains(box)).toBe(true);
+
+        /** Room kept on the right for the ring, so a long term is not written under it. */
+        expect(box).toHaveClass("pr-11!");
+    });
+
+    it("leaves the box typeable while it spins", async () => {
+        renderViewer();
+        await screen.findByRole("heading", { name: "Widgets" });
+        const box = screen.getByLabelText("Filter endpoints");
+
+        fireEvent.change(box, { target: { value: "health" } });
+        fireEvent.change(box, { target: { value: box.value + "y" } });
+
+        expect(box).toHaveValue("healthy");
+        expect(screen.getByRole("status")).toBeInTheDocument();
+    });
+
+    it("spins while the document is being refetched, and stops when it lands", async () => {
+        /** A refetch that stays in flight until the test releases it. */
+        let release;
+        getOpenApiSpec.mockResolvedValueOnce(SPEC);
+        getOpenApiSpec.mockImplementationOnce(
+            () => new Promise((resolve) => { release = resolve; }),
+        );
+
+        renderViewer();
+        await screen.findByRole("heading", { name: "Widgets" });
+
+        fireEvent.click(screen.getByRole("button", { name: "Reload spec" }));
+
+        /** The refetch is a round trip, so the wait covers it landing in the query. */
+        expect(
+            await screen.findByRole("status", undefined, { timeout: 2000 }),
+        ).toHaveTextContent("Searching the documentation");
+
+        await act(async () => { release(SPEC); });
+        await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
+        expect(screen.getByText("/api/widgets/{id}")).toBeInTheDocument();
     });
 });
 
