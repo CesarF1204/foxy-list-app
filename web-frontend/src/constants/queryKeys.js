@@ -27,6 +27,9 @@ const adminUsersKey = (params) => [...ADMIN_USERS_KEY, params ?? {}];
 /** The query key for a single user's admin detail. */
 const adminUserKey = (userId) => ["admin", "user", userId];
 
+/** The query key holding the backend's OpenAPI document. */
+const OPENAPI_SPEC_KEY = ["openapi", "spec"];
+
 export {
     VALIDATE_TOKEN_KEY,
     TASKS_KEY,
@@ -34,4 +37,5 @@ export {
     ADMIN_USERS_KEY,
     adminUsersKey,
     adminUserKey,
+    OPENAPI_SPEC_KEY,
 };

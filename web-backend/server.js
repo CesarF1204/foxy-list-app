@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import apiRoutes from './routes/api.routes.js';
+import { swaggerRoutes } from './swagger/swaggerRoutes.js';
 import { errorMiddleware } from './middleware/errorMiddleware.js';
 import { connectDB, disconnectDB } from './config/db.js';
 import { HTTP_STATUS, HTTP_METHODS } from './constants/http.js';
@@ -41,6 +42,13 @@ app.use(cookieParser());
 app.get('/', (req, res) => {
     res.status(HTTP_STATUS.OK).json({ message: 'Foxy List API is running' });
 });
+
+/**
+ * `/openapi.json` and the Swagger UI at `/api-docs`, registered before the API routers so a
+ * future `/api` path cannot shadow them. The document is built when this line runs, which is
+ * after `dotenv.config()` above - see `swagger/swaggerRoutes.js`.
+ */
+swaggerRoutes(app);
 
 apiRoutes(app);
 

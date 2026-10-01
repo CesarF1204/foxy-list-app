@@ -113,7 +113,7 @@ describe("the Admin Overview link in the navbar", () => {
         renderNavbar(ROUTES.board, ADMIN);
 
         expect(adminLink()).toBeInTheDocument();
-        expect(navLinkNames()).toEqual(["Dashboard", "Admin Overview"]);
+        expect(navLinkNames()).toEqual(["Dashboard", "Admin Overview", "API Docs"]);
     });
 
     it("points at the admin overview's own path", () => {
@@ -153,13 +153,17 @@ describe("the section links in the account menu", () => {
     it("carries the Dashboard and the Admin Overview, Dashboard first", () => {
         renderNavbar(ROUTES.board, ADMIN);
 
-        expect(menuLinkNames(openAccountMenu())).toEqual(["Dashboard", "Admin Overview"]);
+        expect(menuLinkNames(openAccountMenu())).toEqual([
+            "Dashboard",
+            "Admin Overview",
+            "API Docs",
+        ]);
     });
 
     it("carries the Admin Overview only for an admin", () => {
         renderNavbar(ROUTES.board, USER);
 
-        expect(menuLinkNames(openAccountMenu())).toEqual(["Dashboard"]);
+        expect(menuLinkNames(openAccountMenu())).toEqual(["Dashboard", "API Docs"]);
     });
 
     it("points both entries at their own paths", () => {

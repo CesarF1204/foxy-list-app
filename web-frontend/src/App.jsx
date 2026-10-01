@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import AdminOverview from "./pages/AdminOverview";
 import AdminUsers from "./pages/AdminUsers";
 import NotFound from "./pages/NotFound";
+import ApiDocs from "./pages/ApiDocs";
 import ErrorBoundary from "./components/ErrorBoundary";
 import AppShell from "./components/AppShell";
 import { RequireAuth, RequireGuest, RequireAdmin } from "./components/RouteGuards";
@@ -102,6 +103,11 @@ function App() {
                                             </RequireAuth>
                                         }
                                     />
+                                    {/* The API reference. Deliberately unguarded: the
+                                        specification describes shapes, never data, and a
+                                        developer integrating this API needs to read what
+                                        sign-in is before they have a session. */}
+                                    <Route path={ROUTES.apiDocs} element={<ApiDocs />} />
                                     <Route path={ROUTES.notFound} element={<NotFound />} />
                                     {/* Unknown paths fall through to the not-found page. */}
                                     <Route path="*" element={<NotFound onReset={reset} />} />

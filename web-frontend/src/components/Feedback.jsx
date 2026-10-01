@@ -4,6 +4,7 @@
  * product rather than a new one per screen.
  */
 const SPINNER_SIZES = {
+    xs: "h-4 w-4 border-2",
     sm: "h-5 w-5 border-2",
     lg: "h-10 w-10 border-4",
 };

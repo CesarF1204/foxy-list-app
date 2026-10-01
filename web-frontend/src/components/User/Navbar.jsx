@@ -97,6 +97,17 @@ const Navbar = ({ user }) => {
                                 Admin Overview
                             </Link>
                         )}
+                        {/* The API reference. Offered to every signed-in user, not just an
+                            admin: reading what the API is does not require administering it,
+                            and the page itself is public. */}
+                        <NavLink
+                            to={ROUTES.apiDocs}
+                            className={({ isActive }) =>
+                                `rounded-xl px-3 py-2 text-sm font-bold transition ${navClass(isActive)}`
+                            }
+                        >
+                            API Docs
+                        </NavLink>
                     </nav>
                 )}
 
@@ -173,6 +184,18 @@ const Navbar = ({ user }) => {
                                                 </Link>
                                             </li>
                                         )}
+
+                                        <li className="md:hidden">
+                                            <NavLink
+                                                to={ROUTES.apiDocs}
+                                                onClick={() => setIsMenuOpen(false)}
+                                                className={({ isActive }) =>
+                                                    `block w-full px-4 py-2 text-left transition ${navClass(isActive)}`
+                                                }
+                                            >
+                                                API Docs
+                                            </NavLink>
+                                        </li>
 
                                         <li aria-hidden="true" className="my-1.5 border-t-2 border-paper-deep md:hidden" />
                                         <LogOut onDone={() => setIsMenuOpen(false)} />

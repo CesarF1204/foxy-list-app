@@ -1031,10 +1031,16 @@ describe("the pager under the table", () => {
     });
 
     it("offers the page sizes the app supports", () => {
-        renderPager({ pageSize: 5 });
+        renderPager({ pageSize: 10 });
 
         const select = screen.getByLabelText("Rows per page");
-        expect(select).toHaveValue("5");
+
+        /**
+         * The select shows the size it was given, not the first option in the list: `5` heads
+         * `PAGE_SIZE_OPTIONS`, but ten is the default the table loads with, and a pager that
+         * displayed 5 while fetching 10 would misreport every range it prints above.
+         */
+        expect(select).toHaveValue("10");
         expect(within(select).getAllByRole("option").map((o) => o.textContent)).toEqual(["5", "10", "25"]);
     });
 
@@ -1204,11 +1210,11 @@ describe("the users page, driven through the API", () => {
         await renderPage();
 
         /**
-         * Five rows, not ten: `DEFAULT_PAGE_SIZE` in `constants/admin.js` is what the table
+         * Default ten rows: `DEFAULT_PAGE_SIZE` in `constants/admin.js` is what the table
          * asks for on load, and it matches the API's own default.
          */
         expect(getAdminUsers).toHaveBeenCalledWith(
-            expect.objectContaining({ page: 1, pageSize: 5, sortBy: "createdAt", sortDir: "desc" }),
+            expect.objectContaining({ page: 1, pageSize: 10, sortBy: "createdAt", sortDir: "desc" }),
             /** The second argument is the cancellation handle React Query supplies. */
             expect.objectContaining({ signal: expect.anything() }),
         );
