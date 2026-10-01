@@ -106,7 +106,10 @@ both directly. Below that breakpoint the same two links move into the account
 menu behind the avatar, keeping a phone's navbar to the brand alone - never
 both at once, and never neither. The Dashboard sits above Admin Overview
 wherever the pair appears. An administrator is offered these links; a plain user
-is not. See [Accounts](#accounts) for how to get an administrator account.
+is not. The entry names the admin *section*, not the single overview screen, so
+it stays filled and marked current on both `/admin/overview` and
+`/admin/users`; the Overview and Users tabs below it are what move within that
+section. See [Accounts](#accounts) for how to get an administrator account.
 
 ### Managing a user
 

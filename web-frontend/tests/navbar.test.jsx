@@ -146,13 +146,13 @@ describe("the Admin Overview link in the navbar", () => {
         expect(adminLink()).not.toBeInTheDocument();
     });
 
-    it("marks itself current only on the overview, not on the sibling screen", () => {
+    it("stays current on the users table, which sits under the same section", () => {
         renderNavbar(ROUTES.adminOverview, ADMIN);
         expect(adminLink()).toHaveAttribute("aria-current", "page");
 
         cleanup();
         renderNavbar(ROUTES.adminUsers, ADMIN);
-        expect(adminLink()).not.toHaveAttribute("aria-current");
+        expect(adminLink()).toHaveAttribute("aria-current", "page");
     });
 });
 
@@ -252,14 +252,14 @@ describe("the section links in the account menu", () => {
         );
     });
 
-    it("leaves both entries unfilled on a screen that is neither section", () => {
+    it("keeps the admin entry filled on the users table, but leaves Dashboard plain", () => {
         renderNavbar(ROUTES.adminUsers, ADMIN);
         const menu = within(openAccountMenu());
 
         expect(menu.getByRole("link", { name: "Dashboard" }).className).not.toContain(
             "bg-fox-400"
         );
-        expect(menu.getByRole("link", { name: "Admin Overview" }).className).not.toContain(
+        expect(menu.getByRole("link", { name: "Admin Overview" }).className).toContain(
             "bg-fox-400"
         );
     });

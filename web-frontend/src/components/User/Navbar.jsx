@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { Mascot } from "page-mascot";
 import {
     getFullName,
@@ -22,6 +22,17 @@ const navClass = (isActive) =>
     isActive ? "bg-fox-400 text-white" : "text-ink hover:bg-fox-50";
 
 /**
+ * The Admin Overview entry names the admin *section*, not the single screen at
+ * `/admin/overview`: the users table is a sibling screen, not a child of that
+ * path, so `NavLink`'s own matching - exact or prefix of `/admin/overview` -
+ * can never cover it. The section is decided here instead, from the `/admin`
+ * prefix, so the entry stays filled and `aria-current` on both screens while
+ * the Overview/Users tabs below it do the moving within the section.
+ */
+const isAdminSection = (pathname) =>
+    pathname === ROUTES.admin || pathname.startsWith(`${ROUTES.admin}/`);
+
+/**
  * DOCU: The app navbar. Always visible: signed in it carries the brand, mascot,
  * today's date and the account menu; signed out, a sign-in call to action.
  */
@@ -33,6 +44,11 @@ const Navbar = ({ user }) => {
      * drawer has to survive that. */
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const containerRef = useRef(null);
+
+    /* The admin entry follows the section, not the path it points at, so both
+     * the navbar link and the account menu's copy read this one flag. */
+    const { pathname } = useLocation();
+    const inAdminSection = isAdminSection(pathname);
 
     /* Close the menu on an outside click or Escape. */
     useEffect(() => {
@@ -102,15 +118,21 @@ const Navbar = ({ user }) => {
                             Dashboard
                         </NavLink>
                         {isAdmin(user) && (
-                            <NavLink
+                            /* A plain `Link`, not a `NavLink`: `NavLink` decides
+                             * `aria-current` from its own path match, and it
+                             * drops any `aria-current` handed to it - so with
+                             * the users table being a sibling of
+                             * `/admin/overview`, not a child, there is no way
+                             * to keep it lit from inside a `NavLink`. This one
+                             * is lit from `inAdminSection` instead, which reads
+                             * the whole `/admin` prefix. */
+                            <Link
                                 to={ROUTES.adminOverview}
-                                end
-                                className={({ isActive }) =>
-                                    `rounded-xl px-3 py-2 text-sm font-bold transition ${navClass(isActive)}`
-                                }
+                                aria-current={inAdminSection ? "page" : undefined}
+                                className={`rounded-xl px-3 py-2 text-sm font-bold transition ${navClass(inAdminSection)}`}
                             >
                                 Admin Overview
-                            </NavLink>
+                            </Link>
                         )}
                     </nav>
                 )}
@@ -189,7 +211,7 @@ const Navbar = ({ user }) => {
                                             are both guarded and every endpoint
                                             re-checks the role.
 
-                                            Both are `NavLink`s, not plain
+                                            Both are router links, not plain
                                             anchors, so the section a phone is
                                             actually on is filled in the same
                                             fox the navbar uses. The active
@@ -198,7 +220,15 @@ const Navbar = ({ user }) => {
                                             of the base, since two same-layer
                                             text utilities would be resolved by
                                             stylesheet order rather than by the
-                                            order they are written here. */}
+                                            order they are written here.
+
+                                            The Dashboard is a `NavLink`, its
+                                            own match being the whole of the
+                                            board. The admin link is a plain
+                                            `Link`, lit from `inAdminSection`
+                                            instead - see the navbar's copy -
+                                            so both admin screens fill this one
+                                            entry. */}
                                         <li className="md:hidden">
                                             <NavLink
                                                 to={ROUTES.board}
@@ -213,16 +243,16 @@ const Navbar = ({ user }) => {
                                         </li>
                                         {isAdmin(user) && (
                                             <li className="md:hidden">
-                                                <NavLink
+                                                <Link
                                                     to={ROUTES.adminOverview}
-                                                    end
                                                     onClick={() => setIsMenuOpen(false)}
-                                                    className={({ isActive }) =>
-                                                        `block w-full px-4 py-2 text-left transition ${navClass(isActive)}`
+                                                    aria-current={
+                                                        inAdminSection ? "page" : undefined
                                                     }
+                                                    className={`block w-full px-4 py-2 text-left transition ${navClass(inAdminSection)}`}
                                                 >
                                                     Admin Overview
-                                                </NavLink>
+                                                </Link>
                                             </li>
                                         )}
                                         {/* `md:hidden` travels with the links above:
