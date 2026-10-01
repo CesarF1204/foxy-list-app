@@ -289,4 +289,39 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+
+  /*
+    The loading ring is the one thing the blanket rule above must not touch.
+
+    Collapsing its duration turns the spin into a single instant tick, which
+    leaves a fully styled but motionless circle on screen - and a frozen circle
+    beside the words "Loading users..." reads as a stuck control, not as work in
+    progress. A loading indicator is the one place where the movement *is* the
+    message: it is what says "still working" rather than "finished" or "broken".
+
+    So the ring keeps turning. This is a deliberate exception to the preference
+    above, and it is scoped to this element alone - every other animation in the
+    app still respects it. A slowly rotating ring is a small, self-contained
+    indicator that stops the moment the request does, which is a far smaller
+    cost than an admin being unable to tell a live request from a hung one.
+  */
+  .loading-ring {
+    animation: loading-ring-spin 1s linear infinite !important;
+  }
+}
+
+/*
+  The ring's rotation, declared here rather than leaning on Tailwind's built-in
+  `spin` keyframes. The reduced-motion rule above has to name this animation
+  explicitly, and it must keep working if Tailwind's internal keyframe name ever
+  changes. Same 360-degree turn, one second per revolution, linear so it never
+  eases into a visible pause at the top of the circle.
+*/
+@keyframes loading-ring-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

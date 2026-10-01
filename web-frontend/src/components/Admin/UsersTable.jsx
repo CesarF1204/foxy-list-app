@@ -56,6 +56,71 @@ const TaskCountsCell = ({ counts }) => (
     </span>
 );
 
+/**
+ * DOCU: The sort state of a column header, as a drawn icon rather than a
+ * character.
+ *
+ * The header is `text-xs` uppercase, and a text glyph at a fraction of that
+ * landed at roughly 8px - at that size the arrows are a hairline, and `↕`
+ * (U+2195) is missing outright in plenty of system font stacks, so on a wide
+ * screen the control that says "you can sort this" is the one thing you cannot
+ * see. Drawn at a fixed 16px in the same 24-unit grid as every other icon in the
+ * app, it stays legible at any table width and any zoom level.
+ *
+ * Three states, each distinguishable without colour: both chevrons when the
+ * column is unsorted, one filled chevron pointing the way the column is sorted
+ * when it is the active one. The icon is decorative - `aria-sort` on the
+ * `<th>` is what actually carries the order to a screen reader - but the button
+ * names the state in its `title` so it is also a pointer user can read.
+ */
+const SortIndicator = ({ isActive, isAscending }) => {
+    const strokeProps = {
+        stroke: "currentColor",
+        strokeWidth: 2.6,
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+    };
+
+    if (!isActive) {
+        return (
+            <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+                /* Faint, because an unsorted column is an offer, not the state. */
+                className="shrink-0 text-ink-faint"
+                focusable="false"
+            >
+                <path d="M7 10.5 12 5.5l5 5" {...strokeProps} />
+                <path d="M7 13.5 12 18.5l5-5" {...strokeProps} />
+            </svg>
+        );
+    }
+
+    return (
+        <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+            /* The active column is the one the eye should land on first. */
+            className="shrink-0 text-fox-500"
+            focusable="false"
+        >
+            <path
+                d={isAscending ? "M6 14.5 12 8.5l6 6" : "M6 9.5 12 15.5l6-6"}
+                fill="currentColor"
+                stroke="currentColor"
+                strokeWidth={1.4}
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
+};
+
 /** DOCU: A sortable column header. Only the columns the API can sort are
  *  buttons, and the header cell carries `aria-sort`, so the table's order is
  *  announced rather than only seen. */
@@ -69,11 +134,14 @@ const SortHeader = ({ column, sortBy, sortDir, onSort }) => {
     }
 
     const isActive = sortBy === column.sort;
-    const ariaSort = isActive
-        ? sortDir === SORT_DIRECTIONS.asc
-            ? "ascending"
-            : "descending"
-        : "none";
+    const isAscending = sortDir === SORT_DIRECTIONS.asc;
+    const ariaSort = isActive ? (isAscending ? "ascending" : "descending") : "none";
+
+    /* Named for a pointer hover as well, and kept out of the text so the header
+     * still reads as just the column's name. */
+    const stateLabel = isActive
+        ? `, sorted ${isAscending ? "ascending" : "descending"}`
+        : ", not sorted. Activate to sort";
 
     return (
         <th
@@ -84,12 +152,16 @@ const SortHeader = ({ column, sortBy, sortDir, onSort }) => {
             <button
                 type="button"
                 onClick={() => onSort(column.sort)}
-                className="inline-flex items-center gap-1 rounded-lg px-1 py-0.5 transition hover:bg-white hover:text-ink"
+                title={`${column.label}${stateLabel}`}
+                aria-label={`${column.label}${stateLabel}`}
+                /* Not a `.btn`, so it does not inherit that class's `cursor: pointer`
+                 * - the same explicit opt-in the kebab trigger and the navbar
+                 * avatar make. The header cell itself is left unclickable so the
+                 * pointer only promises a sort on the label and its icon. */
+                className="group inline-flex cursor-pointer items-center gap-1.5 rounded-lg border-2 border-transparent px-1.5 py-1 text-ink-soft transition hover:border-ink/15 hover:bg-white hover:text-ink"
             >
                 {column.label}
-                <span aria-hidden="true" className="text-[0.7em]">
-                    {isActive ? (sortDir === SORT_DIRECTIONS.asc ? "▲" : "▼") : "↕"}
-                </span>
+                <SortIndicator isActive={isActive} isAscending={isAscending} />
             </button>
         </th>
     );

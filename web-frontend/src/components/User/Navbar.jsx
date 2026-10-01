@@ -182,7 +182,14 @@ const Navbar = ({ user }) => {
                                                 </NavLink>
                                             </li>
                                         )}
-                                        <li aria-hidden="true" className="my-1.5 border-t-2 border-paper-deep" />
+                                        {/* `md:hidden` travels with the links above:
+                                            the divider only makes sense on the
+                                            screens where it separates something.
+                                            Left visible on a desktop it stacks up
+                                            against the user block's own bottom
+                                            border, and the two together read as a
+                                            double rule above Sign out. */}
+                                        <li aria-hidden="true" className="my-1.5 border-t-2 border-paper-deep md:hidden" />
                                         <LogOut onDone={() => setIsMenuOpen(false)} />
                                     </ul>
                                 </div>

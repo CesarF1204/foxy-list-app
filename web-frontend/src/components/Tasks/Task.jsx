@@ -105,22 +105,12 @@ const TaskBoard = () => {
                                             </span>
                                         </header>
 
-                                        {/* The hint talks about a card waiting to be
-                                            grabbed, so it needs a card to talk about. */}
-                                        {!(board === DEFAULT_BOARD && tasksOnBoard.length === 0) && (
-                                            <p className="mb-3 px-1 text-[0.7rem] font-bold text-ink-faint">
-                                                {meta.hint}
-                                            </p>
-                                        )}
-
-                                        {board === DEFAULT_BOARD && tasksOnBoard.length === 0 && (
-                                            <p
-                                                className="mb-3 rounded-2xl border-2 border-dashed border-ink-faint/60 bg-paper/60 px-3 py-4 text-center text-xs font-bold text-ink-soft"
-                                                role="status"
-                                            >
-                                                {meta.emptyHint}
-                                            </p>
-                                        )}
+                                        {/* Always rendered, even on an empty board, so the
+                                            hint line keeps the same height in every
+                                            column and the empty states line up. */}
+                                        <p className="mb-3 px-1 text-[0.7rem] font-bold text-ink-faint">
+                                            {meta.hint}
+                                        </p>
 
                                         <div className="flex flex-1 flex-col gap-2">
                                             {tasksOnBoard.map((task, index) => (
@@ -137,10 +127,13 @@ const TaskBoard = () => {
                                             {/* The gap the card will drop into. */}
                                             {provided.placeholder}
 
-                                            {tasksOnBoard.length === 0 && board !== DEFAULT_BOARD && (
+                                            {/* One shared placeholder, same copy shape in
+                                                every column, so the three empty blocks
+                                                match in height and size. */}
+                                            {tasksOnBoard.length === 0 && (
                                                 <EmptyState
-                                                    title={`Nothing in ${meta.label.toLowerCase()}`}
-                                                    description="Drag a card here when you start or finish it."
+                                                    title={meta.emptyTitle}
+                                                    description={meta.emptyDescription}
                                                 />
                                             )}
 

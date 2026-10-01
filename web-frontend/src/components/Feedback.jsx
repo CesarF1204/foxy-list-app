@@ -16,7 +16,11 @@ const SPINNER_SIZES = {
 const Spinner = ({ size = "sm" }) => (
     <span
         aria-hidden="true"
-        className={`inline-block shrink-0 animate-spin rounded-full border-fox-200 border-t-fox-500 ${SPINNER_SIZES[size]}`}
+        /* `loading-ring` keeps this spinning under
+         * `prefers-reduced-motion: reduce`, where the app's blanket rule would
+         * otherwise collapse the spin to a single tick and leave a static
+         * circle that reads as a stuck control. See src/index.css. */
+        className={`loading-ring inline-block shrink-0 animate-spin rounded-full border-fox-200 border-t-fox-500 ${SPINNER_SIZES[size]}`}
     />
 );
 

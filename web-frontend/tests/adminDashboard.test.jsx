@@ -1330,5 +1330,195 @@ describe("the users table while it is fetching", () => {
         expect(screen.queryByText("Stale Lovelace")).not.toBeInTheDocument();
         expect(screen.queryByText("Loading users...")).not.toBeInTheDocument();
     });
+
+    /* The remaining triggers, and the states a request can end in that are not
+     * the plain success above. Each has to reach the same loading state and then
+     * leave it, whatever the API answers. */
+
+    it("shows it for a role filter on its own, and for a status filter typed over it", async () => {
+        const { promise, resolve } = await renderPendingPage();
+        const second = deferred();
+
+        fireEvent.change(screen.getByLabelText("Role"), { target: { value: "user" } });
+        expect(await screen.findByText("Loading users...")).toBeInTheDocument();
+
+        /* The second trigger lands while the first is still in flight. */
+        getAdminUsers.mockReturnValue(second.promise);
+        fireEvent.change(screen.getByLabelText("Account status"), { target: { value: "blocked" } });
+        expect(screen.getByText("Loading users...")).toBeInTheDocument();
+
+        second.resolve({ users: page() });
+        resolve({ users: page({ rows: [makeUser({ firstName: "Superseded" })] }) });
+        await promise.catch(() => {});
+
+        await waitFor(() => expect(screen.queryByText("Loading users...")).not.toBeInTheDocument());
+        expect(getAdminUsers).toHaveBeenLastCalledWith(
+            expect.objectContaining({ role: "user", status: "blocked", page: 1 }),
+            expect.objectContaining({ signal: expect.anything() }),
+        );
+    });
+
+    it("shows it for a search combined with a single filter", async () => {
+        const { promise, resolve } = await renderPendingPage();
+
+        fireEvent.change(screen.getByLabelText("Search"), { target: { value: "john" } });
+        await waitFor(() =>
+            expect(getAdminUsers).toHaveBeenCalledWith(
+                expect.objectContaining({ search: "john" }),
+                expect.anything(),
+            ),
+            { timeout: 2000 },
+        );
+
+        fireEvent.change(screen.getByLabelText("Role"), { target: { value: "admin" } });
+
+        expect(await screen.findByText("Loading users...")).toBeInTheDocument();
+        expect(screen.getByLabelText("Search")).toHaveValue("john");
+
+        resolve({ users: page() });
+        await promise;
+
+        expect(getAdminUsers).toHaveBeenLastCalledWith(
+            expect.objectContaining({ search: "john", role: "admin", status: "", page: 1 }),
+            expect.anything(),
+        );
+        await waitFor(() => expect(screen.queryByText("Loading users...")).not.toBeInTheDocument());
+    });
+
+    it("leaves the loading state for an empty result and shows the empty state instead", async () => {
+        const { promise, resolve } = await renderPendingPage();
+
+        fireEvent.change(screen.getByLabelText("Role"), { target: { value: "admin" } });
+        expect(await screen.findByText("Loading users...")).toBeInTheDocument();
+
+        /* Nothing matched: the request succeeded, so the spinner goes and the
+         * table is replaced by the empty state, not left spinning forever. */
+        resolve({ users: page({ rows: [], total: 0, pageCount: 0 }) });
+        await promise;
+
+        expect(await screen.findByText("No users match")).toBeInTheDocument();
+        expect(screen.queryByText("Loading users...")).not.toBeInTheDocument();
+        expect(screen.getByLabelText(TABLE)).toHaveAttribute("aria-busy", "false");
+    });
+
+    it("keeps it up for a slow answer, and drops it the moment the rows land", async () => {
+        await renderPendingPage();
+        getAdminUsers.mockImplementation(
+            () =>
+                new Promise((answer) =>
+                    setTimeout(
+                        () => answer({ users: page({ rows: [makeUser({ firstName: "Slow" })] }) }),
+                        800,
+                    ),
+                ),
+        );
+
+        fireEvent.change(screen.getByLabelText("Role"), { target: { value: "admin" } });
+        expect(await screen.findByText("Loading users...")).toBeInTheDocument();
+
+        /* Half way through the slow reply it is still genuinely loading, so the
+         * indicator must still be there - not dropped by a rerender. */
+        await new Promise((pass) => setTimeout(pass, 400));
+        expect(screen.getByText("Loading users...")).toBeInTheDocument();
+
+        expect(await screen.findByText("Slow Lovelace", undefined, { timeout: 2000 })).toBeInTheDocument();
+        expect(screen.queryByText("Loading users...")).not.toBeInTheDocument();
+    });
+
+    it("locks the pager while a page is in flight, so a second click cannot race it", async () => {
+        const { promise, resolve } = await renderPendingPage(page({ total: 30, pageCount: 3 }));
+
+        fireEvent.click(screen.getByRole("button", { name: "Page 2" }));
+        expect(await screen.findByText("Loading users...")).toBeInTheDocument();
+
+        /* The pager stays on screen, but refuses a second change while the first
+         * is unanswered. The filters stay usable throughout. */
+        expect(screen.getByRole("button", { name: "Page 3" })).toBeDisabled();
+        expect(screen.getByLabelText("Rows per page")).toBeDisabled();
+        expect(screen.getByLabelText("Role")).toBeEnabled();
+
+        resolve({ users: page({ page: 2, total: 30, pageCount: 3 }) });
+        await promise;
+
+        await waitFor(() => expect(screen.getByRole("button", { name: "Page 3" })).toBeEnabled());
+        expect(screen.queryByText("Loading users...")).not.toBeInTheDocument();
+    });
+
+    it("does not show it for a change that never reaches the API", async () => {
+        await renderPendingPage();
+        getAdminUsers.mockClear();
+
+        /* Local UI only: opening a row's menu, then the drawer for that user.
+         * Neither is a request for the table's rows, so the table must not claim
+         * to be loading. */
+        fireEvent.click(
+            screen.getByRole("button", { name: `Actions for ${ROWS[0].firstName} ${ROWS[0].lastName}` }),
+        );
+        expect(screen.getByRole("menu")).toBeInTheDocument();
+        expect(screen.queryByText("Loading users...")).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("menuitem", { name: "View user" }));
+        expect(await screen.findByRole("dialog")).toBeInTheDocument();
+        expect(screen.queryByText("Loading users...")).not.toBeInTheDocument();
+        expect(screen.getByLabelText(TABLE)).toHaveAttribute("aria-busy", "false");
+
+        /* Only the single-user read was sent, not another page of the table. */
+        expect(getAdminUsers).not.toHaveBeenCalled();
+    });
+
+    /* The indicator has to actually move. A visible but motionless circle reads
+     * as a decoration, or worse as a stuck control, so the classes that carry the
+     * animation are pinned here rather than left to a visual check. jsdom applies
+     * no CSS, so this asserts the intent - `animate-spin` is Tailwind's rotating
+     * keyframe, verified to compile in the build output. */
+    it("spins: the indicator carries the animation and a visible ring", async () => {
+        const { promise, resolve } = await renderPendingPage();
+
+        fireEvent.change(screen.getByLabelText("Role"), { target: { value: "admin" } });
+        await screen.findByText("Loading users...");
+
+        const spinner = document.querySelector(".animate-spin");
+        expect(spinner).not.toBeNull();
+
+        /* A full circle with a border, so the rotation is perceptible, and a
+         * heavier top edge so the direction of travel is readable. */
+        expect(spinner).toHaveClass("rounded-full");
+        expect(spinner).toHaveClass("border-fox-200");
+        expect(spinner).toHaveClass("border-t-fox-500");
+        expect(spinner).toHaveClass("h-5", "w-5");
+
+        /* Decorative: the words beside it carry the meaning for a screen reader. */
+        expect(spinner).toHaveAttribute("aria-hidden", "true");
+
+        resolve({ users: page() });
+        await promise;
+    });
+
+    it("dims the rows while it spins, then restores them", async () => {
+        const { promise, resolve } = await renderPendingPage();
+
+        /* The rows are not replaced while loading, they are dimmed, so the card
+         * never changes height and the pager below it never moves. */
+        /* The table sits inside the scroll region, which sits inside the wrapper
+         * that carries the dimming. */
+        const opacityOf = () =>
+            screen.getByRole("table").closest("div").parentElement.className;
+        expect(opacityOf()).toContain("opacity-100");
+
+        fireEvent.change(screen.getByLabelText("Role"), { target: { value: "admin" } });
+        await screen.findByText("Loading users...");
+
+        expect(opacityOf()).toContain("opacity-60");
+        /* The overlay itself is click-through, so the controls stay usable. */
+        expect(document.querySelector(".animate-spin").closest("[role='status']")).toHaveClass(
+            "pointer-events-none",
+        );
+
+        resolve({ users: page() });
+        await promise;
+
+        await waitFor(() => expect(opacityOf()).toContain("opacity-100"));
+    });
 });
+
 

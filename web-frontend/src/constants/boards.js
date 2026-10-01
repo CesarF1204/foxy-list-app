@@ -19,12 +19,15 @@ const BOARD_LABELS = {
     done: "Done",
 };
 
-/** DOCU: Per-board colours and copy, keyed to the CSS custom properties in index.css. */
+/** DOCU: Per-board colours and copy, keyed to the CSS custom properties in index.css.
+ * `emptyTitle` and `emptyDescription` are always both set, so every empty
+ * column renders the same two-line block and the three line up. */
 const BOARD_META = {
     todo: {
         label: "To do",
         hint: "Grab the next thing",
-        emptyHint: "Add a task to get started.",
+        emptyTitle: "Add a task to get started.",
+        emptyDescription: "Type it below, or drag a card in.",
         accent: "bg-todo",
         heading: "text-todo-deep",
         count: "bg-todo/15 text-todo-deep border-todo/40",
@@ -33,6 +36,8 @@ const BOARD_META = {
     ongoing: {
         label: "Ongoing",
         hint: "You are on it",
+        emptyTitle: "Nothing in ongoing",
+        emptyDescription: "Drag a card here when you start or finish it.",
         accent: "bg-ongoing",
         heading: "text-ongoing-deep",
         count: "bg-ongoing/15 text-ongoing-deep border-ongoing/40",
@@ -41,6 +46,8 @@ const BOARD_META = {
     done: {
         label: "Done",
         hint: "Nicely done",
+        emptyTitle: "Nothing in done",
+        emptyDescription: "Drag a card here when you start or finish it.",
         accent: "bg-done",
         heading: "text-done-deep",
         count: "bg-done/15 text-done-deep border-done/40",
