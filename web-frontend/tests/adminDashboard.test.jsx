@@ -709,6 +709,14 @@ describe("the pager under the table", () => {
             />
         );
 
+    /** The page buttons currently on screen, in order, as their own text. */
+    const pageNumbers = () =>
+        screen
+            .getAllByRole("button")
+            .map((button) => button.getAttribute("aria-label") ?? "")
+            .filter((label) => label.startsWith("Page "))
+            .map((label) => label.replace("Page ", ""));
+
     it("calls the page-size select what it counts: rows, not pages", () => {
         renderPager();
 
@@ -743,7 +751,88 @@ describe("the pager under the table", () => {
         renderPager();
 
         expect(screen.getByRole("button", { name: "Page 2" })).toHaveAttribute("aria-current", "page");
-        expect(screen.getByRole("button", { name: "Page 1" })).not.toHaveAttribute("aria-current");
+        expect(screen.getByRole("button", { name: "Page 3" })).not.toHaveAttribute("aria-current");
+    });
+
+    it("shows three consecutive pages, not the whole list", () => {
+        renderPager({ page: 1, pageCount: 10 });
+
+        expect(pageNumbers()).toEqual(["1", "2", "3"]);
+    });
+
+    it("slides the window forward as the admin pages through", () => {
+        renderPager({ page: 4, pageCount: 10 });
+
+        expect(pageNumbers()).toEqual(["4", "5", "6"]);
+    });
+
+    it("keeps the window on the last three pages once it reaches the end", () => {
+        const { unmount } = renderPager({ page: 8, pageCount: 10 });
+        expect(pageNumbers()).toEqual(["8", "9", "10"]);
+        unmount();
+
+        renderPager({ page: 9, pageCount: 10 });
+        expect(pageNumbers()).toEqual(["8", "9", "10"]);
+    });
+
+    it("never renders a page above the last one", () => {
+        renderPager({ page: 10, pageCount: 10 });
+
+        expect(pageNumbers()).toEqual(["8", "9", "10"]);
+    });
+
+    it("does not pad a short list out to three buttons", () => {
+        const { unmount } = renderPager({ page: 1, pageCount: 1 });
+        expect(pageNumbers()).toEqual(["1"]);
+        unmount();
+
+        renderPager({ page: 2, pageCount: 2 });
+        expect(pageNumbers()).toEqual(["1", "2"]);
+    });
+
+    it("walks the list one page at a time with the arrows", () => {
+        const onPage = vi.fn();
+        renderPager({ page: 4, pageCount: 10, onPage });
+
+        fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+        expect(onPage).toHaveBeenLastCalledWith(5);
+
+        fireEvent.click(screen.getByRole("button", { name: "Previous page" }));
+        expect(onPage).toHaveBeenLastCalledWith(3);
+    });
+
+    it("does not re-request the page already shown", () => {
+        const onPage = vi.fn();
+        renderPager({ page: 2, pageCount: 5, onPage });
+
+        fireEvent.click(screen.getByRole("button", { name: "Page 2" }));
+
+        expect(onPage).not.toHaveBeenCalled();
+    });
+
+    it("offers the pointer on every control, and refuses it while disabled", () => {
+        renderPager({ page: 1, pageCount: 5 });
+
+        const previous = screen.getByRole("button", { name: "Previous page" });
+        expect(previous).toHaveClass("cursor-pointer", "disabled:cursor-not-allowed");
+        expect(previous).toBeDisabled();
+
+        expect(screen.getByRole("button", { name: "Next page" })).toHaveClass("cursor-pointer");
+        expect(screen.getByRole("button", { name: "Page 2" })).toHaveClass("cursor-pointer");
+    });
+
+    it("offers the pointer on the page-size select too", () => {
+        const { unmount } = renderPager();
+
+        const select = screen.getByLabelText("Rows per page");
+        expect(select).toHaveClass("cursor-pointer", "disabled:cursor-not-allowed");
+        expect(select).toBeEnabled();
+        unmount();
+
+        /* The pager is locked while a page is in flight, and the select must not
+         * keep advertising a click it will refuse. */
+        renderPager({ isDisabled: true });
+        expect(screen.getByLabelText("Rows per page")).toBeDisabled();
     });
 
     it("disables the ends rather than paging past them", () => {
