@@ -26,6 +26,14 @@ const INVALID_ID_MESSAGE = 'That id is not valid';
 
 const ROUTE_NOT_FOUND_MESSAGE = 'Route not found';
 
+/**
+ * Answers a request whose Origin is not in FRONTEND_URL. Said plainly, because the browser
+ * otherwise reports the same opaque "CORS error" for a blocked origin as for a dead network,
+ * and the real cause is always a missing entry in that environment variable.
+ */
+const CORS_REFUSED_MESSAGE =
+    'This site is not allowed to call the API. Add its origin to FRONTEND_URL on the API host.';
+
 const TASK_NOT_FOUND_MESSAGE = 'Task not found';
 
 export {
@@ -41,5 +49,6 @@ export {
     DUPLICATE_EMAIL_MESSAGE,
     INVALID_ID_MESSAGE,
     ROUTE_NOT_FOUND_MESSAGE,
+    CORS_REFUSED_MESSAGE,
     TASK_NOT_FOUND_MESSAGE,
 };

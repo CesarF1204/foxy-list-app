@@ -7,7 +7,8 @@ import { swaggerRoutes } from './swagger/swaggerRoutes.js';
 import { errorMiddleware } from './middleware/errorMiddleware.js';
 import { connectDB, disconnectDB } from './config/db.js';
 import { HTTP_STATUS, HTTP_METHODS } from './constants/http.js';
-import { ROUTE_NOT_FOUND_MESSAGE } from './constants/messages.js';
+import { ROUTE_NOT_FOUND_MESSAGE, CORS_REFUSED_MESSAGE } from './constants/messages.js';
+import { forbidden } from './helpers/errorHelper.js';
 
 /**
  * Loaded here, after the imports above: every module below reads process.env lazily,
@@ -17,7 +18,15 @@ dotenv.config();
 
 const app = express();
 
-/** A request with no Origin header (curl, the tests) is not subject to CORS. */
+/**
+ * A request with no Origin header (curl, the tests, a server-to-server call) is not subject to
+ * CORS. Anything else has to match an origin the frontend is actually served from.
+ *
+ * Preview deployments get a new hostname on every push, so the allowlist is a comma-separated
+ * list and the running value is printed at startup. A refused origin is named in the log as
+ * well: to the browser it is indistinguishable from a network failure, and the fix is always
+ * the same one line.
+ */
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
     .split(',')
     .map((origin) => origin.trim())
@@ -27,7 +36,20 @@ app.use(
     cors({
         origin(origin, callback) {
             if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-            return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+
+            console.warn(
+                `[cors] refused ${origin}. Add it to FRONTEND_URL on the API host. Allowed: ${
+                    allowedOrigins.join(', ') || '(none)'
+                }`
+            );
+
+            /**
+             * Refused with a real 403 rather than `new Error(...)`. Handing `cors` an Error sends
+             * the request on to the generic error handler, which answers 500 "Something went
+             * wrong" - a server fault reported for what is a configuration mistake, and with no
+             * CORS headers either, so the browser shows a bare "CORS error".
+             */
+            return callback(forbidden(CORS_REFUSED_MESSAGE), false);
         },
         methods: HTTP_METHODS,
         credentials: true,
@@ -68,6 +90,12 @@ const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    /**
+     * Printed so a refused origin can be matched against the value this process is actually
+     * running with, rather than the one that was intended. An empty list here is the usual
+     * reason every browser request is refused.
+     */
+    console.log(`[cors] allowed origins: ${allowedOrigins.join(', ') || '(none)'}`);
 });
 
 /** Closes the server and the database connection on a clean shutdown. */
