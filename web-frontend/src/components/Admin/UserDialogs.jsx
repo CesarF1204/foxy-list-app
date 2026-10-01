@@ -4,7 +4,7 @@ import Modal from "../Modal";
 import { USER_ROLES, ROLE_META } from "../../constants/roles";
 import {
     PASSWORD_MIN_LENGTH,
-    PASSWORD_NO_SPACES_PATTERN,
+    hasPasswordSpaces,
     VALIDATION_MESSAGES,
 } from "../../constants/validation";
 import PasswordField from "../PasswordField";
@@ -113,18 +113,19 @@ export const PasswordDialog = ({ user, isPending, serverError, onConfirm, onClos
 
     /**
      * The same rules the sign-up form applies, so an admin cannot set a password the app would
-     * then refuse at sign-in. The rules themselves live
+     * then refuse at sign-in. The rules themselves live in `newPasswordRules`, but a dialog
+     * cannot use react-hook-form's `register`, so it applies the same conditions in order.
      */
     const validate = () => {
         if (!password) return [VALIDATION_MESSAGES.password.required, "password"];
         if (password.length < PASSWORD_MIN_LENGTH) {
             return [VALIDATION_MESSAGES.passwordTooShort, "password"];
         }
-        if (PASSWORD_NO_SPACES_PATTERN.test(password)) {
+        if (hasPasswordSpaces(password)) {
             return [VALIDATION_MESSAGES.passwordHasSpaces, "password"];
         }
         if (!confirmation) return [VALIDATION_MESSAGES.confirmPassword.required, "confirmation"];
-        if (PASSWORD_NO_SPACES_PATTERN.test(confirmation)) {
+        if (hasPasswordSpaces(confirmation)) {
             return [VALIDATION_MESSAGES.passwordHasSpaces, "confirmation"];
         }
         if (password !== confirmation) {

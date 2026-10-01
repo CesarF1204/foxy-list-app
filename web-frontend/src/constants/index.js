@@ -82,6 +82,7 @@ export {
     NAME_PATTERN,
     PASSWORD_MIN_LENGTH,
     PASSWORD_NO_SPACES_PATTERN,
+    hasPasswordSpaces,
     VALIDATION_MESSAGES,
     newPasswordRules,
     confirmPasswordRules,

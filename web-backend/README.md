@@ -134,6 +134,11 @@ rename can never carry a privilege change with it. The schemas enforce that: a
 - Passwords may not contain whitespace - leading, trailing or internal. The value
   is refused rather than trimmed, so what was typed is always what would be
   stored. `PASSWORD_NO_SPACES_PATTERN` must match the frontend's copy exactly.
+- Letters, digits and symbols are all acceptable password characters; only
+  whitespace disqualifies a password. On the frontend the rule is a `validate`
+  rather than a `pattern`, because a react-hook-form `pattern` passes only when
+  the value *matches* its regex - passing this detector as a pattern would accept
+  only the passwords that contain a space.
 - A new password may not be the one already in force. `assertPasswordChanged`
   compares the candidate against the stored hash with `bcrypt.compare`, so the
   current password never has to be sent by the client and is never echoed back.
