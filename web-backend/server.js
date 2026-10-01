@@ -18,19 +18,56 @@ dotenv.config();
 
 const app = express();
 
+/** Removes a trailing slash, and any trailing whitespace, from an origin. */
+const normalizeOrigin = (origin) => origin.trim().replace(/\/+$/, '');
+
 /**
  * A request with no Origin header (curl, the tests, a server-to-server call) is not subject to
  * CORS. Anything else has to match an origin the frontend is actually served from.
  *
- * Preview deployments get a new hostname on every push, so the allowlist is a comma-separated
- * list and the running value is printed at startup. A refused origin is named in the log as
- * well: to the browser it is indistinguishable from a network failure, and the fix is always
- * the same one line.
+ * Comparison is exact after normalizing, because an `Origin` header never carries a path and
+ * never carries a trailing slash - a browser sends `https://app.vercel.app`, never
+ * `https://app.vercel.app/`. A value pasted into FRONTEND_URL with a trailing slash would
+ * therefore never match, and the refusal would look like the origin had been left out
+ * entirely. `URL` is also used to reject anything that is not a bare origin, so a value with a
+ * path in it is caught at startup rather than as a request that mysteriously fails.
+ *
+ * Origins are matched literally, which means a Vercel *preview* deployment has to be listed
+ * under the hash it was given, and that hash changes on every push. The running list is printed
+ * at startup, and every refusal names the origin it turned away, so the value to add is never a
+ * guess.
  */
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
     .split(',')
-    .map((origin) => origin.trim())
+    .map(normalizeOrigin)
     .filter(Boolean);
+
+/** Reports a malformed entry once at startup, rather than letting it fail a request later. */
+allowedOrigins.forEach((origin) => {
+    let parsed;
+
+    try {
+        parsed = new URL(origin);
+    } catch {
+        console.warn(`[cors] ignoring "${origin}": not a valid URL.`);
+        return;
+    }
+
+    const { hostname, pathname, search, hash, protocol } = parsed;
+
+    if (protocol !== 'http:' && protocol !== 'https:') {
+        console.warn(`[cors] ignoring "${origin}": only http and https origins are supported.`);
+        return;
+    }
+
+    if (pathname !== '/' || search || hash) {
+        console.warn(
+            `[cors] ignoring "${origin}": list a bare origin, with no path. A browser's Origin header never has one.`
+        );
+    }
+
+    if (!hostname) console.warn(`[cors] ignoring "${origin}": no hostname.`);
+});
 
 app.use(
     cors({
