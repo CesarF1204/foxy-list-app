@@ -6,6 +6,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { signIn, registerUser } from "../api-client/users";
 import { useAppContext } from "../contexts/useAppContext";
 import { VALIDATE_TOKEN_KEY } from "../constants/queryKeys";
+import { confirmSession } from "../queryOptions/sessionQueryOptions";
 import { ROUTES } from "../constants/routes";
 import { TOAST_TYPES } from "../constants/toast";
 import { MASCOT_HOLD_MS } from "../constants/mascot";
@@ -72,15 +73,37 @@ const Auth = () => {
         }, SUCCESS_HOLD_MS);
     };
 
+    /**
+     * Clears the cached session and reads it back from the API before the user moves on.
+     *
+     * The sign-in answer only proves the credentials were right. Whether the browser kept the
+     * cookie is a separate fact, and the only thing that can report it is the API reading that
+     * cookie back on a fresh request. Navigating straight to the board instead would hand a
+     * protected route to a session that may not have been stored yet, which shows up as an
+     * instant bounce back to the login page on a slow phone.
+     */
+    const establishSession = async () => {
+        queryClient.removeQueries({ queryKey: VALIDATE_TOKEN_KEY, exact: true });
+
+        try {
+            await confirmSession(queryClient);
+        } catch {
+            /**
+             * Left to the guards: with no readable session they will send the user to sign-in,
+             * which is the honest outcome. A toast here would only claim a failure the app cannot
+             * explain - a dropped cookie and a rejected password look identical from here.
+             */
+        }
+    };
+
     const signInMutation = useMutation({
         mutationFn: signIn,
-        onSuccess: () => {
+        onSuccess: async () => {
             showToast({
                 message: "Signed in. Welcome back!",
                 type: TOAST_TYPES.success,
             });
-            /** Refetch the session so the board renders with the new user. */
-            queryClient.removeQueries({ queryKey: VALIDATE_TOKEN_KEY, exact: true });
+            await establishSession();
             redirectAfterCelebrating(ROUTES.board);
         },
         onError: (error) => showToast({ message: error.message, type: TOAST_TYPES.error }),
