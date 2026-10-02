@@ -13,6 +13,8 @@ import {
     PASSWORD_UNCHANGED_MESSAGE,
     DUPLICATE_EMAIL_MESSAGE,
 } from '../constants/messages.js';
+import resetPasswordTemplate from '../resources/emails/resetPassword.js';
+import { sendEmail } from './mailService.js';
 
 /** The cost factor, configurable so tests can run cheaper than production. */
 const SALT_ROUNDS = () => Number(process.env.BCRYPT_SALT_ROUNDS || 12);
@@ -121,7 +123,6 @@ const signIn = async (data) => {
     return { user: toPublicUser(user), token: issueToken(user) };
 };
 
-
 /**
  * DOCU: Returns the account behind a verified session token.
  * Last Updated Date: October 1, 2026
@@ -180,6 +181,17 @@ const clearSessionCookie = (res) => {
  */
 const forgotPassword = async (data) => {
     await userModel.findByEmail(data.email);
+
+    // Send reset password email
+    const html = resetPasswordTemplate({
+        email: data.email,
+        resetUrl: `${process.env.FRONTEND_URL}/recover-password`,
+    });
+    await sendEmail({
+        to: data.email,
+        subject: 'Password reset request.',
+        html,
+    });
 
     return 'If that email exists, a reset link is on its way';
 };
