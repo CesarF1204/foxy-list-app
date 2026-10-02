@@ -1,10 +1,6 @@
 import { BOARDS, BOARD_META, BOARD_LABELS } from "../../constants/boards";
 
-/**
- * How the tasks on every board are spread, drawn with plain divs rather than a charting
- * library. The app has no chart dependency and this needs three numbers, so adding one would be
- * the larger cost; a flex row of coloured segments is the whole thing.
- */
+/** How the tasks on every board are spread, as a bar of coloured segments. */
 const TaskStatusChart = ({ counts }) => {
     const total = BOARDS.reduce((sum, board) => sum + (counts?.[board] ?? 0), 0);
     const percent = (value) => (total === 0 ? 0 : Math.round((value / total) * 100));
@@ -19,7 +15,6 @@ const TaskStatusChart = ({ counts }) => {
 
     return (
         <div className="flex flex-col gap-4">
-            {/* The bar: one flex row of segments, so no absolute widths to fight. */}
             <div
                 className="flex h-8 w-full overflow-hidden rounded-full border-2 border-ink"
                 role="img"
@@ -36,7 +31,6 @@ const TaskStatusChart = ({ counts }) => {
                 ))}
             </div>
 
-            {/* The same numbers as a list, so nothing is encoded by colour alone. */}
             <ul className="flex flex-col gap-2">
                 {BOARDS.map((board) => (
                     <li

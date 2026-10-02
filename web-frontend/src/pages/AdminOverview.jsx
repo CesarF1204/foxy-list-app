@@ -11,10 +11,7 @@ import AdminLayout from "../components/Admin/AdminLayout";
 import { StatCard, StatCardSkeleton } from "../components/Admin/StatCard";
 import TaskStatusChart from "../components/Admin/TaskStatusChart";
 
-/**
- * Reads a dotted path out of the stats object, so a card is described by data rather than by a
- * chain of conditionals.
- */
+/** Reads a dotted path out of the stats object. */
 const readStat = (stats, path) => path.split(".").reduce((value, key) => value?.[key], stats) ?? 0;
 
 /**
@@ -41,8 +38,6 @@ const AdminOverview = () => {
                 />
             ) : (
                 <div className="flex flex-col gap-6">
-                    {/* Skeletons in the exact shape of the cards, so the page does
-                        * not jump when the numbers arrive. */}
                     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                         {isLoading
                             ? STAT_CARDS.map((card) => <StatCardSkeleton key={card.key} />)
@@ -62,7 +57,7 @@ const AdminOverview = () => {
                             <h2 className="text-base font-extrabold text-ink">
                                 Where the tasks are
                             </h2>
-                            <p className="mt-1 mb-4 text-xs font-semibold text-ink-soft">
+                            <p className="mt-1 mb-4 text-sm leading-relaxed font-semibold text-ink-soft sm:text-xs">
                                 Every task on every board, counted from the task records themselves.
                             </p>
 
@@ -105,7 +100,7 @@ const AdminOverview = () => {
                                     {stats?.users?.admins === 1 ? "account can" : "accounts can"} reach
                                     this dashboard.
                                 </p>
-                                <p className="mt-2 text-xs font-semibold text-ink-faint">
+                                <p className="mt-2 text-sm leading-relaxed font-semibold text-ink-soft sm:text-xs">
                                     {ROLE_META.admin.hint}. Roles are granted here and validated by
                                     the API.
                                 </p>

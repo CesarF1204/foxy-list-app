@@ -287,9 +287,8 @@ const updateUserStatus = async (actor, userId, data) => {
 const updateUserPassword = async (actor, userId, data) => {
     const target = await resolveTarget(actor, userId);
 
-    /* An admin does not know the account's current password, so the client
-     * cannot have made this comparison - it is the server that has to, and
-     * `assertPasswordChanged` is the same guard the self-service path uses. */
+    /* An admin does not know the current password, so the server has to compare it, using the
+     * same guard the self-service path uses. */
     const account = await userModel.findForLogin(target.email);
 
     await assertPasswordChanged(account, data.password);

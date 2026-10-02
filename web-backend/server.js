@@ -7,7 +7,8 @@ import { swaggerRoutes } from './swagger/swaggerRoutes.js';
 import { errorMiddleware } from './middleware/errorMiddleware.js';
 import { connectDB, disconnectDB } from './config/db.js';
 import { HTTP_STATUS, HTTP_METHODS } from './constants/http.js';
-import { ROUTE_NOT_FOUND_MESSAGE } from './constants/messages.js';
+import { ROUTE_NOT_FOUND_MESSAGE, CORS_REFUSED_MESSAGE } from './constants/messages.js';
+import { forbidden } from './helpers/errorHelper.js';
 
 /**
  * Loaded here, after the imports above: every module below reads process.env lazily,
@@ -17,17 +18,75 @@ dotenv.config();
 
 const app = express();
 
-/** A request with no Origin header (curl, the tests) is not subject to CORS. */
+/** Removes a trailing slash, and any trailing whitespace, from an origin. */
+const normalizeOrigin = (origin) => origin.trim().replace(/\/+$/, '');
+
+/**
+ * A request with no Origin header (curl, the tests, a server-to-server call) is not subject to
+ * CORS. Anything else has to match an origin the frontend is actually served from.
+ *
+ * Comparison is exact after normalizing, because an `Origin` header never carries a path and
+ * never carries a trailing slash - a browser sends `https://app.vercel.app`, never
+ * `https://app.vercel.app/`. A value pasted into FRONTEND_URL with a trailing slash would
+ * therefore never match, and the refusal would look like the origin had been left out
+ * entirely. `URL` is also used to reject anything that is not a bare origin, so a value with a
+ * path in it is caught at startup rather than as a request that mysteriously fails.
+ *
+ * Origins are matched literally, which means a Vercel *preview* deployment has to be listed
+ * under the hash it was given, and that hash changes on every push. The running list is printed
+ * at startup, and every refusal names the origin it turned away, so the value to add is never a
+ * guess.
+ */
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
     .split(',')
-    .map((origin) => origin.trim())
+    .map(normalizeOrigin)
     .filter(Boolean);
+
+/** Reports a malformed entry once at startup, rather than letting it fail a request later. */
+allowedOrigins.forEach((origin) => {
+    let parsed;
+
+    try {
+        parsed = new URL(origin);
+    } catch {
+        console.warn(`[cors] ignoring "${origin}": not a valid URL.`);
+        return;
+    }
+
+    const { hostname, pathname, search, hash, protocol } = parsed;
+
+    if (protocol !== 'http:' && protocol !== 'https:') {
+        console.warn(`[cors] ignoring "${origin}": only http and https origins are supported.`);
+        return;
+    }
+
+    if (pathname !== '/' || search || hash) {
+        console.warn(
+            `[cors] ignoring "${origin}": list a bare origin, with no path. A browser's Origin header never has one.`
+        );
+    }
+
+    if (!hostname) console.warn(`[cors] ignoring "${origin}": no hostname.`);
+});
 
 app.use(
     cors({
         origin(origin, callback) {
             if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-            return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+
+            console.warn(
+                `[cors] refused ${origin}. Add it to FRONTEND_URL on the API host. Allowed: ${
+                    allowedOrigins.join(', ') || '(none)'
+                }`
+            );
+
+            /**
+             * Refused with a real 403 rather than `new Error(...)`. Handing `cors` an Error sends
+             * the request on to the generic error handler, which answers 500 "Something went
+             * wrong" - a server fault reported for what is a configuration mistake, and with no
+             * CORS headers either, so the browser shows a bare "CORS error".
+             */
+            return callback(forbidden(CORS_REFUSED_MESSAGE), false);
         },
         methods: HTTP_METHODS,
         credentials: true,
@@ -68,6 +127,12 @@ const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    /**
+     * Printed so a refused origin can be matched against the value this process is actually
+     * running with, rather than the one that was intended. An empty list here is the usual
+     * reason every browser request is refused.
+     */
+    console.log(`[cors] allowed origins: ${allowedOrigins.join(', ') || '(none)'}`);
 });
 
 /** Closes the server and the database connection on a clean shutdown. */

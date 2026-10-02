@@ -204,8 +204,7 @@ const forgotPassword = async (data) => {
  * @author Cesar
  */
 const assertPasswordChanged = async (user, newPassword) => {
-    /* Without a hash there is nothing to compare against; every real account
-     * has one, and a missing hash is refused on write by the schema anyway. */
+    /* Without a hash there is nothing to compare against; the schema refuses one on write. */
     if (!user?.password) return;
 
     if (await bcrypt.compare(newPassword, user.password)) {
@@ -222,9 +221,8 @@ const assertPasswordChanged = async (user, newPassword) => {
  * @author Cesar
  */
 const resetPassword = async (data) => {
-    /* `findForLogin` rather than `findByEmail`, because this is the one reset
-     * path that has to see the hash: refusing to re-set the password that is
-     * already in force needs it. */
+    /* `findForLogin` rather than `findByEmail`: this reset path has to see the hash in order to
+     * refuse re-setting the password already in force. */
     const user = await userModel.findForLogin(data.email);
 
     if (!user) {
@@ -257,9 +255,7 @@ const resetPassword = async (data) => {
  * @author Cesar
  */
 const updateOwnProfile = async (actor, data) => {
-    /* The same duplicate-address check the admin path performs: the collision
-     * is always about the email, and the message is shared so it reads the
-     * same whoever triggers it. */
+    /* The same duplicate-email check the admin path performs, with a shared message. */
     const clash = await userModel.findByEmail(data.email);
 
     if (clash && String(clash._id) !== String(actor._id)) {

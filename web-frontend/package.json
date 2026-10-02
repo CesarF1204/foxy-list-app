@@ -11,6 +11,7 @@
     "verify:tasks": "node scripts/tasks-verify.mjs",
     "verify:mascot": "node scripts/mascot-verify.mjs",
     "verify:toast": "node scripts/toast-verify.mjs",
+    "verify:comments": "node scripts/check-jsx-comment-leaks.mjs src",
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview"

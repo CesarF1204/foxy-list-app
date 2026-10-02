@@ -10,10 +10,9 @@ const useOwnAccountActions = () => {
     const queryClient = useQueryClient();
 
     /**
-     * The saved row *is* the new session, so the session cache is the place that has to learn
-     * about it. The response is written straight in rather than refetched: the navbar, the
-     * greeting and this drawer all read the session, and a refetch would only hand back the
-     * row that is already in hand.
+     * The saved row *is* the new session, so the session cache is the place that has to learn about
+     * it. Written straight in rather than refetched: the navbar, the greeting and this drawer all
+     * read the session, and a refetch would only hand back the row already in hand.
      */
     const profileMutation = useMutation({
         mutationFn: updateOwnProfile,

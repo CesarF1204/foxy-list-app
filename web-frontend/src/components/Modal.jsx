@@ -9,11 +9,7 @@ import { IconButton } from "./icons";
 const Modal = ({ isOpen, onClose, title, children, footer }) => {
     const panelRef = useRef(null);
 
-    /**
-     * In a ref, so the effect below depends only on isOpen. `onClose` is usually an inline
-     * arrow with a new identity each render, and re-running would refocus the panel and steal
-     * focus from whatever the user was typing into.
-     */
+    /** In a ref, so the effect below depends only on `isOpen`. */
     const onCloseRef = useRef(onClose);
     useEffect(() => {
         onCloseRef.current = onClose;
@@ -48,7 +44,7 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
 
     return (
         <div
-            className="fixed inset-0 z-overlay flex items-center justify-center overflow-y-auto bg-ink/50 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-overlay flex items-end justify-center overflow-y-auto bg-ink/50 backdrop-blur-sm sm:items-center sm:p-4"
             onClick={onClose}
         >
             <div
@@ -57,25 +53,24 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
                 aria-modal="true"
                 aria-label={title}
                 tabIndex={-1}
-                /** Clicks inside the panel must not reach the backdrop. */
                 onClick={(event) => event.stopPropagation()}
-                className="surface animate-pop-in w-full max-w-md p-6 outline-none"
+                className="surface animate-pop-in flex max-h-[92dvh] w-full flex-col overflow-y-auto rounded-b-none p-5 outline-none sm:max-h-[85dvh] sm:max-w-md sm:rounded-[1.25rem] sm:p-6"
             >
-                <div className="mb-4 flex items-start justify-between gap-4">
-                    <h2 className="text-lg font-extrabold text-ink">{title}</h2>
-                    {/* The shared icon button, so the close control is the same
-                        size, icon and label in every dialog and drawer. */}
+                <div className="mb-4 flex shrink-0 items-start justify-between gap-3">
+                    <h2 className="min-w-0 flex-1 text-lg font-extrabold wrap-break-word text-ink">
+                        {title}
+                    </h2>
                     <IconButton
                         icon="close"
                         label="Close dialog"
                         onClick={onClose}
-                        className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-faint transition hover:bg-paper hover:text-ink"
+                        className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-faint transition hover:bg-paper hover:text-ink sm:h-8 sm:w-8"
                     />
                 </div>
 
                 {children}
 
-                {footer && <div className="mt-6 flex flex-wrap justify-end gap-3">{footer}</div>}
+                {footer && <div className="modal-footer shrink-0">{footer}</div>}
             </div>
         </div>
     );

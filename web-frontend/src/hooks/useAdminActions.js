@@ -21,12 +21,12 @@ const adminActionToast = (message) => ({ message, type: TOAST_TYPES.success });
 
 /**
  * Every admin write, in one hook, so no screen can forget to refresh the dashboard. After a
- * confirmed change it does three things: it invalidates the users family and the stats, because
- * a rename, a role change, a block and a delete each change what both admin screens show; it
- * drops the returned row into the single-user cache so a drawer left open updates immediately;
- * and it offers the row to the session cache, because an admin editing *their own* account from
- * the users table is also the person behind the navbar - without that, their own rename would
- * leave the navbar and the greeting showing the old name until the next reload.
+ * confirmed change it does three things: invalidates the users family and the stats, because a
+ * rename, a role change, a block and a delete each change what both admin screens show; drops
+ * the returned row into the single-user cache so an open drawer updates immediately; and offers
+ * the row to the session cache, because an admin editing *their own* account from the users table
+ * is also the person behind the navbar - without that, their own rename would leave the navbar
+ * showing the old name until the next reload.
  */
 const useAdminActions = () => {
     const queryClient = useQueryClient();

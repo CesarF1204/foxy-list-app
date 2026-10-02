@@ -58,7 +58,6 @@ export const RoleDialog = ({ user, role, isPending, onConfirm, onClose }) => {
 
     /** Nothing to confirm while the chosen role is the one already in force. */
     const isUnchanged = choice === role;
-
     return (
         <UserConfirmDialog
             title={`Make ${getFullName(user)} ${ROLE_META[choice]?.label.toLowerCase()}?`}
@@ -201,11 +200,7 @@ export const PasswordDialog = ({ user, isPending, serverError, onConfirm, onClos
                     }}
                 />
 
-                {/* The API's refusal, announced and pinned to the password box -
-                    * the same treatment `UserProfileForm` gives a rejected email.
-                    *  It sits here rather than on a field's `error` so that a
-                    *  message arriving before the first submit is not overwritten by
-                    *  the next keystroke, which clears the local errors. */}
+                {/* The API's refusal. Kept off the fields, which clear their own errors on each keystroke. */}
                 {serverError && (
                     <span className="text-xs font-bold text-red-600" role="alert">
                         {serverError}

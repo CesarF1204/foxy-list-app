@@ -9,8 +9,8 @@ import {
 } from "../../constants/validation";
 
 /**
- * The first name, last name and email editor, with the same field component, the same messages
- * and the same patterns as the auth forms
+ * The first name, last name and email editor, using the same field component, messages and
+ * patterns as the auth forms.
  */
 const UserProfileForm = ({ user, isPending, serverError, onSave, onCancel }) => {
     const formApi = useForm();
@@ -103,9 +103,7 @@ const UserProfileForm = ({ user, isPending, serverError, onSave, onCancel }) => 
                 })}
             />
 
-            {/* A rejected request that named no field of its own, e.g. a database
-                failure. It is announced, and it is not pinned to the email box,
-                which would blame the wrong field. */}
+            {/* A rejected request that named no field of its own. */}
             {errors.root?.message && (
                 <span className="text-xs font-bold text-red-600" role="alert">
                     {errors.root.message}

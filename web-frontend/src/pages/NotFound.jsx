@@ -3,28 +3,42 @@ import { Mascot } from "page-mascot";
 import { useAppContext } from "../contexts/useAppContext";
 import { BUILDER_SHEETS, BUILDER_LABEL } from "../constants/mascot";
 import { ROUTES } from "../constants/routes";
+import useMediaQuery from "../hooks/useMediaQuery";
+
+/** The `sm` boundary, named once. */
+const WIDE_ENOUGH = "(min-width: 40rem)";
 
 /**
- * Shown for any URL that does not match a route. The builder stands in rather than the app's
- * own fox, so a dead end does not look like the product.
+ * Shown for any URL that does not match a route. The builder stands in rather than the app's own
+ * fox, so a dead end does not look like the product.
  */
 const NotFound = () => {
     const { isAuthenticated } = useAppContext();
+    const isWide = useMediaQuery(WIDE_ENOUGH);
 
     return (
-        <div className="flex flex-1 flex-col items-center justify-center gap-5 px-6 text-center">
-            <Mascot {...BUILDER_SHEETS} label={BUILDER_LABEL} size={140} />
+        <div className="flex flex-1 flex-col items-center justify-center gap-5 px-4 text-center sm:px-6">
+            <Mascot
+                {...BUILDER_SHEETS}
+                label={BUILDER_LABEL}
+                size={isWide ? 180 : 140}
+            />
 
-            <p className="text-6xl font-extrabold text-fox-400">404</p>
+            <p className="text-5xl font-extrabold text-fox-400 sm:text-6xl">404</p>
 
             <div>
-                <h1 className="text-2xl font-extrabold text-ink">This page wandered off</h1>
+                <h1 className="text-xl font-extrabold wrap-break-word text-ink sm:text-2xl">
+                    This page wandered off
+                </h1>
                 <p className="mt-1.5 max-w-sm text-sm font-semibold text-ink-soft">
                     The link may be old or mistyped. Your tasks are still safe and sound.
                 </p>
             </div>
 
-            <Link to={isAuthenticated ? ROUTES.board : ROUTES.login} className="btn btn-primary">
+            <Link
+                to={isAuthenticated ? ROUTES.board : ROUTES.login}
+                className="btn btn-primary w-full max-w-xs sm:w-auto"
+            >
                 {isAuthenticated ? "Back to my board" : "Go to sign in"}
             </Link>
         </div>

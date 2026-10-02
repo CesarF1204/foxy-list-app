@@ -28,11 +28,7 @@ function App() {
                         {({ reset }) => (
                             <div className="flex flex-1 flex-col">
                                 <Routes>
-                                    {/* The board is the default page. */}
-                                    {/* The site root is not a screen of its own, so it
-                                        redirects to the board the guard below
-                                        protects. Without the guard a signed-out
-                                        visitor would bounce straight back here. */}
+                                    {/* The root has no screen of its own, so it redirects. */}
                                     <Route
                                         path={ROUTES.root}
                                         element={
@@ -73,12 +69,7 @@ function App() {
                                             </RequireGuest>
                                         }
                                     />
-                                    {/* The admin area. Guarded by role, but that guard
-                                        is a convenience: every admin endpoint checks
-                                        the caller's role again in the API. */}
-                                    {/* The bare /admin is the area's index, not a
-                                        screen of its own, so it redirects to the
-                                        overview rather than rendering it here. */}
+                                    {/* A bare /admin is an index, not a screen, so it redirects. */}
                                     <Route
                                         path={ROUTES.admin}
                                         element={<Navigate to={ROUTES.adminOverview} replace />}
@@ -103,10 +94,7 @@ function App() {
                                             </RequireAuth>
                                         }
                                     />
-                                    {/* The API reference. Deliberately unguarded: the
-                                        specification describes shapes, never data, and a
-                                        developer integrating this API needs to read what
-                                        sign-in is before they have a session. */}
+                                    {/* Deliberately unguarded: the spec describes shapes, never data. */}
                                     <Route path={ROUTES.apiDocs} element={<ApiDocs />} />
                                     <Route path={ROUTES.notFound} element={<NotFound />} />
                                     {/* Unknown paths fall through to the not-found page. */}

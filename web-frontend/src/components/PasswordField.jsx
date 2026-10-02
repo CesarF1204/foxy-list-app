@@ -24,7 +24,7 @@ const PasswordField = ({ id, inputClassName = "", ...inputProps }) => {
                 <button
                     type="button"
                     onClick={toggle}
-                    /** Keeps the caret in the field when the eye is clicked. */
+                    /** Keep the caret in the field when the eye is clicked. */
                     onMouseDown={(event) => event.preventDefault()}
                     aria-label={isVisible ? "Hide password" : "Show password"}
                     aria-pressed={isVisible}

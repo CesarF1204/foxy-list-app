@@ -4,10 +4,14 @@ import { createPortal } from "react-dom";
 import { getInitials, getFullName } from "../../helpers/globalHelper";
 import { USER_COLUMNS, SORT_DIRECTIONS } from "../../constants/admin";
 import { BOARD_META, BOARDS, BOARD_LABELS } from "../../constants/boards";
+import useMediaQuery from "../../hooks/useMediaQuery";
 import { RoleBadge, StatusBadge } from "./Badges";
 import { Icon, KebabButton } from "../icons";
 
-/** A date as a short value, with the full timestamp available on hover. */
+/** Width at which the table has room for six columns. */
+const DESKTOP_TABLE = "(min-width: 48rem)";
+
+/** Short date, with the full timestamp on hover. */
 const formatDate = (value) => {
     if (!value) return "Unknown";
 
@@ -17,10 +21,7 @@ const formatDate = (value) => {
     return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 };
 
-/**
- * The avatar: the same initials the navbar uses, so a row and the account menu look like the
- * same person. Decorative, since the name is beside it.
- */
+/** Initials avatar. Decorative: the name sits beside it. */
 const UserAvatar = ({ user }) => (
     <span
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-ink bg-fox-400 text-xs font-extrabold text-white"
@@ -30,12 +31,7 @@ const UserAvatar = ({ user }) => (
     </span>
 );
 
-/**
- * One board task count as an outlined pill. The border and text colours come from `BOARD_META`,
- * so a board count looks the same here as on the board itself. The board is named twice over:
- * the `title` for a pointer, and a screen-reader only label for anyone who cannot use colour,
- * so a row reads "4 To Do, 3 Ongoing, 2 Done" rather than three bare numbers.
- */
+/** One board's task count. Labelled for a pointer and for screen readers. */
 const TaskCountPill = ({ board, value }) => (
     <span
         className={`rounded-lg border-2 bg-white px-1.5 py-0.5 text-xs font-extrabold tabular-nums ${BOARD_META[board].pill}`}
@@ -46,10 +42,7 @@ const TaskCountPill = ({ board, value }) => (
     </span>
 );
 
-/**
- * The whole tasks cell: the three board counts in board order, then the total as plain bold
- * text, so the total is the number the eye lands on.
- */
+/** The three board counts in board order, then the total. */
 const TaskCountsCell = ({ counts }) => (
     <span className="flex items-center justify-start gap-1.5">
         {BOARDS.map((board) => (
@@ -59,30 +52,25 @@ const TaskCountsCell = ({ counts }) => (
     </span>
 );
 
-/**
- * The sort state of a column header, as one of the app's standard icons rather than a
- * character.
- */
+/** Ascending, descending or inactive sort icon. */
 const SortIndicator = ({ isActive, isAscending }) =>
     isActive ? (
         <Icon
             name={isAscending ? "sortAscending" : "sortDescending"}
             size={16}
-            /** The active column is the one the eye should land on first. */
             className="text-fox-500"
         />
     ) : (
         <Icon
             name="sortNone"
             size={16}
-            /** Faint, because an unsorted column is an offer, not the state. */
             className="text-ink-faint"
         />
     );
 
 /**
- * A sortable column header. Only the columns the API can sort are buttons, and the header cell
- * carries `aria-sort`, so the table's order is announced rather than only seen.
+ * A sortable column header. Only columns the API can sort are buttons, and `aria-sort` announces
+ * the current order.
  */
 const SortHeader = ({ column, sortBy, sortDir, onSort }) => {
     if (!column.sort) {
@@ -97,10 +85,7 @@ const SortHeader = ({ column, sortBy, sortDir, onSort }) => {
     const isAscending = sortDir === SORT_DIRECTIONS.asc;
     const ariaSort = isActive ? (isAscending ? "ascending" : "descending") : "none";
 
-    /**
-     * Named for a pointer hover as well, and kept out of the text so the header still reads as
-     * just the column's name.
-     */
+    /** Sort state, named for a pointer hover and kept out of the visible text. */
     const stateLabel = isActive
         ? `, sorted ${isAscending ? "ascending" : "descending"}`
         : ", not sorted. Activate to sort";
@@ -131,14 +116,10 @@ const MENU_ITEMS = 3;
 const MENU_HEIGHT = MENU_ITEM_HEIGHT * MENU_ITEMS;
 const GAP = 4;
 
-/**
- * The row's actions, collapsed into a kebab menu. Three icon buttons per row crowded the table
- * and left a destructive Delete one mis-click from Block, so only the kebab shows until an
- * admin asks for the menu.
- */
+/** The row's actions, collapsed into a kebab menu. */
 const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    /** Where the menu should sit, measured from the trigger once it opens. */
+    /** Menu position, measured from the trigger once it opens. */
     const [position, setPosition] = useState(null);
     const containerRef = useRef(null);
     const triggerRef = useRef(null);
@@ -148,11 +129,8 @@ const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
     const isBlocked = user.status === "blocked";
 
     /**
-     * The menu is portalled to the document body and positioned from the trigger's own
-     * rectangle, because the table sits inside a horizontally scrollable container: an
-     * absolutely positioned menu would be clipped by it, and widening the table so a dropdown
-     * fits is a bad trade. `position: fixed` escapes both that container and the card's
-     * `overflow-hidden` above it.
+     * The menu is portalled to the body and positioned from the trigger's rectangle, since the
+     * table sits in a scrollable container that would clip an absolutely positioned menu.
      */
     useLayoutEffect(() => {
         if (!isMenuOpen) return undefined;
@@ -181,10 +159,7 @@ const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
         };
     }, [isMenuOpen]);
 
-    /**
-     * Close on an outside click or Escape, the same two ways the account menu closes, so both
-     * menus in the app behave identically.
-     */
+    /** Closes on outside click or Escape, matching the account menu. */
     useEffect(() => {
         if (!isMenuOpen) return undefined;
 
@@ -208,10 +183,7 @@ const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
         };
     }, [isMenuOpen]);
 
-    /**
-     * Runs an action and closes the menu, so it never hangs open behind the dialog or drawer
-     * the action opens.
-     */
+    /** Runs an action and closes the menu, so it never hangs open behind the dialog it opens. */
     const choose = (action) => {
         setIsMenuOpen(false);
         action(user);
@@ -228,8 +200,6 @@ const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
                 title="Row actions"
             />
 
-            {/* Portalled to the body so the table's scroll container cannot clip
-                it; `position` is null only on the frame before measurement. */}
             {isMenuOpen &&
                 position &&
                 createPortal(
@@ -241,9 +211,6 @@ const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
                         className="animate-pop-in fixed z-overlay overflow-hidden rounded-2xl border-2 border-ink bg-white shadow-pop"
                     >
                         <ul className="py-1.5">
-                            {/* Each entry pairs the app's standard icon for the
-                                action with its name in words, so the mark is a
-                                recognition aid and never the only label. */}
                             <MenuItem onClick={() => choose(onView)}>
                                 <Icon name="view" size={16} />
                                 View user
@@ -270,11 +237,7 @@ const RowActions = ({ user, canManage, onView, onToggleStatus, onDelete }) => {
     );
 };
 
-/**
- * One entry in the kebab menu. A `<button>` inside a `role="menu"`, so it is reachable by
- * keyboard and announced as a menu item. The label is text, not an icon, so the action is
- * readable at a glance; `tone` tints a destructive entry red.
- */
+/** One entry in the kebab menu. `tone` tints a destructive entry red. */
 const MenuItem = ({ children, tone = "default", onClick }) => (
     <li>
         <button
@@ -291,17 +254,81 @@ const MenuItem = ({ children, tone = "default", onClick }) => (
 );
 
 /**
- * The users table. A real `<table>` with a caption, `<th scope="col">` headers and `aria-sort`
- * on the sortable ones, so the structure a screen reader walks is the structure an admin sees.
+ * One user, as a card, for narrow screens.
+ *
+ * Both layouts read the same `rows` prop and only one is ever in the document.
  */
-const UsersTable = ({ rows, sortBy, sortDir, onSort, onView, onToggleStatus, onDelete, canManageRow }) => (
-    <div
-        className="overflow-x-auto"
-        tabIndex={0}
-        role="region"
-        aria-label="Registered users"
-    >
-        <table className="w-full min-w-176 border-collapse text-sm">
+const UserCard = ({ user, onView, onToggleStatus, onDelete, canManage }) => (
+    <li className="surface animate-rise flex flex-col gap-3 p-3">
+        <div className="flex items-start gap-2.5">
+            <UserAvatar user={user} />
+
+            <div className="min-w-0 flex-1">
+                <p className="font-extrabold wrap-break-word text-ink">{getFullName(user)}</p>
+                <p className="break-anywhere text-sm font-semibold text-ink-soft">
+                    {user.email}
+                </p>
+            </div>
+
+            <RowActions
+                user={user}
+                canManage={canManage}
+                onView={onView}
+                onToggleStatus={onToggleStatus}
+                onDelete={onDelete}
+            />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+            <RoleBadge role={user.role} />
+            <StatusBadge status={user.status} />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+            <TaskCountsCell counts={user.taskCounts} />
+        </div>
+
+        <p className="text-xs font-semibold text-ink-faint">
+            Joined {formatDate(user.createdAt)}
+        </p>
+    </li>
+);
+
+/**
+ * The users list, as cards on narrow screens or as a table on wide ones.
+ *
+ * `useMediaQuery` instead of a `hidden md:block` / `md:hidden` pair, which would leave the hidden
+ * layout in the DOM and hand a screen reader every row twice.
+ *
+ * @param {object} props
+ * @param {object[]} props.rows - One entry per registered account
+ * @returns {JSX.Element} The users list, as cards or as a table
+ */
+const UsersTable = ({ rows, sortBy, sortDir, onSort, onView, onToggleStatus, onDelete, canManageRow }) => {
+    const isWide = useMediaQuery(DESKTOP_TABLE);
+
+    /** Shared row props, so both layouts stay in step. */
+    const rowProps = (user) => ({
+        user,
+        canManage: canManageRow(user),
+        onView,
+        onToggleStatus,
+        onDelete,
+    });
+
+    if (!isWide) {
+        return (
+            <ul className="flex flex-col gap-3 p-3">
+                {rows.map((user) => (
+                    <UserCard key={user._id} {...rowProps(user)} />
+                ))}
+            </ul>
+        );
+    }
+
+    return (
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Registered users">
+            <table className="w-full min-w-176 border-collapse text-sm">
             <caption className="sr-only">
                 Registered users with their role, account status and task counts. The Tasks column
                 shows the To Do, Ongoing and Done counts as coloured pills, followed by
@@ -365,6 +392,7 @@ const UsersTable = ({ rows, sortBy, sortDir, onSort, onView, onToggleStatus, onD
             </tbody>
         </table>
     </div>
-);
+    );
+};
 
 export default UsersTable;

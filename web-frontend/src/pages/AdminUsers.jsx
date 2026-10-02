@@ -16,10 +16,7 @@ import UserDrawer from "../components/Admin/UserDrawer";
 import ConfirmDialog from "../components/Admin/ConfirmDialog";
 import DeleteUserWarning from "../components/Admin/DeleteUserWarning";
 
-/**
- * The grey rows shown while a page of users is loading, in the shape of the real table so the
- * layout holds still when the data arrives.
- */
+/** Grey rows in the shape of the table, so the layout holds while data loads. */
 const TableSkeleton = ({ rows = 5 }) => (
     <div aria-hidden="true" className="flex flex-col gap-2 p-3">
         {Array.from({ length: rows }, (_, index) => (
@@ -46,11 +43,7 @@ const AdminUsers = () => {
     /** A row action awaiting confirmation, or null. */
     const [pending, setPending] = useState(null);
 
-    /**
-     * The open user, refetched by id so the drawer always shows what the API currently holds -
-     * a role changed on another screen, or a delete that already happened, cannot leave a stale
-     * row on display.
-     */
+    /** The open user, refetched by id so the drawer never shows a stale row. */
     const { data: openUser } = useQuery({
         ...getAdminUserQueryOptions(openUserId ?? ""),
         enabled: Boolean(openUserId),
@@ -125,11 +118,6 @@ const AdminUsers = () => {
                 />
 
                 <div className="surface animate-rise overflow-hidden">
-                    {/* The table's own loading boundary. `relative` anchors the
-                     * refresh overlay, `aria-busy` announces that the region is
-                     * updating, and the floor height keeps a short result set from
-                     * shrinking the card and pulling the pagination upwards while a
-                     * request is still in flight. */}
                     <div
                         className="relative min-h-64"
                         aria-busy={isFetching}
@@ -144,10 +132,7 @@ const AdminUsers = () => {
                                 />
                             </div>
                         ) : isLoading ? (
-                            /**
-                             * The very first load, when there is no previous page to keep on
-                             * screen: a skeleton holds the shape.
-                             */
+                            /** The very first load, when there is no previous page to keep on screen. */
                             <TableSkeleton />
                         ) : rows.length === 0 ? (
                             <div className="p-4">
@@ -166,11 +151,7 @@ const AdminUsers = () => {
                                 />
                             </div>
                         ) : (
-                            /**
-                             * A refetch never replaces the table. The rows stay put, dimmed,
-                             * and the overlay says the table is updating - the filters and the
-                             * pagination around it never move.
-                             */
+                            /** A refetch never replaces the table: the rows stay put, dimmed, under the overlay. */
                             <div
                                 className={`transition-opacity ${
                                     isFetching ? "opacity-60" : "opacity-100"
@@ -195,12 +176,7 @@ const AdminUsers = () => {
                             </div>
                         )}
 
-                        {/* One overlay for every trigger - the debounced search, either
-                         * filter, a sort or a page change - because they all surface as
-                         * the same `isFetching` on the same query. It is skipped on the
-                         * first load (the skeleton is already the loading state) and on
-                         * an error, where the message and the retry button are what the
-                         * admin needs to see. */}
+                        {/* Skipped on first load (the skeleton is already the loading state) and on error. */}
                         {isFetching && !isLoading && !isError && (
                             <RefreshOverlay label="Loading users..." />
                         )}

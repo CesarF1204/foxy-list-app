@@ -1,10 +1,4 @@
-/**
- * The small labelled pill used for a required marker and for a field's enum values.
- *
- * Deliberately the app's `.surface`-free, quieter cousin: a details panel is dense, and a
- * full bordered card per field would make it unreadable. So this is a soft fill with no
- * border, which keeps the eye on the text.
- */
+/** A small pill for a required marker or a field's enum values. */
 const Chip = ({ children, tone = "neutral" }) => {
     const tones = {
         neutral: "bg-paper-deep text-ink-soft",
@@ -14,7 +8,7 @@ const Chip = ({ children, tone = "neutral" }) => {
 
     return (
         <span
-            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[0.7rem] font-bold ${tones[tone] ?? tones.neutral}`}
+            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-bold sm:py-0.5 ${tones[tone] ?? tones.neutral}`}
         >
             {children}
         </span>
