@@ -88,15 +88,6 @@ export const forgotPassword = async (req, res) => {
 };
 
 /**
- * DOCU: Completes password recovery.
- * Last Updated Date: October 1, 2026
- * @function resetPassword
- * @param {object} req - Request
- * @param {object} res - Response
- * @returns {Promise<void>} Responds with { message }
- * @author Cesar
- */
-/**
  * DOCU: Updates the signed-in user's own profile fields.
  *
  * The account comes from the verified session, never from the request, so
@@ -129,6 +120,15 @@ export const updatePassword = async (req, res) => {
     res.status(HTTP_STATUS.OK).json({ message: await authService.setOwnPassword(req.user, data) });
 };
 
+/**
+ * DOCU: Completes password recovery.
+ * Last Updated Date: October 1, 2026
+ * @function resetPassword
+ * @param {object} req - Request
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { message }
+ * @author Cesar
+ */
 export const resetPassword = async (req, res) => {
     const data = parseBody(req.body, resetPasswordSchema);
 
