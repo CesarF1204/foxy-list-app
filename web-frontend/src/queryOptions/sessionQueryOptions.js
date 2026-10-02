@@ -52,4 +52,18 @@ const cacheSessionUser = (queryClient, user) => {
     });
 };
 
-export { getSessionQueryOptions, cacheSessionUser };
+/**
+ * Asks the API who the session belongs to, forcing the request even though the query is
+ * otherwise never refetched on its own.
+ *
+ * This is the step between signing in and moving on. The sign-in answer says the password was
+ * right, but it does not prove the browser kept the cookie it was handed: the API can only
+ * answer this question by reading that cookie back. A device slow enough to still be storing it
+ * when the app navigates would otherwise arrive at a protected route with no session at all.
+ * `staleTime: 0` overrides the session query's cache-first rule so the answer comes from the
+ * network rather than from a value written a moment ago.
+ */
+const confirmSession = (queryClient) =>
+    queryClient.fetchQuery({ ...getSessionQueryOptions(), staleTime: 0 });
+
+export { getSessionQueryOptions, cacheSessionUser, confirmSession };

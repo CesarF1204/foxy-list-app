@@ -1,4 +1,13 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+/**
+ * Where the API lives.
+ *
+ * Left empty - or set to "" - every request goes to the origin the page itself was served from,
+ * which is how the app is deployed: Vercel forwards `/api` to Render, so the browser only ever
+ * talks to one host and the session cookie stays first-party. An absolute URL is still accepted
+ * and is what a separately hosted API needs, but it makes every request cross-site, which
+ * browsers are increasingly unwilling to carry a session cookie over.
+ */
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
 
 /** Raised when the API answers with an error. */
 class ApiRequestError extends Error {
@@ -23,12 +32,13 @@ const toErrorMessage = (body, status) => {
 /** Performs a JSON request against the real backend. */
 const apiRequest = async (path, { method = "GET", body, signal } = {}) => {
     /**
-     * Fail loudly when the app has no backend to talk to. Silently answering with fake data
-     * here would hide a missing environment variable behind a screen that looks like it works.
+     * Only reached when a build baked in a value that is not a URL, e.g. `VITE_API_BASE_URL=api`.
+     * An unset or empty value is fine and means "same origin", which is the deployed setup, so it
+     * must not be treated as a missing backend.
      */
-    if (!API_BASE_URL) {
+    if (API_BASE_URL && !/^https?:\/\//i.test(API_BASE_URL)) {
         throw new ApiRequestError(
-            "The app is not connected to a backend. Set VITE_API_BASE_URL in .env and restart.",
+            `VITE_API_BASE_URL must be an absolute URL or empty for same-origin requests, but it is "${API_BASE_URL}". Restart the dev server after changing it.`,
             0
         );
     }
@@ -48,9 +58,8 @@ const apiRequest = async (path, { method = "GET", body, signal } = {}) => {
         });
     } catch (error) {
         /**
-         * A cancelled request is deliberate, not a failure. It must stay an abort so React
-         * Query discards it quietly instead of counting it as an error and putting an "Unable
-         * to reach the server" message on the screen.
+         * A cancelled request is deliberate, not a failure. It must stay an abort so React Query
+         * discards it quietly instead of counting it as an error.
          */
         if (error?.name === "AbortError") throw error;
 

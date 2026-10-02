@@ -1,6 +1,7 @@
 import { USER_ROLES, ROLE_META, ACCOUNT_STATUSES, ACCOUNT_STATUS_META } from "../../constants/roles";
 import SelectField from "../SelectField";
 
+/** Shared class names for the two filter selects. */
 const FILTER_WRAPPER = "flex min-w-40 flex-1 flex-col gap-1.5";
 const FILTER_SELECT = "py-2! text-sm";
 
@@ -75,7 +76,11 @@ const UserFilters = ({ search, role, status, onSearch, onRole, onStatus, onClear
             </div>
 
             {/* The live result count, so a filter that matched nothing says so. */}
-            <p className="text-xs font-semibold text-ink-faint" role="status" aria-live="polite">
+            <p
+                className="text-sm font-semibold text-ink-faint sm:text-xs"
+                role="status"
+                aria-live="polite"
+            >
                 {resultCount === undefined
                     ? "Filtering and paging happen on the server."
                     : `${resultCount} ${resultCount === 1 ? "user" : "users"} match`}

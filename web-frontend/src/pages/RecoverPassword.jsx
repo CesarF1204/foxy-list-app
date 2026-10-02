@@ -107,8 +107,8 @@ const RecoverPassword = () => {
 
     /**
      * A submit that never left the browser, since `handleSubmit` stops before the mutation. The
-     * toast makes a rejected form announce itself the same way a rejected request does, and
-     * gives the mascot the same signal.
+     * toast makes a rejected form announce itself the same way a rejected request does, and gives
+     * the mascot the same signal.
      */
     const reportFieldErrors = (errors) => {
         const toast = fieldErrorToast(errors);
@@ -147,9 +147,7 @@ const RecoverPassword = () => {
                                       : "bg-white text-xs font-extrabold text-ink-faint"
                             }`}
                         >
-                            {/* A finished step is the app's tick, not a `✓`
-                                character - the same mark a completed task card
-                                wears, so "done" looks the same everywhere. */}
+                            {/* A finished step wears the app's tick, the same mark a completed task card uses. */}
                             {step > number ? <Icon name="check" size={14} /> : <span>{number}</span>}
                         </span>
                         {number === 1 && (

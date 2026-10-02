@@ -21,23 +21,16 @@ const SelectField = ({
             {label}
         </label>
 
-        {/* `relative` so the chevron can be positioned against the control. */}
         <div className="relative">
             <select
                 id={id}
-                /**
-                 * `peer` is what lets the chevron below react to this select's disabled state,
-                 * since a sibling cannot inherit it.
-                 */
                 className={`field peer appearance-none pr-10 font-bold hover:border-fox-400 ${className}`}
                 {...selectProps}
             >
                 {children}
             </select>
 
-            {/* Decoration, not a control: the chevron is hidden from assistive
-                tech because the select is already named by its label, and it
-                takes no pointer events, so the whole box stays clickable. */}
+            {/* Decoration: hidden from assistive tech, which the label already names. */}
             <Icon
                 name="chevronDown"
                 size={18}

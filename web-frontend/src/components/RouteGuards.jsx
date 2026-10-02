@@ -31,7 +31,7 @@ const RequireGuest = ({ children }) => {
     return children;
 };
 
-/** The admin area's guard. It waits for the session exactly as */
+/** The admin area's guard. It waits for the session exactly as `RequireAuth` does. */
 const RequireAdmin = ({ children }) => {
     const { user, isAuthenticated, isAuthLoading } = useAppContext();
 

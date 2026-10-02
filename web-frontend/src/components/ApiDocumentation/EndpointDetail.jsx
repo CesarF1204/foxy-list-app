@@ -3,14 +3,7 @@ import FieldTable from "./FieldTable";
 import Chip from "./Chip";
 
 /**
- * The expanded detail of one endpoint.
- *
- * Split out of `ApiEndpoint` so the row stays a row: this panel is long, it is only mounted
- * while the row is open, and keeping it in its own file makes the two halves readable
- * without either scrolling past the other.
- *
- * The order it reads in is the order someone integrating an endpoint needs it: what it
- * requires, what it takes, and what it gives back.
+ * The expanded detail of one endpoint: what it requires, what it takes, what it returns.
  *
  * @param {object} props
  * @param {object} props.endpoint - One entry from `groupOperationsByTag`
@@ -23,19 +16,14 @@ const EndpointDetail = ({ endpoint, id }) => {
     return (
         <div
             id={id}
-            className="animate-rise space-y-5 border-t-2 border-paper-deep px-4 py-4"
+            className="animate-rise space-y-5 border-t-2 border-paper-deep px-3 py-4 sm:px-4"
         >
             {description && (
-                <p className="text-sm leading-relaxed font-semibold whitespace-pre-line text-ink-soft">
+                <p className="text-sm leading-relaxed font-semibold whitespace-pre-line break-anywhere text-ink-soft">
                     {description}
                 </p>
             )}
 
-            {/*
-                Authentication is stated as a fact rather than left to be inferred from the
-                401 in the response table: someone deciding whether they can call this at all
-                should not have to work that out from an error code.
-            */}
             <section>
                 <h5 className="mb-1.5 text-xs font-extrabold tracking-wide text-ink uppercase">
                     Authentication
@@ -77,8 +65,6 @@ const EndpointDetail = ({ endpoint, id }) => {
                                 className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-sm"
                             >
                                 <span className="inline-flex items-center gap-1.5">
-                                    {/* The dot is decoration; the code beside it carries the
-                                        meaning, so colour is never the only cue. */}
                                     <span
                                         aria-hidden="true"
                                         className={`h-2.5 w-2.5 rounded-full ${statusStyle(response.status)}`}

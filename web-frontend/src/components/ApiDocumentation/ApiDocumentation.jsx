@@ -10,22 +10,8 @@ import { useDebouncedValue, SEARCH_DEBOUNCE_MS } from "../../hooks/useDebouncedV
 import ApiGroup from "./ApiGroup";
 
 /**
- * The API documentation viewer.
- *
- * Read-only on purpose. The specification is fetched from the backend and rendered as
- * whatever that document says - no endpoint is written down here, and no branch in this file
- * mentions a task or a user - so a new endpoint appears the moment the backend documents it,
- * and this component is never the thing that has to be updated. `openapiHelper.js` does the
- * reading; this file arranges the result on screen and handles the three states a request
- * can be in.
- *
- * Reusable by construction: it renders any OpenAPI 3 document. It is a viewer for this API
- * because that is what it is pointed at, not because it knows anything about it.
- *
- * The open endpoint lives here rather than in each row, because the viewer is what knows the
- * rows are siblings: one open at a time is a claim about the whole list, and a row holding its
- * own state could not enforce it. Opening one row replaces the key rather than adding to it,
- * so the row that was open closes by the same rule that opened the new one.
+ * The API documentation viewer. Read-only: the specification is fetched from the backend and
+ * rendered as that document says, so a new endpoint appears the moment it is documented.
  *
  * @returns {JSX.Element} The viewer, or its loading or error state
  */
@@ -33,23 +19,10 @@ const ApiDocumentation = () => {
     /** What the box is bound to, so it responds to every keystroke. */
     const [filterInput, setFilterInput] = useState("");
 
-    /**
-     * The term the list is actually filtered by, and the box.
-     *
-     * Debounced like the users table's search, on the same delay, so the two feel alike:
-     * matching every endpoint in a large specification on each keystroke re-renders the whole
-     * list, and on a document with hundreds of paths that is enough to make the box feel like
-     * it is lagging. The box stays bound to the immediate value, so it never waits on this.
-     */
+    /** The debounced term the list is filtered by. The box stays bound to the input. */
     const [filter] = useDebouncedValue(filterInput, SEARCH_DEBOUNCE_MS);
 
-    /**
-     * The one open endpoint, by `endpointKey`, or null when everything is closed.
-     *
-     * Held here so that opening an endpoint closes whichever was open before it. It is compared
-     * against the rows rather than stored per row, so filtering an open endpoint out of the
-     * list hides its panel with it and leaves no stale detail mounted behind the filter.
-     */
+    /** The one open endpoint, so opening one closes whichever was open before it. */
     const [openKey, setOpenKey] = useState(null);
 
     /** Opening the row that is already open closes it; any other row replaces it. */
@@ -60,24 +33,10 @@ const ApiDocumentation = () => {
         getOpenApiSpecQueryOptions()
     );
 
-    /**
-     * Whether a search is still being worked out.
-     *
-     * The list is filtered in the page rather than fetched, so "in flight" here is the gap
-     * between the term in the box and the term the list is filtered by: a keystroke that has
-     * not yet been committed by the debounce, or a document being refetched behind the
-     * filter. Both are work the reader is waiting on, so both are what the box reports.
-     *
-     * Reading it as a difference between two states rather than as a separate flag means it
-     * cannot disagree with them: the moment the term settles, the spinner goes, with no
-     * effect to forget to run.
-     */
+    /** True while the typed term and the filtered term disagree, or the spec is refetching. */
     const isSearching = filterInput !== filter || (isFetching && !isLoading);
 
-    /**
-     * Grouping is a pure function of the document, so it is memoised rather than recomputed
-     * on every keystroke of the filter box.
-     */
+    /** Memoised: grouping is a pure function of the document. */
     const groups = useMemo(() => groupOperationsByTag(spec), [spec]);
     const summary = useMemo(() => readSpecSummary(spec), [spec]);
 
@@ -125,16 +84,11 @@ const ApiDocumentation = () => {
                 </section>
             )}
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
                 <label className="sr-only" htmlFor="api-docs-filter">
                     Filter endpoints
                 </label>
 
-                {/* The box and its spinner, in a `relative` wrapper rather than one element:
-                    the ring is positioned against the field's own box, and it is rendered
-                    inside it so the two can never be separated by a wrap on a narrow screen.
-                    The wrapper keeps `max-w-sm` from the input, so the field is exactly as
-                    wide as it was before the spinner existed. */}
                 <div className="relative w-full max-w-sm">
                     <input
                         id="api-docs-filter"
@@ -142,21 +96,12 @@ const ApiDocumentation = () => {
                         value={filterInput}
                         onChange={(event) => setFilterInput(event.target.value)}
                         placeholder="Filter by method, path or description"
-                        /** `aria-busy` states the search is unfinished; the words beside the
-                            ring say the same thing to anyone who cannot see it spin. */
                         aria-busy={isSearching}
                         className={`field ${isSearching ? "pr-11!" : ""}`}
                     />
 
                     {isSearching && (
-                        /** The app's one spinner, at its smallest size, in the app's own
-                            colours - the same ring the full-page loader and the refresh
-                            overlay use, so this reads as the product's loading state and
-                            not as decoration invented for this field. `pointer-events-none`
-                            because the box is still typed into while it spins, and
-                            `right-4` clears the field's own padding. `role="status"` wraps a
-                            live region around it, so the state is announced once rather
-                            than on every keystroke. */
+                        /** Spins while the box is still being typed into. */
                         <span
                             className="pointer-events-none absolute inset-y-0 right-4 flex items-center"
                             role="status"
@@ -169,7 +114,7 @@ const ApiDocumentation = () => {
                 <button
                     type="button"
                     onClick={() => refetch()}
-                    className="btn btn-neutral py-1.5! text-xs!"
+                    className="btn btn-neutral py-2! text-sm! sm:py-1.5! sm:text-xs!"
                 >
                     Reload spec
                 </button>
@@ -195,9 +140,7 @@ const ApiDocumentation = () => {
                 ))
             )}
 
-            {/* Where the document itself lives, so a reader can go and read the raw JSON.
-                Composed as one string rather than as adjacent nodes, so it copies out of the
-                page as one address rather than as two fragments. */}
+            {/* Composed as one string, so it copies out of the page as one address. */}
             <p className="text-xs font-semibold text-ink-faint">
                 Generated from{" "}
                 <code className="font-mono break-anywhere">{`${API_BASE_URL}${OPENAPI_PATH}`}</code>

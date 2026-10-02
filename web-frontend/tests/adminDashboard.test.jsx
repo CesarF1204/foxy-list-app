@@ -493,9 +493,11 @@ describe("the users table", () => {
 
         /**
          * Circular by construction: one fixed dimension, so `rounded-full` resolves to a true
-         * circle rather than a rounded rectangle.
+         * circle rather than a rounded rectangle. Scoped to `sm` because that is where the
+         * larger touch-sized circle gives way to the 36px one - each branch still states a
+         * single fixed dimension, which is what keeps the shape a circle.
          */
-        expect(trigger).toHaveClass("h-9", "w-9");
+        expect(trigger).toHaveClass("sm:h-9", "sm:w-9");
 
         /**
          * No lift: the ring is the whole response, so a shadow here would compete with the

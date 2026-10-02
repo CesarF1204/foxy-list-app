@@ -21,8 +21,8 @@ const TaskBoard = () => {
     );
 
     /**
-     * One stable handler for every card, so the memo on TaskCard is not broken by a fresh
-     * closure per row. The card passes its own task in.
+     * One stable handler for every card, so the memo on TaskCard is not broken by a fresh closure
+     * per row. The card passes its own task in.
      */
     const handleSave = useCallback(
         (task, title, description) => renameTask(task, title, description),
@@ -73,7 +73,6 @@ const TaskBoard = () => {
     return (
         <>
             <DragDropContext onDragEnd={handleDragEnd}>
-                {/* Stacks on small screens, three columns from md upwards. */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {boards.map((board) => {
                         const meta = boardMeta[board];
@@ -86,7 +85,7 @@ const TaskBoard = () => {
                                         {...provided.droppableProps}
                                         ref={provided.innerRef}
                                         aria-label={meta.label}
-                                        className={`flex min-h-72 flex-col rounded-3xl border-2 border-ink p-3 ${
+                                        className={`flex min-h-56 flex-col rounded-3xl border-2 border-ink p-3 md:min-h-72 ${
                                             snapshot.isDraggingOver
                                                 ? "border-fox-400 bg-fox-50"
                                                 : "bg-white/70"
@@ -98,7 +97,7 @@ const TaskBoard = () => {
                                                 aria-hidden="true"
                                             />
                                             <h2
-                                                className={`text-xs font-extrabold tracking-wider uppercase ${meta.heading}`}
+                                                className={`text-sm font-extrabold tracking-wider uppercase ${meta.heading}`}
                                             >
                                                 {meta.label}
                                             </h2>
@@ -109,10 +108,8 @@ const TaskBoard = () => {
                                             </span>
                                         </header>
 
-                                        {/* Always rendered, even on an empty board, so the
-                                            hint line keeps the same height in every
-                                            column and the empty states line up. */}
-                                        <p className="mb-3 px-1 text-[0.7rem] font-bold text-ink-faint">
+                                        {/* Always rendered, even on an empty board, so the empty states line up. */}
+                                        <p className="mb-3 px-1 text-xs leading-snug font-bold text-ink-soft">
                                             {meta.hint}
                                         </p>
 
@@ -131,9 +128,6 @@ const TaskBoard = () => {
                                             {/* The gap the card will drop into. */}
                                             {provided.placeholder}
 
-                                            {/* One shared placeholder, same copy shape in
-                                                every column, so the three empty blocks
-                                                match in height and size. */}
                                             {tasksOnBoard.length === 0 && (
                                                 <EmptyState
                                                     title={meta.emptyTitle}

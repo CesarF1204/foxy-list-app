@@ -4,14 +4,8 @@ import { endpointKey } from "../../helpers/openapiHelper";
 /**
  * One resource group: its heading, its description, and the endpoints under it.
  *
- * A component rather than a map inside the viewer so that grouping is a thing with a name,
- * and so a group can grow its own behaviour - a collapse-all control, say - without the
- * viewer having to know where it goes.
- *
- * `openKey` and `onToggle` are passed straight through to the rows. The group decides nothing
- * about which row is open: it carries the viewer's single-answer state down to the endpoints,
- * so that opening a row in one group also closes the row left open in another. Each row's
- * toggle is handed back the row's own key, so the viewer never has to know which row called.
+ * `openKey` and `onToggle` pass straight through to the rows: the group decides nothing about
+ * which row is open.
  *
  * @param {object} props
  * @param {object} props.group - One entry from `groupOperationsByTag`

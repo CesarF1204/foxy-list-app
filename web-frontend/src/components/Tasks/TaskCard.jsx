@@ -9,17 +9,15 @@ import EditTask from "./EditTask";
 /** The two actions available on a task: edit and delete. */
 const CardActions = ({ task, onEdit, onDelete }) => {
     const buttonClass =
-        "flex h-7 w-7 items-center justify-center rounded-lg text-ink-faint transition " +
-        "hover:bg-ink/10 hover:text-ink focus-visible:ring-4 focus-visible:ring-ink/20";
+        "flex h-9 w-9 items-center justify-center rounded-lg text-ink-faint transition " +
+        "hover:bg-ink/10 hover:text-ink focus-visible:ring-4 focus-visible:ring-ink/20 " +
+        "sm:h-7 sm:w-7";
 
-    /**
-     * A button press must never start a drag: stopping pointerdown propagation means the
-     * library never sees the gesture begin.
-     */
+    /** A button press must never start a drag. */
     const stopDragStart = (event) => event.stopPropagation();
 
     return (
-        <div className="absolute right-1.5 top-1.5 flex gap-0.5">
+        <div className="absolute top-1 right-1 flex gap-0.5 sm:top-1.5 sm:right-1.5">
             <button
                 type="button"
                 onPointerDown={stopDragStart}
@@ -28,7 +26,7 @@ const CardActions = ({ task, onEdit, onDelete }) => {
                 title="Edit task"
                 className={buttonClass}
             >
-                <Icon name="edit" size={14} />
+                <Icon name="edit" size={16} />
             </button>
 
             <button
@@ -39,7 +37,7 @@ const CardActions = ({ task, onEdit, onDelete }) => {
                 title="Delete task"
                 className={`${buttonClass} hover:bg-red-500/15 hover:text-red-600`}
             >
-                <Icon name="remove" size={14} />
+                <Icon name="remove" size={16} />
             </button>
         </div>
     );
@@ -65,7 +63,7 @@ const TaskCard = ({ task, board, index, onSave, onDelete }) => {
                     {...provided.dragHandleProps}
                     ref={provided.innerRef}
                     data-dragging={snapshot.isDragging ? "true" : "false"}
-                    className={`task-card relative rounded-2xl border-2 border-ink bg-white pl-4 pr-9 ${
+                    className={`task-card relative rounded-2xl border-2 border-ink bg-white pl-4 pr-12 sm:pr-9 ${
                         snapshot.isDragging
                             ? "shadow-pop-lg"
                             : isPending
@@ -73,7 +71,6 @@ const TaskCard = ({ task, board, index, onSave, onDelete }) => {
                               : "shadow-card hover:shadow-pop"
                     }`}
                 >
-                    {/* Coloured spine identifying the board. */}
                     <span
                         className={`absolute left-0 top-2 bottom-2 w-1.5 rounded-full ${meta.spine}`}
                         aria-hidden="true"

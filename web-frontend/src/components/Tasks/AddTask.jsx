@@ -23,14 +23,14 @@ const AddTask = ({ onAdd }) => {
 
         if (!currentTitle.trim()) return;
 
-        /** Clear first: anything reading the draft from now on sees it empty. */
+        /** Clear first, so anything reading the draft sees it empty. */
         draft.current = { title: "", description: "" };
         setTitle("");
         setDescription("");
 
         onAdd({ title: currentTitle, description: currentDescription });
 
-        /** Close once the task is handed off, so the column shows the new task right away. */
+        /** Close once the task is handed off, so the new card shows right away. */
         setIsOpen(false);
     };
 

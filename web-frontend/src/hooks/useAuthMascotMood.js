@@ -29,10 +29,9 @@ const useAuthMascotMood = (form, mutation, resetKey = null) => {
     const lastKeyRef = useRef(resetKey);
 
     /**
-     * A toast outlives the screen that raised it, and `resolveAuthMood` alone cannot tell that
-     * from a verdict about the step now on show. The toast up at the moment of the change is
-     * remembered and ignored from then on; the notification itself is left alone, only the fox
-     * stops reading it.
+     * A toast outlives the screen that raised it, and `resolveAuthMood` alone cannot tell that from
+     * a verdict about the step now on show. The toast up at the moment of the change is remembered
+     * and ignored from then on; the notification itself is left alone, only the fox stops reading it.
      */
     const [staleToast, setStaleToast] = useState({ step: resetKey, id: undefined });
 
@@ -80,9 +79,8 @@ const useAuthMascotMood = (form, mutation, resetKey = null) => {
         });
 
         /**
-         * react-hook-form returns `{ unsubscribe }` here; older versions handed back the
-         * function itself, and this cleanup must not be the thing that throws if the shape
-         * differs again.
+         * react-hook-form returns `{ unsubscribe }` here; older versions returned the function
+         * itself, and this cleanup must not be the thing that throws if the shape differs.
          */
         return () => {
             if (typeof subscription === "function") {

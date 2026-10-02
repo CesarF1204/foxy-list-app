@@ -26,14 +26,14 @@ const useUserFilters = () => {
     /**
      * The page number, which is only meaningful for the term it was chosen under.
      *
-     * Held as `{ term, page }` rather than a bare number so a new term can invalidate it in the
-     * same render that reads it: page 2 of a three page list has no page 2 in a one page
-     * result, so a search has to start again from page 1.
+     * Held as `{ term, page }` rather than a bare number so a new term invalidates it in the same
+     * render that reads it: page 2 of a three page list has no page 2 in a one page result, so a
+     * search has to start again from page 1.
      *
-     * The remembered page is the source of truth while the term is unchanged, which is every
-     * page button press. When the term moves on, `page` reads 1 and the remembered value is
-     * overwritten on the way past - one piece of state, no effect, and no render showing the
-     * new term alongside the page being left behind.
+     * While the term is unchanged - every page button press - the remembered page is the source of
+     * truth. When the term moves on, `page` reads 1 and the remembered value is overwritten on the
+     * way past: one piece of state, no effect, and no render showing the new term beside the page
+     * being left behind.
      */
     const [paging, setPaging] = useState({ term: search, page: 1 });
 

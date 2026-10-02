@@ -12,10 +12,7 @@ const Icon = ({
 }) => {
     const entry = ICONS[name];
 
-    /**
-     * A typo in an icon name should be loud in development and invisible in production, rather
-     * than an exception that takes a screen down with it.
-     */
+    /** A typo in an icon name: loud in development, invisible in production. */
     if (!entry) {
         if (import.meta.env?.DEV) {
             console.error(`<Icon />: "${name}" is not in ICONS.`);

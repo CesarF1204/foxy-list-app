@@ -63,23 +63,23 @@ const Drawer = ({ isOpen, onClose, title, children, footer }) => {
                 aria-label={title}
                 tabIndex={-1}
                 onClick={(event) => event.stopPropagation()}
-                className="animate-pop-in flex h-full w-full max-w-lg flex-col overflow-y-auto border-l-2 border-ink bg-paper p-4 outline-none sm:p-6"
+                className="animate-pop-in flex h-full max-h-dvh w-full flex-col overflow-y-auto overscroll-contain border-ink bg-paper p-4 outline-none sm:max-h-none sm:max-w-lg sm:border-l-2 sm:p-6"
             >
-                <div className="mb-4 flex items-start justify-between gap-4">
-                    <h2 className="text-lg font-extrabold text-ink">{title}</h2>
-                    {/* The same shared icon button `Modal` uses, so "close" is
-                        one control in one shape across the whole app. */}
+                <div className="mb-4 flex shrink-0 items-start justify-between gap-3">
+                    <h2 className="min-w-0 flex-1 text-lg font-extrabold wrap-break-word text-ink">
+                        {title}
+                    </h2>
                     <IconButton
                         icon="close"
                         label="Close panel"
                         onClick={onClose}
-                        className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-faint transition hover:bg-paper-deep hover:text-ink"
+                        className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-faint transition hover:bg-paper-deep hover:text-ink sm:h-8 sm:w-8"
                     />
                 </div>
 
                 <div className="flex flex-1 flex-col gap-5">{children}</div>
 
-                {footer && <div className="mt-6 flex flex-wrap justify-end gap-3">{footer}</div>}
+                {footer && <div className="drawer-footer shrink-0">{footer}</div>}
             </div>
         </div>
     );
