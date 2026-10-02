@@ -1,4 +1,4 @@
-import { authResponses, badRequest, jsonResponse } from './responses.js';
+import { authResponses, badRequest, errorResponse, jsonResponse } from './responses.js';
 
 /**
  * DOCU: The public half of `routes/userRoutes.js`, plus the one route that lives in the
@@ -209,6 +209,58 @@ const authPaths = {
             responses: {
                 200: jsonResponse('The password was changed.', { $ref: '#/components/schemas/Message' }),
                 400: badRequest,
+                ...authResponses(),
+            },
+        },
+    },
+
+    /**
+     * The one endpoint that takes a file rather than a JSON body.
+     *
+     * POST rather than PATCH: the avatar travels as a multipart part, and a client can never
+     * name its own URL. The 400 covers the three refusals - wrong format, over 5 MB, no file.
+     */
+    '/api/users/avatar': {
+        post: {
+            tags: ['Authentication'],
+            summary: 'Upload your own profile picture',
+            description:
+                'Stores a new profile picture for the signed-in account and answers with the ' +
+                'updated account. Self-service: the account comes from the verified session, so ' +
+                'there is no id to name and no way to reach another account\'s picture.\n\n' +
+                'The file must be a JPG or PNG of at most 5 MB, and both the extension and the ' +
+                'reported MIME type are checked. The image is stored by Cloudinary and only its ' +
+                'URL is kept, so the server holds no image data.\n\n' +
+                'A failed upload never overwrites an existing picture: the image reaches ' +
+                'Cloudinary before anything is written to the account, so a rejected file or a ' +
+                'Cloudinary outage leaves the current profile picture exactly as it was.',
+            security: [{ sessionCookie: [] }],
+            requestBody: {
+                required: true,
+                content: {
+                    'multipart/form-data': {
+                        schema: {
+                            type: 'object',
+                            required: ['avatar'],
+                            properties: {
+                                avatar: {
+                                    type: 'string',
+                                    format: 'binary',
+                                    description: 'The image file. JPG or PNG, at most 5 MB.',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            responses: {
+                200: jsonResponse('The new picture and the account it belongs to.', {
+                    $ref: '#/components/schemas/AvatarResponse',
+                }),
+                400: errorResponse(
+                    'The upload was refused: the file is not a JPG or PNG, it is larger than ' +
+                        '5 MB, or no file was sent at all. The stored picture is unchanged.'
+                ),
                 ...authResponses(),
             },
         },

@@ -46,6 +46,8 @@ const toPublicUser = (user) => ({
     role: user.role,
     status: user.status,
     createdAt: user.createdAt,
+    /** Always present, so callers test only whether it holds anything. */
+    avatar: user.avatar ?? '',
 });
 
 /**
@@ -309,6 +311,26 @@ const setOwnPassword = async (actor, data) => {
     return PASSWORD_UPDATED_MESSAGE;
 };
 
+/**
+ * DOCU: Stores the Cloudinary URL of a new profile picture on the signed-in account.
+ *
+ * Takes no id: the account is the one behind the verified session. The image is already in
+ * Cloudinary by the time this runs, so a failed upload never reaches the database and the
+ * existing avatar is left alone.
+ *
+ * Last Updated Date: October 2, 2026
+ * @function setOwnAvatar
+ * @param {object} actor - The signed-in user, from authMiddleware
+ * @param {string} avatarUrl - The Cloudinary secure URL to store
+ * @returns {Promise<object>} The updated user, without a password
+ * @author Cesar
+ */
+const setOwnAvatar = async (actor, avatarUrl) => {
+    const updated = await userModel.updateUser(actor._id, { avatar: avatarUrl });
+
+    return toPublicUser(updated);
+};
+
 export {
     SALT_ROUNDS,
     hashPassword,
@@ -324,4 +346,5 @@ export {
     resetPassword,
     updateOwnProfile,
     setOwnPassword,
+    setOwnAvatar,
 };

@@ -1,6 +1,7 @@
 import * as userModel from '../models/userModel.js';
 import * as taskModel from '../models/taskModel.js';
 import { hashPassword, assertPasswordChanged, toPublicUser } from './authService.js';
+import { uploadAvatarImage } from './avatarService.js';
 import { notFound, conflict } from '../helpers/errorHelper.js';
 import { assertNotSelfLockOut } from '../middleware/adminMiddleware.js';
 import { escapeRegex, parsePagination } from '../helpers/queryHelper.js';
@@ -298,6 +299,30 @@ const updateUserPassword = async (actor, userId, data) => {
 };
 
 /**
+ * DOCU: Replaces another account's profile picture with an uploaded image.
+ *
+ * The same two-step order as the self-service path: Cloudinary first, so a failed upload
+ * leaves the stored picture untouched. Unlike the privileged actions there is no self-lockout
+ * guard - a picture carries no privilege, and an admin setting their own from the users table
+ * is exactly the thing this endpoint is for.
+ *
+ * Last Updated Date: October 2, 2026
+ * @function updateUserAvatar
+ * @param {object} actor - The signed-in administrator
+ * @param {string} userId - The account to change
+ * @param {object} file - The Multer file, already checked by parseAvatarUpload
+ * @returns {Promise<object>} The updated admin row
+ * @author Cesar
+ */
+const updateUserAvatar = async (actor, userId, file) => {
+    const target = await resolveTarget(actor, userId);
+
+    const avatarUrl = await uploadAvatarImage(file, target._id);
+
+    return toAdminUser(await userModel.updateUser(target._id, { avatar: avatarUrl }));
+};
+
+/**
  * DOCU: Deletes an account together with the tasks it owned.
  * Last Updated Date: October 1, 2026
  * @function deleteUser
@@ -326,6 +351,7 @@ export {
     updateUserRole,
     updateUserStatus,
     updateUserPassword,
+    updateUserAvatar,
     deleteUser,
 };
 

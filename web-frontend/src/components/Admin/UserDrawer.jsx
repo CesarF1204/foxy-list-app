@@ -1,10 +1,12 @@
 import { useState } from "react";
 
 import Drawer from "../Drawer";
-import { getFullName, getInitials } from "../../helpers/globalHelper";
+import { getFullName } from "../../helpers/globalHelper";
 import { BOARD_META, BOARDS, BOARD_LABELS } from "../../constants/boards";
 import { ROLE_META, ACCOUNT_STATUS_META, isAdmin } from "../../constants/roles";
 import { TOAST_TYPES } from "../../constants/toast";
+import Avatar from "../User/Avatar";
+import AvatarUploader from "../User/AvatarUploader";
 import { RoleBadge, StatusBadge } from "./Badges";
 import UserProfileForm from "./UserProfileForm";
 import DeleteUserWarning from "./DeleteUserWarning";
@@ -77,6 +79,24 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
     /** Admins cannot demote, block or delete themselves. */
     const canBlock = isViewerAdmin && !isSelf;
     const canDelete = isViewerAdmin && !isSelf;
+/**
+     * Who may set this account's picture. An admin may set anyone's; everyone else only their
+     * own, which is the self-service path in the account menu rather than this one.
+     */
+    const canUploadAvatar = isViewerAdmin || isSelf;
+
+    /**
+     * For an admin changing somebody else, the file goes to the account in the drawer rather
+     * than to the caller's own - so the upload names its target instead of relying on the
+     * session cookie. On anyone's own account this is omitted and the hook self-services,
+     * which is what keeps the navbar in step with the picture.
+     */
+    const uploadOptions = isSelf
+        ? undefined
+        : {
+              upload: (file, onProgress) =>
+                  actions.uploadAvatar({ userId: user._id, file, onProgress }),
+          };
 
     const isPending = actions.isMutating;
 
@@ -108,12 +128,21 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
         <>
             <Drawer isOpen onClose={onClose} title={getFullName(user)}>
                 <div className="flex items-center gap-3">
-                    <span
-                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 border-ink bg-fox-400 font-extrabold text-white"
-                        aria-hidden="true"
-                    >
-                        {getInitials(user)}
-                    </span>
+                    {/* Uploadable by an admin for anyone, and by everyone for themselves: a plain
+                        user viewing another row gets the picture, not a button. */}
+                    {canUploadAvatar ? (
+                        <AvatarUploader
+                            user={user}
+                            options={uploadOptions}
+                            label={
+                                isSelf
+                                    ? undefined
+                                    : `Change ${getFullName(user)}'s profile picture`
+                            }
+                        />
+                    ) : (
+                        <Avatar user={user} className="h-12 w-12 text-sm" aria-hidden="true" />
+                    )}
                     <div className="flex flex-wrap items-center gap-2">
                         <RoleBadge role={user.role} />
                         <StatusBadge status={user.status} />

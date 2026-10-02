@@ -6,6 +6,7 @@ import {
     updateAdminUserRole,
     updateAdminUserStatus,
     updateAdminUserPassword,
+    updateAdminUserAvatar,
     deleteAdminUser,
 } from "../api-client/admin";
 import { ADMIN_STATS_KEY, ADMIN_USERS_KEY, adminUserKey } from "../constants/queryKeys";
@@ -83,6 +84,15 @@ const useAdminActions = () => {
         onSuccess: refresh,
     });
 
+    /**
+     * The avatar answers with the account, exactly as the self-service route does, so it joins
+     * the mutations that seed the caches rather than the ones that only refresh.
+     */
+    const avatarMutation = useMutation({
+        mutationFn: updateAdminUserAvatar,
+        onSuccess: onUserSaved,
+    });
+
     return {
         /**
          * True while any admin write is in flight, so a dialog can disable its own buttons and
@@ -93,6 +103,7 @@ const useAdminActions = () => {
             roleMutation.isPending ||
             statusMutation.isPending ||
             passwordMutation.isPending ||
+            avatarMutation.isPending ||
             deleteMutation.isPending,
 
         saveProfile: (payload) => profileMutation.mutateAsync(payload),
@@ -100,6 +111,7 @@ const useAdminActions = () => {
         changeStatus: (payload) => statusMutation.mutateAsync(payload),
         changePassword: (payload) => passwordMutation.mutateAsync(payload),
         deleteUser: (userId) => deleteMutation.mutateAsync(userId),
+        uploadAvatar: (payload) => avatarMutation.mutateAsync(payload),
 
         /**
          * The wording for each success, kept beside the action it reports so a toast can never

@@ -25,6 +25,13 @@ const userSchemas = {
             role: { $ref: '#/components/schemas/UserRole' },
             status: { $ref: '#/components/schemas/AccountStatus' },
             createdAt: { type: 'string', format: 'date-time' },
+            avatar: {
+                type: 'string',
+                description:
+                    'The Cloudinary secure URL of the profile picture, or `""` when none has ' +
+                    'been uploaded. Avatars fall back to initials when this is empty.',
+                example: 'https://res.cloudinary.com/foxy/image/upload/foxy-list/avatars/u1.jpg',
+            },
         },
     },
 
@@ -57,6 +64,20 @@ const userSchemas = {
         type: 'object',
         required: ['user'],
         properties: { user: { $ref: '#/components/schemas/User' } },
+    },
+
+    /** `POST /api/users/avatar`. */
+    AvatarResponse: {
+        type: 'object',
+        required: ['message', 'avatar', 'user'],
+        properties: {
+            message: { type: 'string', example: 'Profile picture updated' },
+            avatar: {
+                type: 'string',
+                description: 'The new Cloudinary secure URL, repeated here for convenience.',
+            },
+            user: { $ref: '#/components/schemas/User' },
+        },
     },
 
     /** `POST /api/users/register`. */
