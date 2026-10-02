@@ -1,10 +1,8 @@
 import { ROLE_META, ACCOUNT_STATUS_META, DEFAULT_ROLE, DEFAULT_ACCOUNT_STATUS } from "../../constants/roles";
 
 /**
- * A user's role or account status as a pill. The colour comes from the shared meta in
- * `constants/roles.js`, so a role looks the same everywhere, and every pill carries a text
- * label and a shape as well as a colour - the dot is filled for active and hollow for blocked,
- * so the state never depends on hue alone.
+ * A user's role or account status as a pill. The filled/hollow dot means the state never
+ * depends on hue alone.
  */
 const Badge = ({ meta, fallback, withDot = false }) => {
     const info = meta ?? fallback;

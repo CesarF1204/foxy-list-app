@@ -1,8 +1,4 @@
-/**
- * The app's one circular indicator. Every loader is this same spinner at a different size, so
- * there is a single border colour, a single fox accent and a single animation style in the
- * product rather than a new one per screen.
- */
+/** The app's one spinner, in three sizes. */
 const SPINNER_SIZES = {
     xs: "h-4 w-4 border-2",
     sm: "h-5 w-5 border-2",
@@ -12,7 +8,6 @@ const SPINNER_SIZES = {
 const Spinner = ({ size = "sm" }) => (
     <span
         aria-hidden="true"
-        /** `loading-ring` keeps this spinning under */
         className={`loading-ring inline-block shrink-0 animate-spin rounded-full border-fox-200 border-t-fox-500 ${SPINNER_SIZES[size]}`}
     />
 );
@@ -55,11 +50,6 @@ const RefreshOverlay = ({ label = "Updating..." }) => (
 const EmptyState = ({ title, description, action }) => (
     <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink-faint/60 bg-paper/60 px-4 py-8 text-center">
         <p className="text-sm font-extrabold text-ink">{title}</p>
-        {/* `max-w-60` is 240px, which is narrow even for the centred column it
-            sits in. `max-w-sm` and `text-sm` below `sm`: a description here is
-            usually the only instruction the empty state gives - "Type it below,
-            or drag a card in" - so it has to be readable rather than a caption,
-            and at `text-xs` on a phone it was neither. */}
         {description && (
             <p className="max-w-sm text-sm leading-relaxed font-semibold text-ink-soft sm:text-xs">
                 {description}
@@ -76,11 +66,6 @@ const ErrorState = ({ title = "Something went wrong", message, onRetry }) => (
         role="alert"
     >
         <p className="text-sm font-extrabold text-red-800">{title}</p>
-        {/* Same reasoning as `EmptyState`: an error message is the whole content
-            of this panel, so it is set at body size below `sm`. `max-w-xs` (320px)
-            is also wider than most of the panels this renders inside - a modal is
-            `max-w-md` less its padding - so it was capping text well before the
-            container did. */}
         {message && (
             <p className="max-w-sm text-sm leading-relaxed font-semibold break-anywhere text-red-600 sm:text-xs">
                 {message}

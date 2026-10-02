@@ -1,11 +1,8 @@
 import Modal from "../Modal";
 
 /**
- * The confirmation every destructive or security-sensitive admin action goes through: blocking,
- * unblocking, changing a role, resetting a password and deleting. It follows the task delete
- * dialog's pattern, and adds the one thing a security action needs: the body names the exact
- * account and says plainly what will happen, so nobody confirms a destructive click on the
- * wrong row.
+ * The confirmation every destructive or security-sensitive admin action goes through. The body
+ * names the exact account and says plainly what will happen.
  */
 const ConfirmDialog = ({
     title,

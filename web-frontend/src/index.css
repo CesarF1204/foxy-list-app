@@ -35,10 +35,9 @@
   --color-done-deep: #4a804a;
 
   /*
-    Row highlight. A cool blue, deliberately off the warm paper-and-fox palette:
-    on hover it should read as "this row", not as another surface of the app.
-    Light enough that the ink text on top still passes contrast, and it takes the
-    `todo` sky as its hue so it still feels like one system.
+    Row highlight. A cool blue, deliberately off the warm paper-and-fox palette, so it reads
+    as "this row" rather than another surface. It takes the `todo` sky as its hue so it still
+    feels like one system.
   */
   --color-row-hover: #cfe6f4;
 
@@ -55,9 +54,9 @@
   --shadow-card: 2px 2px 0 0 rgb(43 33 25 / 0.16);
 
   /*
-    The toast outranks every overlay: the provider mounts it
-    before the app's children, so at an equal z-index the drawer that raised it paints its
-    dimming backdrop straight over the confirmation.
+    The toast outranks every overlay: the provider mounts it before the app's children, so at an
+    equal z-index the drawer that raised it paints its dimming backdrop straight over the
+    confirmation.
   */
   --z-page: 10;
   --z-header: 30;
@@ -70,12 +69,9 @@
     -webkit-text-size-adjust: 100%;
 
     /*
-      The dotted paper is tiled at 22px and the layout is fluid, so nothing in
-      the app should ever be wider than the viewport. This is the last line of
-      defence rather than a fix: a wide table or an over-long unbroken string
-      can still overflow, and letting the whole document pan sideways is worse
-      than clipping the one element that caused it, because the page then
-      appears to have no edge at all.
+      The dotted paper is tiled at 22px and the layout is fluid, so nothing should ever be wider
+      than the viewport. This clips the one element that overflows rather than letting the whole
+      document pan sideways, which would leave the page appearing to have no edge at all.
     */
     overflow-x: clip;
   }
@@ -85,7 +81,7 @@
     background-color: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-body);
-    /* The dotted paper grid. Tiled from a data URI so it costs no request. */
+    /* The dotted paper grid, tiled so it costs no request. */
     background-image: radial-gradient(rgb(43 33 25 / 0.09) 1.2px, transparent 1.2px);
     background-size: 22px 22px;
     background-attachment: fixed;
@@ -186,14 +182,11 @@
 
   /* Form controls share one shape and focus treatment. */
   /*
-    A form control's own font size is set in pixels, not in `rem`, and not by
-    accident. Mobile Safari zooms the whole viewport when a focused field's
-    font is under 16px, and it only zooms back out if the user double-taps the
-    page. 0.95rem is about 15.2px, which lands just under that line and
-    therefore triggers the zoom on every sign-in. 1rem is the same 16px the
-    body copy uses, so the control matches the page and the zoom never fires;
-    from `sm` up the pointer is a mouse, no zoom exists, and the control can
-    sit a shade under the body size without looking wrong next to it.
+    A form control's font size is set in pixels, not `rem`, and not by accident. Mobile Safari
+    zooms the viewport when a focused field's font is under 16px, and only zooms back out if the
+    user double-taps. 0.95rem is about 15.2px, just under that line, so it would trigger the zoom
+    on every sign-in. 1rem is the same 16px the body copy uses; from `sm` up the pointer is a
+    mouse, no zoom exists, and the control can sit a shade smaller without looking wrong.
   */
   .field {
     width: 100%;
@@ -228,32 +221,21 @@
   }
 
   /*
-    The dropdown list.
+    The dropdown list. A `<select>`'s popup is the one surface the page cannot build itself: the
+    browser draws it outside the document. What is reachable is the `option` elements inside it,
+    and that is enough to stop the popup looking like a different application - it used to show
+    the operating system's grey rows, its own highlight blue, and its default font.
 
-    A `<select>`'s popup is the one surface in this app the page cannot build
-    itself: the browser draws it in a separate window, outside the document, so
-    no layout of ours reaches it. What can be reached is the `option` elements
-    inside it, and that is enough to stop the popup looking like a different
-    application - which is what it looked like before these rules: the operating
-    system's grey rows, its own highlight blue, and its default font, all of
-    which clash with the paper-and-fox palette the rest of the app is built on.
+    Three declarations do the work, all honoured by the desktop engines:
 
-    Three declarations do the work, and all three are honoured by the desktop
-    engines that render the popup (Chrome, Edge, Firefox, Safari):
+      - the row's own background and text colour, replacing the grey-and-blue;
+      - `accent-color` on the select, which tints the *highlighted* row. That row is drawn by
+        the engine, so this is a request rather than a guarantee - where it is ignored the
+        closed control still looks right, because the arrow on top of it is ours;
+      - the font, so the rows match the body copy.
 
-      - the row's own background and text colour, which is what replaces the
-        grey-and-blue;
-      - `accent-color` on the select, which is what tints the *highlighted* row.
-        That row is drawn by the engine rather than by us, so this is a request
-        rather than a guarantee, and an engine that ignores it keeps its system
-        highlight - the closed control still looks right either way, because the
-        arrow on top of it is ours;
-      - the font, so the rows match the body copy instead of falling back to the
-        platform UI font.
-
-    `padding` on an `option` is honoured inconsistently - Firefox and Chrome take
-    it, Safari largely ignores it - so it is a nicety rather than a guarantee,
-    and the popup is never the only place an option's label appears.
+    `padding` on an `option` is honoured inconsistently (Safari largely ignores it), so it is a
+    nicety, and the popup is never the only place an option's label appears.
   */
   select.field {
     accent-color: var(--color-fox-400);
@@ -410,15 +392,14 @@
 
   /*
     The stacking scale, named by what sits there rather than by number. Declared here rather
-    than reached for as a raw `z-[60]` in each component, because Tailwind only emits the classes
-    it can find as literal strings in the source: a value interpolated into a class name -
-    `z-[${LAYERS.toast}]` - is silently dropped from the build, leaving the element with no
-    stacking at all. These are found wherever they are used.
+    than reached for as a raw `z-[60]` in each component, because Tailwind only emits classes
+    it finds as literal strings: a value interpolated into a class name -
+    `z-[${LAYERS.toast}]` - is silently dropped from the build.
 
     `z-toast` sits above every overlay on purpose. The provider mounts the toast before the
     app's children, so at an equal z-index the drawer or dialog that raised it would paint its
     dimming backdrop over the message confirming the action - and most of those actions happen
-    inside the drawer, so the confirmation would be swallowed every single time.
+    inside the drawer.
   */
   .z-page {
     z-index: var(--z-page);
@@ -472,19 +453,13 @@
   }
 
   /*
-    The loading ring is the one thing the blanket rule above must not touch.
+    The loading ring is the one thing the blanket rule above must not touch. Collapsing its
+    duration turns the spin into a single instant tick, leaving a fully styled but motionless
+    circle beside "Loading users...", which reads as a stuck control rather than work in
+    progress - and here the movement *is* the message.
 
-    Collapsing its duration turns the spin into a single instant tick, which
-    leaves a fully styled but motionless circle on screen - and a frozen circle
-    beside the words "Loading users..." reads as a stuck control, not as work in
-    progress. A loading indicator is the one place where the movement *is* the
-    message: it is what says "still working" rather than "finished" or "broken".
-
-    So the ring keeps turning. This is a deliberate exception to the preference
-    above, and it is scoped to this element alone - every other animation in the
-    app still respects it. A slowly rotating ring is a small, self-contained
-    indicator that stops the moment the request does, which is a far smaller
-    cost than an admin being unable to tell a live request from a hung one.
+    So the ring keeps turning. This is a deliberate, element-scoped exception to the preference
+    above; every other animation still respects it.
   */
   .loading-ring {
     animation: loading-ring-spin 1s linear infinite !important;
@@ -492,11 +467,9 @@
 }
 
 /*
-  The ring's rotation, declared here rather than leaning on Tailwind's built-in
-  `spin` keyframes. The reduced-motion rule above has to name this animation
-  explicitly, and it must keep working if Tailwind's internal keyframe name ever
-  changes. Same 360-degree turn, one second per revolution, linear so it never
-  eases into a visible pause at the top of the circle.
+  The ring's rotation, declared here rather than leaning on Tailwind's built-in `spin` keyframes,
+  which the reduced-motion rule above has to name explicitly. Linear, so it never eases into a
+  visible pause at the top of the circle.
 */
 @keyframes loading-ring-spin {
   from {

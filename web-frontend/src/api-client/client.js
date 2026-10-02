@@ -58,9 +58,8 @@ const apiRequest = async (path, { method = "GET", body, signal } = {}) => {
         });
     } catch (error) {
         /**
-         * A cancelled request is deliberate, not a failure. It must stay an abort so React
-         * Query discards it quietly instead of counting it as an error and putting an "Unable
-         * to reach the server" message on the screen.
+         * A cancelled request is deliberate, not a failure. It must stay an abort so React Query
+         * discards it quietly instead of counting it as an error.
          */
         if (error?.name === "AbortError") throw error;
 

@@ -63,24 +63,12 @@ const Drawer = ({ isOpen, onClose, title, children, footer }) => {
                 aria-label={title}
                 tabIndex={-1}
                 onClick={(event) => event.stopPropagation()}
-                /**
-                 * Full width and edge to edge on a phone - a side panel has
-                 * nowhere to sit at 360px - and capped at `lg` from `sm` up,
-                 * where it becomes the drawer it was designed as. `overscroll`
-                 * keeps a scroll that reaches the end of the panel from then
-                 * scrolling the page behind it.
-                 */
-                className="animate-pop-in flex h-full max-h-[100dvh] w-full flex-col overflow-y-auto overscroll-contain border-ink bg-paper p-4 outline-none sm:max-h-none sm:max-w-lg sm:border-l-2 sm:p-6"
+                className="animate-pop-in flex h-full max-h-dvh w-full flex-col overflow-y-auto overscroll-contain border-ink bg-paper p-4 outline-none sm:max-h-none sm:max-w-lg sm:border-l-2 sm:p-6"
             >
                 <div className="mb-4 flex shrink-0 items-start justify-between gap-3">
-                    {/* `min-w-0` so a long name wraps inside the panel rather
-                        than shoving the close control past the right edge. */}
-                    <h2 className="min-w-0 flex-1 text-lg font-extrabold break-words text-ink">
+                    <h2 className="min-w-0 flex-1 text-lg font-extrabold wrap-break-word text-ink">
                         {title}
                     </h2>
-                    {/* The same shared icon button `Modal` uses, so "close" is
-                        one control in one shape across the whole app, and the
-                        same 44px touch target. */}
                     <IconButton
                         icon="close"
                         label="Close panel"

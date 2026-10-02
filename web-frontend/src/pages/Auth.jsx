@@ -77,10 +77,9 @@ const Auth = () => {
      * Clears the cached session and reads it back from the API before the user moves on.
      *
      * The sign-in answer only proves the credentials were right. Whether the browser kept the
-     * cookie is a separate fact, and the only thing that can report it is the API reading that
-     * cookie back on a fresh request. Navigating straight to the board instead would hand a
-     * protected route to a session that may not have been stored yet, which shows up as an
-     * instant bounce back to the login page on a slow phone.
+     * cookie is a separate fact, and only the API reading it back can report that. Navigating
+     * straight to the board would hand a protected route to a session that may not be stored
+     * yet, which shows up as an instant bounce back to login on a slow phone.
      */
     const establishSession = async () => {
         queryClient.removeQueries({ queryKey: VALIDATE_TOKEN_KEY, exact: true });
@@ -89,9 +88,9 @@ const Auth = () => {
             await confirmSession(queryClient);
         } catch {
             /**
-             * Left to the guards: with no readable session they will send the user to sign-in,
-             * which is the honest outcome. A toast here would only claim a failure the app cannot
-             * explain - a dropped cookie and a rejected password look identical from here.
+             * Left to the guards: with no readable session they will send the user to sign-in, which
+             * is the honest outcome. A toast here would claim a failure the app cannot explain - a
+             * dropped cookie and a rejected password look identical from here.
              */
         }
     };

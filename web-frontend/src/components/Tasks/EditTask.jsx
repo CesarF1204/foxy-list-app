@@ -33,12 +33,8 @@ const EditTask = ({ task, onSave, onCancel }) => {
     };
 
     /**
-     * The editor's own inputs, not the shared `.field`, because it renders
-     * inside a card rather than on a panel and has to inherit the card's
-     * compact metrics. They still respect the two things that matter on a
-     * phone: `text-base sm:text-sm`, so the fields never drop under the 16px
-     * that stops Mobile Safari zooming the viewport on focus, and a 44px
-     * action row, so Save and Cancel can be hit without aiming.
+     * The editor's own inputs rather than the shared `.field`, because this renders inside a card
+     * and has to inherit the card's compact metrics.
      */
     const inputClass =
         "w-full rounded-lg border-2 border-ink bg-white px-3 py-2 text-base outline-none " +
@@ -86,13 +82,6 @@ const EditTask = ({ task, onSave, onCancel }) => {
                 </button>
             </div>
 
-            {/**
-                 * A keyboard shortcut, so it is deliberately the quietest line
-                 * in the editor - but `text-[0.65rem]` is 10.4px, which is
-                 * unreadable on a phone and smaller than any other text in the
-                 * app. `text-xs` with the faint colour carries the same
-                 * "this is a footnote" weight.
-                 */}
             <p className="text-xs font-bold text-ink-faint">
                 Tip: Esc to cancel, Ctrl+Enter to save.
             </p>

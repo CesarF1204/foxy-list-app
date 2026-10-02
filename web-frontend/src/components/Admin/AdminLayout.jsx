@@ -9,10 +9,7 @@ const TABS = [
     { to: ROUTES.adminUsers, label: "Users", end: false },
 ];
 
-/**
- * The frame both admin screens share: the app's own navbar, a page title and the two tabs.
- * Deliberately built from the same pieces as the board -
- */
+/** The frame both admin screens share: the navbar, a title and the two tabs. */
 const AdminLayout = ({ user, title, subtitle, children }) => (
     <div className="flex-1">
         <Navbar user={user} />

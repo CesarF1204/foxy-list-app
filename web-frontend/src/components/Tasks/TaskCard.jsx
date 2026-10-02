@@ -8,31 +8,15 @@ import EditTask from "./EditTask";
 
 /** The two actions available on a task: edit and delete. */
 const CardActions = ({ task, onEdit, onDelete }) => {
-    /**
-     * `h-7 w-7` is 28px: fine for a cursor, far too small for a thumb, and
-     * these sit in the top corner of a card where the neighbouring content is
-     * not there to help the user aim. The floor is declared here rather than in
-     * the shared `.btn` rule because this control is not a `.btn`, and it is
-     * `h-9` rather than 44px so the card does not have to grow to accommodate
-     * it - 36px plus the gap between the two buttons is a comfortable target.
-     */
     const buttonClass =
         "flex h-9 w-9 items-center justify-center rounded-lg text-ink-faint transition " +
         "hover:bg-ink/10 hover:text-ink focus-visible:ring-4 focus-visible:ring-ink/20 " +
         "sm:h-7 sm:w-7";
 
-    /**
-     * A button press must never start a drag: stopping pointerdown propagation means the
-     * library never sees the gesture begin.
-     */
+    /** A button press must never start a drag. */
     const stopDragStart = (event) => event.stopPropagation();
 
     return (
-        /**
-         * Inset by a gap rather than pinned to the corner, because the targets
-         * are wider on a touch screen and would otherwise sit against - or
-         * past - the card's own rounded border.
-         */
         <div className="absolute top-1 right-1 flex gap-0.5 sm:top-1.5 sm:right-1.5">
             <button
                 type="button"
@@ -79,14 +63,6 @@ const TaskCard = ({ task, board, index, onSave, onDelete }) => {
                     {...provided.dragHandleProps}
                     ref={provided.innerRef}
                     data-dragging={snapshot.isDragging ? "true" : "false"}
-                    /**
-                     * The right padding reserves the gutter the action buttons
-                     * float in, so a long title never slides under them. It is
-                     * `pr-12` on touch screens and `pr-9` from `sm` because the
-                     * buttons are 36px there rather than 28px, and a gutter sized
-                     * for the small pair would put the second button over the
-                     * text.
-                     */
                     className={`task-card relative rounded-2xl border-2 border-ink bg-white pl-4 pr-12 sm:pr-9 ${
                         snapshot.isDragging
                             ? "shadow-pop-lg"
@@ -95,7 +71,6 @@ const TaskCard = ({ task, board, index, onSave, onDelete }) => {
                               : "shadow-card hover:shadow-pop"
                     }`}
                 >
-                    {/* Coloured spine identifying the board. */}
                     <span
                         className={`absolute left-0 top-2 bottom-2 w-1.5 rounded-full ${meta.spine}`}
                         aria-hidden="true"

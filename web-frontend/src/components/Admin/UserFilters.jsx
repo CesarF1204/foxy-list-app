@@ -1,14 +1,7 @@
 import { USER_ROLES, ROLE_META, ACCOUNT_STATUSES, ACCOUNT_STATUS_META } from "../../constants/roles";
 import SelectField from "../SelectField";
 
-/**
- * `min-w-40` (160px) is a floor, not a fixed width, and the wrapper is `flex-1`
- * - so on a phone, where the row is a column, each select takes the full width
- * and the floor never binds. It exists for the `sm:flex-row` case, where two
- * selects plus the search box share one line. `w-full` is stated explicitly
- * below `sm` so the intent survives if the wrapper is reused somewhere the
- * floor would apply.
- */
+/** Shared class names for the two filter selects. */
 const FILTER_WRAPPER = "flex min-w-40 flex-1 flex-col gap-1.5";
 const FILTER_SELECT = "py-2! text-sm";
 
@@ -82,10 +75,7 @@ const UserFilters = ({ search, role, status, onSearch, onRole, onStatus, onClear
                 </button>
             </div>
 
-            {/* The live result count, so a filter that matched nothing says so.
-                `text-sm` below `sm`: on a phone this line is what tells the
-                admin whether their filter did anything, and it sits directly
-                under the controls that changed it. */}
+            {/* The live result count, so a filter that matched nothing says so. */}
             <p
                 className="text-sm font-semibold text-ink-faint sm:text-xs"
                 role="status"

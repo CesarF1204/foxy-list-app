@@ -21,11 +21,9 @@ const SEARCH_DEBOUNCE_MS = 1500;
  * holds. That guard is what stops a stale term from overwriting a newer one: a keystroke landing
  * mid-pause clears the pending timer through the cleanup rather than queueing behind it.
  *
- * Every caller gets its own state and its own pending timer - nothing here is held at module
- * level, and the returned `settleNow` is per instance too. That is what lets the users table
- * and the API viewer share one delay constant without sharing a debounce: typing in one box
- * can never settle the other, and each timer is cleared when its own box unmounts. Sharing the
- * constant is deliberate; sharing the state would be a bug.
+ * Every caller gets its own state and its own pending timer, so the users table and the API
+ * viewer can share one delay constant without sharing a debounce. Sharing the constant is
+ * deliberate; sharing the state would be a bug.
  *
  * @param {string} value - The immediate value, e.g. straight from an input
  * @param {number} delay - How long to wait after the last change, in ms

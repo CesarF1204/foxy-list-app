@@ -12,12 +12,6 @@ import { UserConfirmDialog, RoleDialog, PasswordDialog } from "./UserDialogs";
 
 /** One labelled row of the read-only detail list. */
 const DetailRow = ({ label, children }) => (
-    /**
-     * `w-32` is only applied from `sm`. Below it the row stacks, so the label
-     * takes its own line and the value the full width - a 128px label column
-     * plus a long email left the value about 100px on a 360px screen, which is
-     * three words and an ellipsis.
-     */
     <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-3">
         <dt className="text-xs font-extrabold tracking-wide text-ink-soft uppercase sm:w-32 sm:shrink-0">
             {label}
@@ -26,15 +20,7 @@ const DetailRow = ({ label, children }) => (
     </div>
 );
 
-/**
- * The per-board task counts, as a labelled list rather than a bare row of numbers, so "12 To
- * Do" is read aloud instead of "12, 3, 7".
- *
- * Two columns below `sm` and four from `sm` up, with `text-xs` labels rather than the
- * `text-[0.65rem]` (10.4px) they used to be. Four tiles across a phone-width drawer is
- * roughly 70px each - too narrow for the number, let alone the word under it, and 10.4px
- * is below a legible size at any width. Two columns gives each tile the room for both.
- */
+/** The per-board task counts, as a labelled list. */
 const TaskCounts = ({ counts }) => (
     <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <li className="rounded-2xl border-2 border-ink bg-white p-2 text-center">
@@ -83,21 +69,12 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
     const isSelf = currentUser?._id === user._id;
     const isBlocked = user.status === "blocked";
 
-    /**
-     * Which controls this drawer may offer, decided from the caller's role rather than from a
-     * prop, so a caller cannot widen them by forgetting to pass something. `isAdmin` is the
-     * same utility the navbar and the route guards use, so there is one definition of an admin
-     * in the app.
-     */
+    /** Which controls this drawer may offer, from the caller's role rather than a prop. */
     const isViewerAdmin = isAdmin(currentUser);
     const canEditProfile = true;
     const canSetPassword = true;
     const canChangeRole = isViewerAdmin;
-    /**
-     * The self-lock-out guard stays on top of the role check: an admin opening their own
-     * account still cannot demote, block or delete themselves. The API refuses it as well, so
-     * the two agree.
-     */
+    /** Admins cannot demote, block or delete themselves. */
     const canBlock = isViewerAdmin && !isSelf;
     const canDelete = isViewerAdmin && !isSelf;
 
@@ -130,8 +107,6 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
     return (
         <>
             <Drawer isOpen onClose={onClose} title={getFullName(user)}>
-                {/* Identity first: avatar, name and both badges, so the state of
-                    the account is readable without hunting for a control. */}
                 <div className="flex items-center gap-3">
                     <span
                         className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 border-ink bg-fox-400 font-extrabold text-white"
@@ -206,15 +181,6 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
 
                 <TaskCounts counts={user.taskCounts} />
 
-                {/* ------------------------------ actions ------------------------------ */}
-
-                {/**
-                 * The action row. `flex-col` below `sm` so each action takes the
-                 * panel's full width rather than three buttons competing for one
-                 * narrow row, and the explanatory note stops being a full-width
-                 * item squeezed between them. `flex-wrap` from `sm` up keeps the
-                 * desktop row exactly as it was.
-                 */}
                 {(canChangeRole || canBlock || canDelete) && (
                     <div className="flex flex-col gap-2 border-t-2 border-paper-deep pt-4 sm:flex-row sm:flex-wrap">
                         {canChangeRole && (

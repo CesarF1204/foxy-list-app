@@ -35,8 +35,8 @@ const layer = {
 /**
  * The `page-mascot` fox, extended so a parent can pin its expression. The library only changes
  * faces on click, which is no use on a form that has to say "that field is wrong". Same sheets,
- * cursor tracking and click squash, plus: - `reaction`: an expression name to hold on screen,
- * or null for the default behaviour. Takes precedence over the click faces while pinned.
+ * cursor tracking and click squash, plus a `reaction` prop: an expression name to hold on screen,
+ * or null for the default behaviour, taking precedence over the click faces while pinned.
  */
 const ControlledMascot = ({
     directions,
@@ -166,7 +166,7 @@ const ControlledMascot = ({
     const showing = Boolean(shown);
     const reactionIndex = Math.max(MASCOT_REACTIONS.indexOf(shown ?? ""), 0);
 
-    /** Inline styles so the file drops into any project without a CSS framework. */
+    /** Inline styles, so this component needs no CSS framework. */
     return (
         <button
             ref={buttonRef}
@@ -198,7 +198,6 @@ const ControlledMascot = ({
                     transformOrigin: "50% 78%",
                 }}
             >
-                {/* Directions underneath, hidden while a face is up. */}
                 <span
                     style={{
                         ...layer,
@@ -207,7 +206,6 @@ const ControlledMascot = ({
                         opacity: showing ? 0 : 1,
                     }}
                 />
-                {/* Expressions on top, transparent until one is chosen. */}
                 <span
                     style={{
                         ...layer,

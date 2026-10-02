@@ -1,16 +1,6 @@
 import IconButton from "./IconButton";
 
-/**
- * The circular styling of a row's overflow trigger, declared once here so every kebab in the
- * app is the same circle. Tailwind's `rounded-full` on a square element is what makes it a true
- * circle rather than a rounded square, and it stays in the class list in every state - the
- * ring, the fill and the icon colour change, the shape never does.
- *
- * `h-11 w-11` (44px) below `sm`, `h-9 w-9` from `sm` up. This is the *only* way to reach a row's
- * three actions, so a 36px circle in the last column of a phone-width card is a target the user
- * has to aim at rather than press. It is the one control on the row that has to work without a
- * pointer, and widening the card view to `sm` is what makes the larger circle affordable there.
- */
+/** A row's overflow menu trigger. The shape is the same circle everywhere. */
 const KEBAB_BUTTON_CLASS =
     "inline-flex h-11 w-11 cursor-pointer shrink-0 items-center justify-center " +
     "rounded-full border-2 border-ink/15 bg-white text-ink-faint " +

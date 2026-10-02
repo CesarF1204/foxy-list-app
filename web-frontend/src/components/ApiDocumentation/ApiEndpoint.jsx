@@ -3,21 +3,9 @@ import MethodBadge from "./MethodBadge";
 import EndpointDetail from "./EndpointDetail";
 import Chip from "./Chip";
 
-/**
- * One documented endpoint, collapsed to a single row and expandable to its full detail.
+/** One documented endpoint, collapsed to a row and expandable to its full detail.
  *
- * The collapsed row is the whole list on first paint: method, path and summary, so a reader
- * can scan every endpoint the API offers and open only the one they care about. Everything
- * else is behind a disclosure.
- *
- * The toggle is a `<button>` carrying `aria-expanded` and `aria-controls` rather than a
- * clickable heading, because a disclosure is what it is and that is the role assistive
- * technology needs in order to announce it as one.
- *
- * Open state has two owners. Given `isOpen` and `onToggle`, the row is controlled: the viewer
- * holds the single open row, so opening one endpoint closes whichever was open before it. Given
- * neither, the row keeps its own state and behaves as an ordinary self-contained disclosure -
- * which is what a screen taking this row on its own from the barrel expects.
+ * Given `isOpen` and `onToggle` the row is controlled; given neither, it keeps its own state.
  *
  * @param {object} props
  * @param {object} props.endpoint - One entry from `groupOperationsByTag`
@@ -53,13 +41,6 @@ const ApiEndpoint = ({ endpoint, isOpen: controlledIsOpen, onToggle }) => {
     return (
         <li className="overflow-hidden rounded-2xl border-2 border-ink bg-white">
             <h4>
-                {/**
-                 * `min-h-11` on the row itself: below `sm` the row is the only way
-                 * to reach an endpoint's detail, and at `py-3` with a single line
-                 * of path text it is about 40px - enough for a pointer, not quite
-                 * enough for a thumb. `gap-2` below `sm` for the same reason the
-                 * padding is not generous.
-                 */}
                 <button
                     type="button"
                     onClick={toggle}
@@ -80,11 +61,6 @@ const ApiEndpoint = ({ endpoint, isOpen: controlledIsOpen, onToggle }) => {
                         )}
                     </span>
 
-                    {/*
-                        Hidden on the narrowest screens rather than dropped: the panel says the
-                        same thing, and a row that wraps on a phone is worse than a row that
-                        defers the detail to the reader who opens it.
-                    */}
                     {secured && (
                         <span className="hidden shrink-0 sm:block">
                             <Chip tone="accent">session</Chip>

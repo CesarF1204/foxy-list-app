@@ -9,11 +9,7 @@ import { IconButton } from "./icons";
 const Modal = ({ isOpen, onClose, title, children, footer }) => {
     const panelRef = useRef(null);
 
-    /**
-     * In a ref, so the effect below depends only on isOpen. `onClose` is usually an inline
-     * arrow with a new identity each render, and re-running would refocus the panel and steal
-     * focus from whatever the user was typing into.
-     */
+    /** In a ref, so the effect below depends only on `isOpen`. */
     const onCloseRef = useRef(onClose);
     useEffect(() => {
         onCloseRef.current = onClose;
@@ -57,28 +53,13 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
                 aria-modal="true"
                 aria-label={title}
                 tabIndex={-1}
-                /** Clicks inside the panel must not reach the backdrop. */
                 onClick={(event) => event.stopPropagation()}
-                /**
-                 * `items-end` below `sm` so the panel rises from the bottom edge
-                 * like a sheet on a phone, where there is no room to centre a
-                 * tall dialog without clipping its top. `max-h` in `dvh` rather
-                 * than `vh` because the mobile browser's address bar is part of
-                 * the visual viewport but not of `vh`, and a dialog sized
-                 * against `vh` is taller than the screen it has to fit in.
-                 */
                 className="surface animate-pop-in flex max-h-[92dvh] w-full flex-col overflow-y-auto rounded-b-none p-5 outline-none sm:max-h-[85dvh] sm:max-w-md sm:rounded-[1.25rem] sm:p-6"
             >
                 <div className="mb-4 flex shrink-0 items-start justify-between gap-3">
-                    {/* `min-w-0` so a long title wraps inside the panel rather
-                        than pushing the close control off its right edge. */}
-                    <h2 className="min-w-0 flex-1 text-lg font-extrabold break-words text-ink">
+                    <h2 className="min-w-0 flex-1 text-lg font-extrabold wrap-break-word text-ink">
                         {title}
                     </h2>
-                    {/* The shared icon button, so the close control is the same
-                        size, icon and label in every dialog and drawer. 44px on
-                        touch screens, where a 32px target in the corner is the
-                        hardest thing on the page to hit. */}
                     <IconButton
                         icon="close"
                         label="Close dialog"
