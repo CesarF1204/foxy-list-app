@@ -183,7 +183,7 @@ const forgotPassword = async (data) => {
     // Send reset password email
     const html = resetPasswordTemplate({
         email: data.email,
-        resetUrl: `${process.env.FRONTEND_URL}/recover-password?email=${data.email}`,
+        resetUrl: `${process.env.FRONTEND_URL}/recover-password`,
     });
     await sendEmail({
         to: data.email,

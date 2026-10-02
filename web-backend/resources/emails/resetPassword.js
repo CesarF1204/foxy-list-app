@@ -147,41 +147,6 @@ const resetPasswordTemplate = ({ email, resetUrl }) => {
                                         </tr>
                                     </table>
 
-                                    <!-- Expiration notice -->
-                                    <table
-                                        width="100%"
-                                        cellpadding="0"
-                                        cellspacing="0"
-                                        border="0"
-                                        style="
-                                            background-color: #FBF4E9;
-                                            border-radius: 12px;
-                                        "
-                                    >
-                                        <tr>
-                                            <td
-                                                style="
-                                                    padding: 18px 20px;
-                                                    text-align: left;
-                                                "
-                                            >
-                                                <p
-                                                    style="
-                                                        margin: 0;
-                                                        font-size: 14px;
-                                                        line-height: 1.6;
-                                                        color: #6B5A4B;
-                                                    "
-                                                >
-                                                    This password reset link will
-                                                    expire soon. If you did not
-                                                    request a password reset, you
-                                                    can safely ignore this email.
-                                                </p>
-                                            </td>
-                                        </tr>
-                                    </table>
-
                                     <!-- Fallback URL -->
                                     <p
                                         style="
