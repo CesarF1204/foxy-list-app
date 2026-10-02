@@ -1,7 +1,7 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://foxy-list-app-local.onrender.com/api/$1" },
-    { "source": "/openapi.json", "destination": "https://foxy-list-app-local.onrender.com/openapi.json" },
+    { "source": "/api/(.*)", "destination": "https://foxy-list-app.onrender.com/api/$1" },
+    { "source": "/openapi.json", "destination": "https://foxy-list-app.onrender.com/openapi.json" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
