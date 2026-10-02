@@ -86,7 +86,20 @@ const TaskBoard = () => {
                                         {...provided.droppableProps}
                                         ref={provided.innerRef}
                                         aria-label={meta.label}
-                                        className={`flex min-h-72 flex-col rounded-3xl border-2 border-ink p-3 ${
+                                        /**
+                                         * A floor on the column's height, so the
+                                         * composer at the foot of the To Do
+                                         * column has room and the three columns
+                                         * look the same height when they are
+                                         * empty. It is `min-h-56` on a phone
+                                         * rather than the `min-h-72` it uses
+                                         * from `md` up: stacked, three 288px
+                                         * columns is nearly 900px of mostly empty
+                                         * board before the user reaches the
+                                         * second one, and the drop target stays
+                                         * comfortably larger than a finger needs.
+                                         */
+                                        className={`flex min-h-56 flex-col rounded-3xl border-2 border-ink p-3 md:min-h-72 ${
                                             snapshot.isDraggingOver
                                                 ? "border-fox-400 bg-fox-50"
                                                 : "bg-white/70"
@@ -98,7 +111,7 @@ const TaskBoard = () => {
                                                 aria-hidden="true"
                                             />
                                             <h2
-                                                className={`text-xs font-extrabold tracking-wider uppercase ${meta.heading}`}
+                                                className={`text-sm font-extrabold tracking-wider uppercase ${meta.heading}`}
                                             >
                                                 {meta.label}
                                             </h2>
@@ -111,8 +124,13 @@ const TaskBoard = () => {
 
                                         {/* Always rendered, even on an empty board, so the
                                             hint line keeps the same height in every
-                                            column and the empty states line up. */}
-                                        <p className="mb-3 px-1 text-[0.7rem] font-bold text-ink-faint">
+                                            column and the empty states line up. `text-xs` rather
+                                             than the `text-[0.7rem]` it used to be: at
+                                             11px this line is below a comfortable
+                                             reading size on a phone, and it is a
+                                             real instruction - "Grab the next
+                                             thing" - not decoration. */}
+                                        <p className="mb-3 px-1 text-xs leading-snug font-bold text-ink-soft">
                                             {meta.hint}
                                         </p>
 

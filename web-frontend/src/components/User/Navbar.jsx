@@ -65,19 +65,26 @@ const Navbar = ({ user }) => {
     return (
         <>
             <header className="sticky top-0 z-header border-b-2 border-ink bg-paper/95 backdrop-blur">
-                <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
+                <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-3 sm:gap-3 sm:px-6">
 
-                <div className="flex shrink-0 items-center gap-2.5 pr-2">
+                {/* The brand block: `min-w-0` and `truncate` on the name so a long
+                    name or a large text size shortens the wordmark rather than
+                    pushing the account control off the right edge. */}
+                <div className="flex min-w-0 shrink items-center gap-2 pr-1 sm:gap-2.5 sm:pr-2">
                     <Mascot {...MASCOT_SHEETS} label={MASCOT_LABEL} size={40} />
                     <Link
                         to={ROUTES.board}
-                        className="rounded-xl text-xl font-extrabold tracking-tight text-ink transition hover:opacity-80"
+                        className="truncate rounded-xl text-lg font-extrabold tracking-tight text-ink transition hover:opacity-80 sm:text-xl"
                     >
                         Foxy List
                     </Link>
                 </div>
 
                 {user && (
+                    /** Below `md` the links live in the account menu instead, so
+                        the row holds three items rather than six and the date
+                        has to go: something has to give on a 360px screen, and
+                        the navigation is what the user came for. */
                     <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
                         <NavLink
                             to={ROUTES.board}
@@ -112,7 +119,7 @@ const Navbar = ({ user }) => {
                 )}
 
                 {user ? (
-                    <div className="ml-auto flex items-center gap-3">
+                    <div className="ml-auto flex items-center gap-2 sm:gap-3">
                         {/* Hidden on the narrowest screens to protect the avatar. */}
                         <p className="hidden text-sm font-bold text-ink-soft md:block">
                             {getTodayLabel()}
@@ -133,7 +140,15 @@ const Navbar = ({ user }) => {
                             {isMenuOpen && (
                                 <div
                                     role="menu"
-                                    className="animate-pop-in absolute right-0 z-header mt-2 w-60 overflow-hidden rounded-2xl border-2 border-ink bg-white shadow-pop"
+                                    /**
+                                     * `w-60` is 240px, which fits a 320px screen
+                                     * only by luck. Capping it at the viewport
+                                     * minus the header's own gutter means the menu
+                                     * can never hang off the right edge whatever
+                                     * the window is, and the long email inside it
+                                     * truncates against that cap.
+                                     */
+                                    className="animate-pop-in absolute right-0 z-header mt-2 w-60 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border-2 border-ink bg-white shadow-pop"
                                 >
                                     <div className="border-b-2 border-paper-deep px-4 py-3">
                                         <p className="truncate text-sm font-extrabold text-ink">
@@ -151,7 +166,17 @@ const Navbar = ({ user }) => {
                                                 setIsMenuOpen(false);
                                                 setIsProfileOpen(true);
                                             }}
-                                            className="mt-1 w-fit cursor-pointer truncate text-sm font-extrabold text-fox-600 underline decoration-2 underline-offset-2 transition hover:text-fox-700"
+                                            /**
+                                                  * `py-2` makes a 36px row. Below
+                                                  * `md` this menu *is* the
+                                                  * navigation, so every entry in
+                                                  * it has to clear the 44px touch
+                                                  * floor; the padding is restored
+                                                  * from `sm`, where a pointer is
+                                                  * driving and the compact row is
+                                                  * correct.
+                                                  */
+                                                 className="mt-1 flex min-h-11 w-full cursor-pointer items-center text-sm font-extrabold text-fox-600 underline decoration-2 underline-offset-2 transition hover:text-fox-700 sm:min-h-0 sm:w-fit sm:py-0"
                                         >
                                             View Profile
                                         </button>
@@ -164,7 +189,7 @@ const Navbar = ({ user }) => {
                                                 end
                                                 onClick={() => setIsMenuOpen(false)}
                                                 className={({ isActive }) =>
-                                                    `block w-full px-4 py-2 text-left transition ${navClass(isActive)}`
+                                                    `block w-full px-4 py-2.5 text-left transition md:py-2 ${navClass(isActive)}`
                                                 }
                                             >
                                                 Dashboard
@@ -178,7 +203,7 @@ const Navbar = ({ user }) => {
                                                     aria-current={
                                                         inAdminSection ? "page" : undefined
                                                     }
-                                                    className={`block w-full px-4 py-2 text-left transition ${navClass(inAdminSection)}`}
+                                                    className={`block w-full px-4 py-2.5 text-left transition md:py-2 ${navClass(inAdminSection)}`}
                                                 >
                                                     Admin Overview
                                                 </Link>
@@ -190,7 +215,7 @@ const Navbar = ({ user }) => {
                                                 to={ROUTES.apiDocs}
                                                 onClick={() => setIsMenuOpen(false)}
                                                 className={({ isActive }) =>
-                                                    `block w-full px-4 py-2 text-left transition ${navClass(isActive)}`
+                                                    `block w-full px-4 py-2.5 text-left transition md:py-2 ${navClass(isActive)}`
                                                 }
                                             >
                                                 API Docs

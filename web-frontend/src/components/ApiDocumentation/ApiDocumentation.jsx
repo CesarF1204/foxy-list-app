@@ -125,7 +125,11 @@ const ApiDocumentation = () => {
                 </section>
             )}
 
-            <div className="flex flex-wrap items-center gap-3">
+            {/* `flex-col` below `sm` so the reload button sits under the full-width filter
+                box rather than beside it, and `sm:w-auto` restores the row. The
+                button was `text-xs` with `py-1.5`, about 28px tall - too small to
+                press on a phone, and it is the only way to re-read the spec. */}
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
                 <label className="sr-only" htmlFor="api-docs-filter">
                     Filter endpoints
                 </label>
@@ -169,7 +173,7 @@ const ApiDocumentation = () => {
                 <button
                     type="button"
                     onClick={() => refetch()}
-                    className="btn btn-neutral py-1.5! text-xs!"
+                    className="btn btn-neutral py-2! text-sm! sm:py-1.5! sm:text-xs!"
                 >
                     Reload spec
                 </button>

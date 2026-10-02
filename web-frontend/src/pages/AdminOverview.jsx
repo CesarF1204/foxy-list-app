@@ -62,7 +62,7 @@ const AdminOverview = () => {
                             <h2 className="text-base font-extrabold text-ink">
                                 Where the tasks are
                             </h2>
-                            <p className="mt-1 mb-4 text-xs font-semibold text-ink-soft">
+                            <p className="mt-1 mb-4 text-sm leading-relaxed font-semibold text-ink-soft sm:text-xs">
                                 Every task on every board, counted from the task records themselves.
                             </p>
 
@@ -105,7 +105,7 @@ const AdminOverview = () => {
                                     {stats?.users?.admins === 1 ? "account can" : "accounts can"} reach
                                     this dashboard.
                                 </p>
-                                <p className="mt-2 text-xs font-semibold text-ink-faint">
+                                <p className="mt-2 text-sm leading-relaxed font-semibold text-ink-soft sm:text-xs">
                                     {ROLE_META.admin.hint}. Roles are granted here and validated by
                                     the API.
                                 </p>

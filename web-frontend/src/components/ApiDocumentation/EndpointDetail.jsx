@@ -21,12 +21,19 @@ const EndpointDetail = ({ endpoint, id }) => {
     const { description, secured, parameters, requestBody, responses } = endpoint;
 
     return (
+        /**
+         * `px-3` below `sm` rather than `px-4`: the panel sits inside an endpoint
+         * row that is itself inside the page's padding, so each level costs 16px
+         * of a 360px screen. Three levels of it left about 260px for the field
+         * list, which is what made the table a scroll-and-a-half rather than a
+         * readable list. The vertical rhythm is unchanged.
+         */
         <div
             id={id}
-            className="animate-rise space-y-5 border-t-2 border-paper-deep px-4 py-4"
+            className="animate-rise space-y-5 border-t-2 border-paper-deep px-3 py-4 sm:px-4"
         >
             {description && (
-                <p className="text-sm leading-relaxed font-semibold whitespace-pre-line text-ink-soft">
+                <p className="text-sm leading-relaxed font-semibold whitespace-pre-line break-anywhere text-ink-soft">
                     {description}
                 </p>
             )}

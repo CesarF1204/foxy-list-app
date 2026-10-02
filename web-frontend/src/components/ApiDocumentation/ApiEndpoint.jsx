@@ -53,12 +53,19 @@ const ApiEndpoint = ({ endpoint, isOpen: controlledIsOpen, onToggle }) => {
     return (
         <li className="overflow-hidden rounded-2xl border-2 border-ink bg-white">
             <h4>
+                {/**
+                 * `min-h-11` on the row itself: below `sm` the row is the only way
+                 * to reach an endpoint's detail, and at `py-3` with a single line
+                 * of path text it is about 40px - enough for a pointer, not quite
+                 * enough for a thumb. `gap-2` below `sm` for the same reason the
+                 * padding is not generous.
+                 */}
                 <button
                     type="button"
                     onClick={toggle}
                     aria-expanded={isOpen}
                     aria-controls={hasDetail ? panelId : undefined}
-                    className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition hover:bg-fox-50"
+                    className="flex min-h-11 w-full cursor-pointer items-center gap-2 px-3 py-3 text-left transition hover:bg-fox-50 sm:min-h-0 sm:gap-3 sm:px-4"
                 >
                     <MethodBadge method={method} />
 
@@ -67,7 +74,7 @@ const ApiEndpoint = ({ endpoint, isOpen: controlledIsOpen, onToggle }) => {
                             {path}
                         </span>
                         {summary && (
-                            <span className="mt-0.5 block text-xs font-semibold text-ink-soft">
+                            <span className="mt-0.5 block text-sm leading-snug font-semibold text-ink-soft sm:text-xs">
                                 {summary}
                             </span>
                         )}

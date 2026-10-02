@@ -31,20 +31,27 @@ const Pagination = ({ page, pageCount, total, pageSize, onPage, onPageSize, isDi
     /**
      * `cursor-pointer` on the control itself and `disabled:cursor-not-allowed` on the way out,
      * so a button that cannot do anything does not invite the click.
+     *
+     * `h-11` (44px) below `sm` and `h-9` from `sm` up. The pager is a row of
+     * up to five small boxes and a cursor finds each one without effort; a
+     * thumb does not, and on a phone these are already at the edge of the
+     * screen with the page-size select wrapped above them. `flex-wrap` on the
+     * parent lets the row break to two lines rather than overflow, which is
+     * what happened before at 320px.
      */
     const buttonClass =
-        "flex h-9 min-w-9 cursor-pointer items-center justify-center rounded-xl border-2 border-ink bg-white px-2.5 text-sm font-extrabold text-ink transition hover:bg-fox-50 disabled:cursor-not-allowed disabled:opacity-40";
+        "flex h-11 min-w-11 cursor-pointer items-center justify-center rounded-xl border-2 border-ink bg-white px-3 text-sm font-extrabold text-ink transition hover:bg-fox-50 disabled:cursor-not-allowed disabled:opacity-40 sm:h-9 sm:min-w-9 sm:px-2.5";
 
     return (
         <nav
             className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
             aria-label="Users table pagination"
         >
-            <p className="text-xs font-semibold text-ink-soft" role="status" aria-live="polite">
+            <p className="text-sm font-semibold text-ink-soft sm:text-xs" role="status" aria-live="polite">
                 Showing {first}-{last} of {total}
             </p>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
                 <div className="flex shrink-0 items-center gap-2">
                     <SelectField
                         id="admin-page-size"

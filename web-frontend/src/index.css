@@ -68,6 +68,16 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+
+    /*
+      The dotted paper is tiled at 22px and the layout is fluid, so nothing in
+      the app should ever be wider than the viewport. This is the last line of
+      defence rather than a fix: a wide table or an over-long unbroken string
+      can still overflow, and letting the whole document pan sideways is worse
+      than clipping the one element that caused it, because the page then
+      appears to have no edge at all.
+    */
+    overflow-x: clip;
   }
 
   body {
@@ -175,16 +185,32 @@
   }
 
   /* Form controls share one shape and focus treatment. */
+  /*
+    A form control's own font size is set in pixels, not in `rem`, and not by
+    accident. Mobile Safari zooms the whole viewport when a focused field's
+    font is under 16px, and it only zooms back out if the user double-taps the
+    page. 0.95rem is about 15.2px, which lands just under that line and
+    therefore triggers the zoom on every sign-in. 1rem is the same 16px the
+    body copy uses, so the control matches the page and the zoom never fires;
+    from `sm` up the pointer is a mouse, no zoom exists, and the control can
+    sit a shade under the body size without looking wrong next to it.
+  */
   .field {
     width: 100%;
     border: 2px solid var(--color-ink);
     border-radius: 0.85rem;
     background-color: white;
     padding: 0.6rem 0.85rem;
-    font-size: 0.95rem;
+    font-size: 1rem;
     transition:
       box-shadow 120ms ease,
       border-color 120ms ease;
+  }
+
+  @media (min-width: 40rem) {
+    .field {
+      font-size: 0.95rem;
+    }
   }
 
   .field:focus {
@@ -261,6 +287,66 @@
   /* Long unbroken words (URLs, tokens) must not blow out a card's width. */
   .break-anywhere {
     overflow-wrap: anywhere;
+  }
+
+  /*
+    Tap targets.
+
+    Two floors rather than one. A control the user has to aim at should be at
+    least 44x44 CSS pixels - the size of an average fingertip - so every
+    interactive surface in the app meets it on a touch screen. A control the
+    pointer already hovers over does not have the same problem, and the 36px
+    boxes the dense panels use (a table's pager, a card's edit and delete) are
+    what make those panels legible at all. So the floor is applied from the
+    pointer type rather than from the screen size: it is what the input can do
+    that decides, not how wide the window happens to be.
+
+    Declared with `@media (hover: none)` rather than a width breakpoint on
+    purpose. A narrow desktop window is still driven by a mouse, and padding a
+    pager out because someone resized the window would leave the layout looking
+    broken for no reason.
+  */
+  @media (hover: none) {
+    .btn {
+      min-height: 2.75rem;
+    }
+  }
+
+  /*
+    The footer of a dialog or a drawer.
+
+    Space is the scarcest thing on a phone, and a row of side-by-side buttons
+    on a narrow panel either wraps into an uneven stack or squeezes its labels
+    until they clip. So below `sm` the footer buttons take the full width of the
+    panel and stack in reverse document order - the primary action nearest the
+    thumb - and from `sm` up the footer returns to the ordinary right-aligned
+    row. `> *` rather than `> button` so a wrapped fragment of two buttons is
+    treated as one unit too.
+  */
+  .modal-footer,
+  .drawer-footer {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .modal-footer > *,
+  .drawer-footer > * {
+    width: 100%;
+  }
+
+  @media (min-width: 40rem) {
+    .modal-footer,
+    .drawer-footer {
+      flex-flow: row wrap;
+      justify-content: flex-end;
+    }
+
+    .modal-footer > *,
+    .drawer-footer > * {
+      width: auto;
+    }
   }
 
   /*

@@ -32,16 +32,21 @@ const ApiDocs = () => {
                 {/* A flex row rather than a stacked header: the title takes the width it
                     needs and the CRT keeps its own, so neither is squeezed on a narrow
                     screen and the heading stays on one line as long as it can. */}
-                <div className="animate-rise mb-6 flex items-start gap-4">
-                    <div className="min-w-0 flex-1">
-                        <h1 className="text-3xl font-extrabold tracking-tight text-ink">
-                            API Documentation
-                        </h1>
-                        <p className="mt-1 text-sm font-semibold text-ink-soft">
-                            Every endpoint the backend exposes, read live from its OpenAPI
-                            specification.
-                        </p>
-                    </div>
+                {/* `text-2xl` below `sm` and `text-3xl` from `sm` up. "API Documentation" at
+                30px is about 240px of text, which does not fit beside the CRT on a
+                360px screen once the page's own padding is taken off - the heading was
+                wrapping to two lines, or pushing the mascot out, depending on the
+                viewport. It steps up once there is room for it. */}
+            <div className="animate-rise mb-6 flex items-start gap-4">
+                <div className="min-w-0 flex-1">
+                    <h1 className="text-2xl font-extrabold tracking-tight break-words text-ink sm:text-3xl">
+                        API Documentation
+                    </h1>
+                    <p className="mt-1 text-sm font-semibold text-ink-soft">
+                        Every endpoint the backend exposes, read live from its OpenAPI
+                        specification.
+                    </p>
+                </div>
 
                     {/* Square card behind the CRT, the same construction AuthLayout uses.
                         `shrink-0` so it holds its size instead of being squeezed by the

@@ -12,38 +12,49 @@ import { UserConfirmDialog, RoleDialog, PasswordDialog } from "./UserDialogs";
 
 /** One labelled row of the read-only detail list. */
 const DetailRow = ({ label, children }) => (
+    /**
+     * `w-32` is only applied from `sm`. Below it the row stacks, so the label
+     * takes its own line and the value the full width - a 128px label column
+     * plus a long email left the value about 100px on a 360px screen, which is
+     * three words and an ellipsis.
+     */
     <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-3">
-        <dt className="w-32 shrink-0 text-xs font-extrabold tracking-wide text-ink-soft uppercase">
+        <dt className="text-xs font-extrabold tracking-wide text-ink-soft uppercase sm:w-32 sm:shrink-0">
             {label}
         </dt>
-        <dd className="break-anywhere text-sm font-bold text-ink">{children}</dd>
+        <dd className="text-sm font-bold break-anywhere text-ink">{children}</dd>
     </div>
 );
 
 /**
  * The per-board task counts, as a labelled list rather than a bare row of numbers, so "12 To
  * Do" is read aloud instead of "12, 3, 7".
+ *
+ * Two columns below `sm` and four from `sm` up, with `text-xs` labels rather than the
+ * `text-[0.65rem]` (10.4px) they used to be. Four tiles across a phone-width drawer is
+ * roughly 70px each - too narrow for the number, let alone the word under it, and 10.4px
+ * is below a legible size at any width. Two columns gives each tile the room for both.
  */
 const TaskCounts = ({ counts }) => (
-    <ul className="grid grid-cols-4 gap-2">
+    <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <li className="rounded-2xl border-2 border-ink bg-white p-2 text-center">
-            <span className="block text-xl font-extrabold text-ink tabular-nums">
+            <span className="block text-2xl font-extrabold text-ink tabular-nums">
                 {counts?.total ?? 0}
             </span>
-            <span className="text-[0.65rem] font-extrabold tracking-wide text-ink-soft uppercase">
+            <span className="text-xs font-extrabold tracking-wide text-ink-soft uppercase">
                 Total
             </span>
         </li>
         {BOARDS.map((board) => (
             <li key={board} className="rounded-2xl border-2 border-ink bg-white p-2 text-center">
-                <span className="flex items-center justify-center gap-1.5 text-xl font-extrabold text-ink tabular-nums">
+                <span className="flex items-center justify-center gap-1.5 text-2xl font-extrabold text-ink tabular-nums">
                     <span
                         className={`h-2.5 w-2.5 rounded-full ${BOARD_META[board].accent}`}
                         aria-hidden="true"
                     />
                     {counts?.[board] ?? 0}
                 </span>
-                <span className="text-[0.65rem] font-extrabold tracking-wide text-ink-soft uppercase">
+                <span className="text-xs font-extrabold tracking-wide text-ink-soft uppercase">
                     {BOARD_LABELS[board]}
                 </span>
             </li>
@@ -197,8 +208,15 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
 
                 {/* ------------------------------ actions ------------------------------ */}
 
+                {/**
+                 * The action row. `flex-col` below `sm` so each action takes the
+                 * panel's full width rather than three buttons competing for one
+                 * narrow row, and the explanatory note stops being a full-width
+                 * item squeezed between them. `flex-wrap` from `sm` up keeps the
+                 * desktop row exactly as it was.
+                 */}
                 {(canChangeRole || canBlock || canDelete) && (
-                    <div className="flex flex-wrap gap-2 border-t-2 border-paper-deep pt-4">
+                    <div className="flex flex-col gap-2 border-t-2 border-paper-deep pt-4 sm:flex-row sm:flex-wrap">
                         {canChangeRole && (
                             <button
                                 type="button"
@@ -235,7 +253,7 @@ const UserDrawer = ({ user, currentUser, actions, showToast, onClose }) => {
                         {/* Said once, and only where it is true: a plain user simply
                             has no administrative controls and nothing to explain. */}
                         {isViewerAdmin && isSelf && (
-                            <p className="w-full text-xs font-semibold text-ink-faint">
+                            <p className="text-sm leading-relaxed font-semibold text-ink-faint sm:text-xs">
                                 This is your own admin account, so the actions that would lock you out
                                 of the dashboard are hidden here.
                             </p>

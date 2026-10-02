@@ -4,8 +4,18 @@ import { createPortal } from "react-dom";
 import { getInitials, getFullName } from "../../helpers/globalHelper";
 import { USER_COLUMNS, SORT_DIRECTIONS } from "../../constants/admin";
 import { BOARD_META, BOARDS, BOARD_LABELS } from "../../constants/boards";
+import useMediaQuery from "../../hooks/useMediaQuery";
 import { RoleBadge, StatusBadge } from "./Badges";
 import { Icon, KebabButton } from "../icons";
+
+/**
+ * The width at which the table has room for six columns.
+ *
+ * `md` is the same 48rem Tailwind's `md:` is, named once so the breakpoint is a
+ * single fact rather than a number repeated in a query string and a class list
+ * that could drift apart.
+ */
+const DESKTOP_TABLE = "(min-width: 48rem)";
 
 /** A date as a short value, with the full timestamp available on hover. */
 const formatDate = (value) => {
@@ -291,17 +301,112 @@ const MenuItem = ({ children, tone = "default", onClick }) => (
 );
 
 /**
+ * One user, as a card.
+ *
+ * The table below cannot work on a phone and no amount of shrinking will make
+ * it: six columns of name, email, two badges, three task pills, a date and a
+ * menu is about 700px of content, so on a 360px screen the reader would have to
+ * scroll sideways to see who a row belongs to and sideways again for the
+ * controls - and the row's identity, which is the one thing every other column
+ * is read relative to, would be the first thing to leave the screen.
+ *
+ * So below `md` the same rows are laid out as cards, stacked and full width.
+ * Every value the table shows is here, in the same reading order, and the
+ * kebab menu is the same control with the same `RowActions` behind it. This is
+ * a second *presentation* of one list of data rather than a second source of
+ * truth: both read the same `rows` prop, and only one is ever in the document.
+ *
+ * `RoleBadge` and `StatusBadge` are what the `Role` and `Status` columns held;
+ * the board counts sit under the name because they qualify it, and the joined
+ * date is last because it is the least-read column and the one that has room
+ * to wrap.
+ */
+const UserCard = ({ user, onView, onToggleStatus, onDelete, canManage }) => (
+    <li className="surface animate-rise flex flex-col gap-3 p-3">
+        <div className="flex items-start gap-2.5">
+            <UserAvatar user={user} />
+
+            {/* `min-w-0` so a long name or email truncates rather than pushing
+                the kebab past the card's edge. */}
+            <div className="min-w-0 flex-1">
+                <p className="font-extrabold break-words text-ink">{getFullName(user)}</p>
+                <p className="break-anywhere text-sm font-semibold text-ink-soft">
+                    {user.email}
+                </p>
+            </div>
+
+            <RowActions
+                user={user}
+                canManage={canManage}
+                onView={onView}
+                onToggleStatus={onToggleStatus}
+                onDelete={onDelete}
+            />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+            <RoleBadge role={user.role} />
+            <StatusBadge status={user.status} />
+        </div>
+
+        {/* `flex-wrap` and the labelled pills rather than a bare number row: the
+            cards are narrow, and three pills plus a total do not fit on one line
+            beside each other at 360px. */}
+        <div className="flex flex-wrap items-center gap-1.5">
+            <TaskCountsCell counts={user.taskCounts} />
+        </div>
+
+        <p className="text-xs font-semibold text-ink-faint">
+            Joined {formatDate(user.createdAt)}
+        </p>
+    </li>
+);
+
+/**
  * The users table. A real `<table>` with a caption, `<th scope="col">` headers and `aria-sort`
  * on the sortable ones, so the structure a screen reader walks is the structure an admin sees.
+ *
+ * Both layouts read the same `rows` prop, and only one is ever in the document.
+ *
+ * `useMediaQuery` rather than a `hidden md:block` / `md:hidden` pair, which is
+ * the tempting way to write this and is wrong here: it leaves the hidden layout
+ * in the DOM, so a screen reader is handed every row twice, every kebab has two
+ * names, and any query over the document - `getByRole`, text search, a test -
+ * matches both copies. The `md` boundary is kept in one place, in `DESKTOP_TABLE`,
+ * rather than repeated across the class lists of two trees.
+ *
+ * @param {object} props
+ * @param {object[]} props.rows - One entry per registered account
+ * @returns {JSX.Element} The users list, as cards or as a table
  */
-const UsersTable = ({ rows, sortBy, sortDir, onSort, onView, onToggleStatus, onDelete, canManageRow }) => (
-    <div
-        className="overflow-x-auto"
-        tabIndex={0}
-        role="region"
-        aria-label="Registered users"
-    >
-        <table className="w-full min-w-176 border-collapse text-sm">
+const UsersTable = ({ rows, sortBy, sortDir, onSort, onView, onToggleStatus, onDelete, canManageRow }) => {
+    const isWide = useMediaQuery(DESKTOP_TABLE);
+
+    /**
+     * Everything the two branches share, so a change to the row's actions is
+     * one edit rather than two that can drift apart.
+     */
+    const rowProps = (user) => ({
+        user,
+        canManage: canManageRow(user),
+        onView,
+        onToggleStatus,
+        onDelete,
+    });
+
+    if (!isWide) {
+        return (
+            <ul className="flex flex-col gap-3 p-3">
+                {rows.map((user) => (
+                    <UserCard key={user._id} {...rowProps(user)} />
+                ))}
+            </ul>
+        );
+    }
+
+    return (
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Registered users">
+            <table className="w-full min-w-176 border-collapse text-sm">
             <caption className="sr-only">
                 Registered users with their role, account status and task counts. The Tasks column
                 shows the To Do, Ongoing and Done counts as coloured pills, followed by
@@ -365,6 +470,7 @@ const UsersTable = ({ rows, sortBy, sortDir, onSort, onView, onToggleStatus, onD
             </tbody>
         </table>
     </div>
-);
+    );
+};
 
 export default UsersTable;

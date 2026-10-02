@@ -38,7 +38,13 @@ const LogOut = ({ onDone }) => {
                 type="button"
                 onClick={() => mutation.mutate()}
                 disabled={mutation.isPending}
-                className="block w-full cursor-pointer px-4 py-2 text-left text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                /**
+                 * The one entry of the account menu that is not a link, and on
+                 * a phone the only way out of the app. It gets the same 44px
+                 * floor as the navigation links beside it: `py-2` alone is 36px,
+                 * which is under the comfortable minimum for a thumb.
+                 */
+                className="block w-full cursor-pointer px-4 py-2.5 text-left text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 md:py-2"
             >
                 {mutation.isPending ? "Signing out..." : "Sign out"}
             </button>
