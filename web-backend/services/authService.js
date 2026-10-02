@@ -15,6 +15,7 @@ import {
 } from '../constants/messages.js';
 import resetPasswordTemplate from '../resources/emails/resetPassword.js';
 import { sendEmail } from './mailService.js';
+import crypto from 'node:crypto';
 
 /** The cost factor, configurable so tests can run cheaper than production. */
 const SALT_ROUNDS = () => Number(process.env.BCRYPT_SALT_ROUNDS || 12);
@@ -178,12 +179,24 @@ const clearSessionCookie = (res) => {
  * @author Cesar
  */
 const forgotPassword = async (data) => {
-    await userModel.findByEmail(data.email);
+    const user = await userModel.findByEmail(data.email);
+
+    if (!user) {
+        throw notFound('No account found for that email');
+    }
+
+    const token = crypto.randomBytes(16).toString('hex');
+    const tokenExpiration = Date.now() + 300000; // Token expiration is 5mins after token creation
+
+    await userModel.updateUser(user._id, {
+        passwordResetToken: token,
+        passwordResetExpiration: tokenExpiration,
+    });
 
     // Send reset password email
     const html = resetPasswordTemplate({
         email: data.email,
-        resetUrl: `${process.env.FRONTEND_URL}/recover-password`,
+        resetUrl: `${process.env.FRONTEND_URL}/recover-password?token=${token}`,
     });
     await sendEmail({
         to: data.email,
