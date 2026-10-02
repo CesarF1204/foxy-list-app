@@ -9,6 +9,8 @@ import {
     updateUserPasswordSchema,
 } from '../utils/validationSchemas.js';
 import { HTTP_STATUS } from '../constants/http.js';
+import { uploadAvatarImage } from '../services/avatarService.js';
+import { AVATAR_UPDATED_MESSAGE } from '../constants/messages.js';
 
 /**
  * DOCU: Registers a new account.
@@ -88,15 +90,6 @@ export const forgotPassword = async (req, res) => {
 };
 
 /**
- * DOCU: Completes password recovery.
- * Last Updated Date: October 1, 2026
- * @function resetPassword
- * @param {object} req - Request
- * @param {object} res - Response
- * @returns {Promise<void>} Responds with { message }
- * @author Cesar
- */
-/**
  * DOCU: Updates the signed-in user's own profile fields.
  *
  * The account comes from the verified session, never from the request, so
@@ -129,6 +122,42 @@ export const updatePassword = async (req, res) => {
     res.status(HTTP_STATUS.OK).json({ message: await authService.setOwnPassword(req.user, data) });
 };
 
+/**
+ * DOCU: Replaces the signed-in user's profile picture with an uploaded image.
+ *
+ * The file is already read and checked by `parseAvatarUpload`. Cloudinary runs before the
+ * database, so a failed upload leaves the stored avatar untouched. The whole account is
+ * returned, so the client can write the new row into its session cache and every avatar
+ * updates without a refetch or a reload.
+ *
+ * Last Updated Date: October 2, 2026
+ * @function uploadAvatar
+ * @param {object} req - Request, carrying the file and already carrying the user
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { message, avatar, user }
+ * @author Cesar
+ */
+export const uploadAvatar = async (req, res) => {
+    const avatarUrl = await uploadAvatarImage(req.file, req.user._id);
+
+    const user = await authService.setOwnAvatar(req.user, avatarUrl);
+
+    res.status(HTTP_STATUS.OK).json({
+        message: AVATAR_UPDATED_MESSAGE,
+        avatar: user.avatar,
+        user,
+    });
+};
+
+/**
+ * DOCU: Completes password recovery.
+ * Last Updated Date: October 1, 2026
+ * @function resetPassword
+ * @param {object} req - Request
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { message }
+ * @author Cesar
+ */
 export const resetPassword = async (req, res) => {
     const data = parseBody(req.body, resetPasswordSchema);
 

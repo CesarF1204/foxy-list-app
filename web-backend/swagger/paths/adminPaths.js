@@ -279,6 +279,58 @@ const adminPaths = {
         },
     },
 
+/**
+     * The one admin endpoint that takes a file rather than a JSON body - the same shape as the
+     * self-service avatar route, but naming the account in the path instead of reading it from
+     * the session.
+     *
+     * POST rather than PATCH because the avatar travels as a multipart part. Unlike role, status,
+     * password and delete, there is no self-lockout guard here: a picture carries no privilege,
+     * so an admin may set their own this way.
+     */
+    '/api/admin/users/{id}/avatar': {
+        post: {
+            tags: ['Admin'],
+            summary: "Set a user's profile picture",
+            description:
+                'Stores a new profile picture for another account and answers with the updated ' +
+                'account, so the open drawer and the table row redraw without a refetch.\n\n' +
+                'The file must be a JPG or PNG of at most 5 MB, and both the extension and the ' +
+                'reported MIME type are checked. The image is stored by Cloudinary and only its ' +
+                'URL is kept.\n\n' +
+                'A failed upload never overwrites an existing picture: the image reaches ' +
+                'Cloudinary before anything is written to the account.',
+            security: [{ sessionCookie: [] }],
+            parameters: [idPathParameter('id', 'user')],
+            requestBody: {
+                required: true,
+                content: {
+                    'multipart/form-data': {
+                        schema: {
+                            type: 'object',
+                            required: ['avatar'],
+                            properties: {
+                                avatar: {
+                                    type: 'string',
+                                    format: 'binary',
+                                    description: 'The image file. JPG or PNG, at most 5 MB.',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            responses: {
+                200: jsonResponse('The new picture and the account it belongs to.', {
+                    $ref: '#/components/schemas/AvatarResponse',
+                }),
+                400: badRequest,
+                404: notFound,
+                ...authResponses('Administrator access is required.'),
+            },
+        },
+    },
+
 };
 
 export { adminPaths, userTableParameters };

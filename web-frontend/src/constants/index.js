@@ -78,6 +78,13 @@ export {
 export {
     DISPLAY_NAME_FALLBACK,
     INITIALS_FALLBACK,
+    AVATAR_ACCEPT,
+    AVATAR_EXTENSIONS,
+    AVATAR_MAX_SIZE_BYTES,
+    AVATAR_MAX_SIZE_MB,
+    AVATAR_MESSAGES,
+    getFileExtension,
+    validateAvatarFile,
 } from "./user";
 export {
     EMAIL_PATTERN,

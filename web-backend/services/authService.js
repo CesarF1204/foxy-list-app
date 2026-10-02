@@ -13,6 +13,8 @@ import {
     PASSWORD_UNCHANGED_MESSAGE,
     DUPLICATE_EMAIL_MESSAGE,
 } from '../constants/messages.js';
+import resetPasswordTemplate from '../resources/emails/resetPassword.js';
+import { sendEmail } from './mailService.js';
 
 /** The cost factor, configurable so tests can run cheaper than production. */
 const SALT_ROUNDS = () => Number(process.env.BCRYPT_SALT_ROUNDS || 12);
@@ -44,6 +46,8 @@ const toPublicUser = (user) => ({
     role: user.role,
     status: user.status,
     createdAt: user.createdAt,
+    /** Always present, so callers test only whether it holds anything. */
+    avatar: user.avatar ?? '',
 });
 
 /**
@@ -119,7 +123,6 @@ const signIn = async (data) => {
     return { user: toPublicUser(user), token: issueToken(user) };
 };
 
-
 /**
  * DOCU: Returns the account behind a verified session token.
  * Last Updated Date: October 1, 2026
@@ -178,6 +181,17 @@ const clearSessionCookie = (res) => {
  */
 const forgotPassword = async (data) => {
     await userModel.findByEmail(data.email);
+
+    // Send reset password email
+    const html = resetPasswordTemplate({
+        email: data.email,
+        resetUrl: `${process.env.FRONTEND_URL}/recover-password`,
+    });
+    await sendEmail({
+        to: data.email,
+        subject: 'Password reset request.',
+        html,
+    });
 
     return 'If that email exists, a reset link is on its way';
 };
@@ -297,6 +311,26 @@ const setOwnPassword = async (actor, data) => {
     return PASSWORD_UPDATED_MESSAGE;
 };
 
+/**
+ * DOCU: Stores the Cloudinary URL of a new profile picture on the signed-in account.
+ *
+ * Takes no id: the account is the one behind the verified session. The image is already in
+ * Cloudinary by the time this runs, so a failed upload never reaches the database and the
+ * existing avatar is left alone.
+ *
+ * Last Updated Date: October 2, 2026
+ * @function setOwnAvatar
+ * @param {object} actor - The signed-in user, from authMiddleware
+ * @param {string} avatarUrl - The Cloudinary secure URL to store
+ * @returns {Promise<object>} The updated user, without a password
+ * @author Cesar
+ */
+const setOwnAvatar = async (actor, avatarUrl) => {
+    const updated = await userModel.updateUser(actor._id, { avatar: avatarUrl });
+
+    return toPublicUser(updated);
+};
+
 export {
     SALT_ROUNDS,
     hashPassword,
@@ -312,4 +346,5 @@ export {
     resetPassword,
     updateOwnProfile,
     setOwnPassword,
+    setOwnAvatar,
 };
