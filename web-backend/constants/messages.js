@@ -36,7 +36,24 @@ const CORS_REFUSED_MESSAGE =
 
 const TASK_NOT_FOUND_MESSAGE = 'Task not found';
 
+/** The refusals an image upload can raise, worded as what to do next. */
+const IMAGE_TYPE_MESSAGE = 'That file is not an image. Upload a JPG or PNG.';
+
+const IMAGE_SIZE_MESSAGE = 'That image is too large. The maximum is 5 MB.';
+
+const IMAGE_MISSING_MESSAGE = 'No image was uploaded. Choose a JPG or PNG file.';
+
+const IMAGE_UPLOAD_FAILED_MESSAGE =
+    'The image could not be uploaded. Please try again - your profile picture is unchanged.';
+
+const AVATAR_UPDATED_MESSAGE = 'Profile picture updated';
+
 export {
+    IMAGE_TYPE_MESSAGE,
+    IMAGE_SIZE_MESSAGE,
+    IMAGE_MISSING_MESSAGE,
+    IMAGE_UPLOAD_FAILED_MESSAGE,
+    AVATAR_UPDATED_MESSAGE,
     GENERIC_ERROR_MESSAGE,
     BLOCKED_ACCOUNT_MESSAGE,
     NO_TOKEN_MESSAGE,

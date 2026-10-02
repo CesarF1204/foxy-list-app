@@ -165,7 +165,16 @@ admin screens, which it only offers to an administrator, so a desktop reaches
 both directly. Below that breakpoint the same two links move into the account
 menu behind the avatar, keeping a phone's navbar to the brand alone - never
 both at once, and never neither. The Dashboard sits above Admin Overview
-wherever the pair appears. An administrator is offered these links; a plain user
+wherever the pair appears.
+
+The account trigger is the avatar and its caret, as one control. The
+picture is ringed in ink rather than filled, and a downward caret rides
+its corner, so the control reads as a menu before it is ever clicked -
+and the caret turns over while the menu is open. The badge is
+absolutely positioned, so the trigger stays the width of the picture
+alone and the navbar gives up no room to it on a phone.
+
+An administrator is offered these links; a plain user
 is not. The entry names the admin *section*, not the single overview screen, so
 it stays filled and marked current on both `/admin/overview` and
 `/admin/users`; the Overview and Users tabs below it are what move within that
@@ -182,10 +191,19 @@ every change is a confirmed action on its own endpoint:
 | Change role | `PUT /api/admin/users/:id/role` |
 | Block or unblock | `PUT /api/admin/users/:id/status` |
 | Set a new password | `PUT /api/admin/users/:id/password` |
+| Replace the profile picture | `POST /api/admin/users/:id/avatar` |
 | Delete the account and its tasks | `DELETE /api/admin/users/:id` |
 
 They are separate endpoints on purpose, so a rename can never carry a privilege
 change with it.
+
+An admin sets any account's picture from the drawer, using the same camera
+control as the account menu. The one difference is where the file goes: that
+endpoint names its target in the path, where self-service deliberately cannot and
+takes the account from the session instead. An admin opening their own row still
+goes through self-service, so the navbar stays in step. Unlike role, status,
+password and delete, this one carries no self-lockout guard - a picture is not a
+privilege.
 
 ### Where the authorization lives
 

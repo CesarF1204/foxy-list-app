@@ -34,6 +34,7 @@ const updateAdminUser = vi.fn();
 const updateAdminUserRole = vi.fn();
 const updateAdminUserPassword = vi.fn();
 const deleteAdminUser = vi.fn();
+const updateAdminUserAvatar = vi.fn();
 
 vi.mock("../src/api-client/admin", () => ({
     getAdminUsers: (...args) => getAdminUsers(...args),
@@ -44,6 +45,7 @@ vi.mock("../src/api-client/admin", () => ({
     updateAdminUserStatus: (...args) => updateAdminUserStatus(...args),
     updateAdminUserPassword: (...args) => updateAdminUserPassword(...args),
     deleteAdminUser: (...args) => deleteAdminUser(...args),
+    updateAdminUserAvatar: (...args) => updateAdminUserAvatar(...args),
 }));
 
 const ADMIN = { _id: "admin-1", firstName: "Ada", lastName: "Lovelace", role: "admin" };
@@ -1535,6 +1537,53 @@ describe("the users page, driven through the API", () => {
 
         expect(await screen.findByRole("dialog")).toBeInTheDocument();
         expect(getAdminUser).toHaveBeenCalledWith("u2");
+        expect(getAdminUser).toHaveBeenCalledWith("u2");
+    });
+
+    it("lets an admin replace the selected user's picture", async () => {
+        updateAdminUserAvatar.mockResolvedValue({
+            message: "Profile picture updated",
+            avatar: "https://res.cloudinary.com/foxy/image/upload/avatars/u2.png",
+            user: makeUser({ _id: "u2", avatar: "https://res.cloudinary.com/foxy/avatars/u2.png" }),
+        });
+        await renderPage();
+
+        chooseAction("Alan Turing", "View user");
+        const drawer = await screen.findByRole("dialog");
+
+        expect(
+            within(drawer).getByRole("button", { name: "Change Alan Turing's profile picture" })
+        ).toBeInTheDocument();
+
+        const file = new File(["x"], "pic.png", { type: "image/png" });
+        fireEvent.change(within(drawer).getByTestId("avatar-file-input"), { target: { files: [file] } });
+
+        await waitFor(() => expect(updateAdminUserAvatar).toHaveBeenCalledTimes(1));
+
+        /**
+         * `mutateAsync` also passes the mutation context, so only the payload is compared.
+         * The target is named in it - never the admin's own id.
+         */
+        expect(updateAdminUserAvatar.mock.calls[0][0]).toEqual(
+            expect.objectContaining({ userId: "u2", file })
+        );
+    });
+
+    it("keeps self-service wording when an admin opens their own row", async () => {
+        /** The drawer refetches the account by id, so the mock has to answer with the admin. */
+        await renderPage(page({ rows: [{ ...makeUser(), _id: ADMIN._id }] }));
+        getAdminUser.mockResolvedValue({ user: { ...makeUser(), _id: ADMIN._id } });
+
+        fireEvent.click(
+            screen.getByRole("button", { name: `Actions for ${ADMIN.firstName} ${ADMIN.lastName}` })
+        );
+        fireEvent.click(screen.getByRole("menuitem", { name: "View user" }));
+        const drawer = await screen.findByRole("dialog");
+
+        /** Their own account goes through the session, so the label is not rewritten. */
+        expect(
+            within(drawer).getByRole("button", { name: "Change your profile picture" })
+        ).toBeInTheDocument();
     });
 
     it("shows a rejected action as an error, not as a success", async () => {

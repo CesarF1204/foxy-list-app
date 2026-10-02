@@ -30,6 +30,8 @@ const toSessionUser = (user) => ({
     role: user.role,
     status: user.status,
     createdAt: user.createdAt,
+    /** The profile picture URL, so every avatar follows the session the same way the name does. */
+    avatar: user.avatar ?? "",
 });
 
 /**

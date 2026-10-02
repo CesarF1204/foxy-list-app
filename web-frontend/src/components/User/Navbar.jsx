@@ -3,13 +3,13 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import { Mascot } from "page-mascot";
 import {
     getFullName,
-    getInitials,
     getTodayLabel,
 } from "../../helpers/globalHelper";
 import { MASCOT_SHEETS, MASCOT_LABEL } from "../../constants/mascot";
 import { CONTROL_ICON } from "../../constants/styles";
 import { ROUTES } from "../../constants/routes";
 import { isAdmin } from "../../constants/roles";
+import Avatar from "./Avatar";
 import LogOut from "./LogOut";
 import ProfileDrawer from "./ProfileDrawer";
 import Icon from "../icons/Icon";
@@ -114,9 +114,39 @@ const Navbar = ({ user }) => {
                                     aria-haspopup="menu"
                                     aria-expanded={isMenuOpen}
                                     aria-label="Open account menu"
-                                    className="flex h-10 w-10 cursor-pointer shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-ink bg-fox-400 text-sm font-extrabold text-white transition hover:bg-fox-500"
+                                    className="relative flex shrink-0 cursor-pointer items-center justify-center rounded-full transition focus-visible:ring-4 focus-visible:ring-fox-200 focus-visible:outline-none"
                                 >
-                                    {getInitials(user)}
+                                    {/**
+                                     * The same `Avatar` as the drawer, so an upload appears here too. Ringed
+                                     * rather than filled: the 2px ink ring reads as a frame around the picture,
+                                     * where the fox-400 fill under it painted the picture's own box and clipped
+                                     * it square.
+                                     */}
+                                    <Avatar
+                                        user={user}
+                                        className="h-10 w-10 rounded-full border-0! text-sm ring-2 ring-ink"
+                                    />
+
+                                    {/**
+                                     * The caret, and the reason this reads as a dropdown rather than a picture.
+                                     * It rides the avatar's corner instead of taking a column of its own, so
+                                     * the pair stays one compact target at every width - the navbar has
+                                     * room for that on a phone.
+                                     *
+                                     * Decoration only: the button already carries the label and `aria-haspopup`,
+                                     * so the glyph is hidden rather than announced twice. It turns over while
+                                     * the menu is open, the way a closed select's marker gives way to an open one.
+                                     */}
+                                    <span
+                                        aria-hidden="true"
+                                        className="absolute right-0 bottom-0 flex h-5 w-5 items-center justify-center rounded-full border-2 border-ink bg-white text-ink shadow-pop-sm"
+                                    >
+                                        <Icon
+                                            name="chevronDown"
+                                            size={12}
+                                            className={`transition-transform duration-200 ${isMenuOpen ? "rotate-180" : ""}`.trim()}
+                                        />
+                                    </span>
                                 </button>
 
                                 {isMenuOpen && (
@@ -125,12 +155,22 @@ const Navbar = ({ user }) => {
                                         className="animate-pop-in absolute right-0 z-header mt-2 w-60 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border-2 border-ink bg-white shadow-pop"
                                     >
                                         <div className="border-b-2 border-paper-deep px-4 py-3">
-                                            <p className="truncate text-sm font-extrabold text-ink">
-                                                {getFullName(user)}
-                                            </p>
-                                            <p className="truncate text-xs font-semibold text-ink-soft">
-                                                {user.email}
-                                            </p>
+                                            {/** The same `Avatar`, reading the session, so an upload shows up here too. */}
+                                            <div className="flex items-center gap-3">
+                                                <Avatar
+                                                    user={user}
+                                                    className="h-10 w-10 text-xs"
+                                                    aria-hidden="true"
+                                                />
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-sm font-extrabold text-ink">
+                                                        {getFullName(user)}
+                                                    </p>
+                                                    <p className="truncate text-xs font-semibold text-ink-soft">
+                                                        {user.email}
+                                                    </p>
+                                                </div>
+                                            </div>
 
                                             <button
                                                 type="button"
