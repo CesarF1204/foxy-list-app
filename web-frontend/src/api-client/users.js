@@ -1,4 +1,5 @@
-import { apiRequest } from "./client";
+import { apiRequest, apiUpload } from "./client";
+import { AVATAR_FIELD } from "../constants/user";
 
 /** Registers a new account. */
 const registerUser = (form_data) =>
@@ -27,6 +28,23 @@ const updateOwnProfile = (profile) =>
 const updateOwnPassword = ({ password }) =>
     apiRequest("/api/users/password", { method: "PUT", body: { password } });
 
+/**
+ * Uploads a new profile picture for the signed-in user.
+ *
+ * The file is the only thing in the form: there is no id in the path, so this cannot name an
+ * account - the one behind the session cookie is the one that changes.
+ *
+ * @param {File} file - The chosen image
+ * @param {(percent: number) => void} [onProgress] - Progress callback
+ * @returns {Promise<{message: string, avatar: string, user: object}>} The updated account
+ */
+const uploadAvatar = (file, onProgress) => {
+    const form = new FormData();
+    form.append(AVATAR_FIELD, file);
+
+    return apiUpload("/api/users/avatar", form, onProgress);
+};
+
 export {
     registerUser,
     signIn,
@@ -35,4 +53,5 @@ export {
     resetPassword,
     updateOwnProfile,
     updateOwnPassword,
+    uploadAvatar,
 };

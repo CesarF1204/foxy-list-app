@@ -29,6 +29,9 @@ const TITLE_MAX_LENGTH = 200;
 /** Maximum task description length. */
 const DESCRIPTION_MAX_LENGTH = 2000;
 
+/** Maximum length of the stored profile-picture URL. */
+const AVATAR_URL_MAX_LENGTH = 2048;
+
 export {
     EMAIL_PATTERN,
     NAME_PATTERN,
@@ -39,4 +42,5 @@ export {
     PASSWORD_NO_SPACES_PATTERN,
     TITLE_MAX_LENGTH,
     DESCRIPTION_MAX_LENGTH,
+    AVATAR_URL_MAX_LENGTH,
 };

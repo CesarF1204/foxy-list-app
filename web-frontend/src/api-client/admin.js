@@ -1,4 +1,5 @@
-import { apiRequest } from "./client";
+import { apiRequest, apiUpload } from "./client";
+import { AVATAR_FIELD } from "../constants/user";
 
 /** The admin endpoints, one function per operation, matching */
 
@@ -50,6 +51,24 @@ const updateAdminUserStatus = ({ userId, status }) =>
 const updateAdminUserPassword = ({ userId, password }) =>
     apiRequest(`/api/admin/users/${userId}/password`, { method: "PUT", body: { password } });
 
+/**
+ * Uploads a new profile picture for a user the admin is managing.
+ *
+ * The one admin endpoint that carries a file, so it is an upload rather than a JSON request. The
+ * account is named in the path - which is exactly what the self-service route refuses to do.
+ *
+ * @param {object} payload - `{ userId }` and the chosen image
+ * @param {File} payload.file - The chosen image
+ * @param {(percent: number) => void} [payload.onProgress] - Progress callback
+ * @returns {Promise<{message: string, avatar: string, user: object}>} The updated account
+ */
+const updateAdminUserAvatar = ({ userId, file, onProgress }) => {
+    const form = new FormData();
+    form.append(AVATAR_FIELD, file);
+
+    return apiUpload(`/api/admin/users/${userId}/avatar`, form, onProgress);
+};
+
 /** Permanently deletes a user and their tasks. */
 const deleteAdminUser = (userId) => apiRequest(`/api/admin/users/${userId}`, { method: "DELETE" });
 
@@ -61,6 +80,7 @@ export {
     updateAdminUserRole,
     updateAdminUserStatus,
     updateAdminUserPassword,
+    updateAdminUserAvatar,
     deleteAdminUser,
     toQueryString,
 };

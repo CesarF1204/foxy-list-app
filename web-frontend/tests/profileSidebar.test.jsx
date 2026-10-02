@@ -30,6 +30,7 @@ vi.mock("../src/api-client/admin", () => ({
     updateAdminUserStatus: vi.fn(),
     updateAdminUserPassword: vi.fn(),
     deleteAdminUser: vi.fn(),
+    updateAdminUserAvatar: vi.fn(),
     getAdminUsers: vi.fn(),
     getAdminUser: vi.fn(),
     getAdminStats: vi.fn(),

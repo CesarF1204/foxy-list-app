@@ -489,3 +489,112 @@ describe("View Profile in the account menu", () => {
         });
     });
 });
+
+describe("the avatar trigger in the navbar", () => {
+    /** The avatar button, and the avatar inside it. */
+    const trigger = () => screen.getByRole("button", { name: "Open account menu" });
+    /** The avatar box itself: `Avatar` renders the picture inside a `span.relative`. */
+    const avatarIn = (node) => node.querySelector("span.relative");
+
+    it("frames the picture in an ink ring instead of painting a box behind it", () => {
+        renderNavbar(ROUTES.board, USER);
+
+        /**
+         * The ring is the refinement: a border here would be drawn *over* the edge of the
+         * picture, because `Avatar` clips its image to its own box.
+         */
+        expect(avatarIn(trigger())).toHaveClass("ring-2", "ring-ink");
+
+        /**
+         * The border is overridden emphatically, not merely asked to be zero: Tailwind
+         * emits `border-2` after `border-0`, so a plain override loses and the ring
+         * would be drawn outside a border that is still there.
+         */
+        expect(avatarIn(trigger())).toHaveClass("border-0!");
+
+        /** And the button no longer paints a fox fill that the picture would hide anyway. */
+        expect(trigger()).not.toHaveClass("bg-fox-400");
+    });
+
+    it("keeps the picture round, and centred on the ring that surrounds it", () => {
+        renderNavbar(ROUTES.board, USER);
+
+        /** One fixed size for both axes is what keeps the ring a circle. */
+        expect(avatarIn(trigger())).toHaveClass("h-10", "w-10", "rounded-full");
+        expect(trigger()).toHaveClass("items-center", "justify-center", "relative");
+    });
+
+    it("shows a downward caret on the picture, drawn from the shared chevron", () => {
+        renderNavbar(ROUTES.board, USER);
+
+        /**
+         * The point of the change: without the caret the control reads as a picture, and
+         * nothing on it says a menu is behind it.
+         */
+        const caret = trigger().querySelector('span.absolute svg');
+        expect(caret).toBeInTheDocument();
+
+        /** The glyph is decoration: the button already names itself and declares the menu. */
+        expect(caret).toHaveAttribute("aria-hidden", "true");
+    });
+
+    it("parks the caret on the picture's corner rather than beside it", () => {
+        renderNavbar(ROUTES.board, USER);
+
+        /**
+         * Absolute, so the trigger stays the width of the picture alone and the navbar
+         * gives up no horizontal room on a phone.
+         */
+        const badge = trigger().querySelector('span.absolute');
+        expect(badge).toHaveClass("absolute", "right-0", "bottom-0", "rounded-full");
+    });
+
+    it("holds the same colours under the pointer and while pressed", () => {
+        renderNavbar(ROUTES.board, USER);
+
+        /**
+         * Neither a hover nor a press may recolour the trigger: the ring stays ink and
+         * the caret stays white, so the control looks identical at rest, under the
+         * pointer, and while it is held down.
+         */
+        const button = trigger();
+        expect(avatarIn(button)).not.toHaveClass(
+            "group-hover:ring-fox-400",
+            "group-active:ring-fox-500"
+        );
+        expect(button.querySelector('span.absolute')).not.toHaveClass(
+            "group-hover:bg-fox-50",
+            "group-active:bg-fox-100"
+        );
+
+        /** The resting colours are still the ones the design calls for. */
+        expect(avatarIn(button)).toHaveClass("ring-2", "ring-ink");
+        expect(button.querySelector('span.absolute')).toHaveClass("bg-white", "border-2", "border-ink");
+    });
+
+    it("still shows a keyboard focus ring, like every other navbar control", () => {
+        renderNavbar(ROUTES.board, USER);
+
+        expect(trigger()).toHaveClass("focus-visible:ring-4", "focus-visible:outline-none");
+    });
+
+    it("turns the caret over while the menu is open, and back when it closes", () => {
+        renderNavbar(ROUTES.board, USER);
+        const caretOf = () => trigger().querySelector('span.absolute svg');
+
+        expect(caretOf()).not.toHaveClass("rotate-180");
+
+        openAccountMenu();
+        expect(caretOf()).toHaveClass("rotate-180");
+
+        fireEvent.click(trigger());
+        expect(caretOf()).not.toHaveClass("rotate-180");
+    });
+
+    it("still opens the menu on click, so the new design costs no behaviour", () => {
+        renderNavbar(ROUTES.board, USER);
+
+        fireEvent.click(trigger());
+        expect(screen.getByRole("menu")).toBeInTheDocument();
+    });
+});

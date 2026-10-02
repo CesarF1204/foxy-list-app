@@ -1,10 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { getInitials, getFullName } from "../../helpers/globalHelper";
+import { getFullName } from "../../helpers/globalHelper";
 import { USER_COLUMNS, SORT_DIRECTIONS } from "../../constants/admin";
 import { BOARD_META, BOARDS, BOARD_LABELS } from "../../constants/boards";
 import useMediaQuery from "../../hooks/useMediaQuery";
+import Avatar from "../User/Avatar";
 import { RoleBadge, StatusBadge } from "./Badges";
 import { Icon, KebabButton } from "../icons";
 
@@ -23,12 +24,7 @@ const formatDate = (value) => {
 
 /** Initials avatar. Decorative: the name sits beside it. */
 const UserAvatar = ({ user }) => (
-    <span
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-ink bg-fox-400 text-xs font-extrabold text-white"
-        aria-hidden="true"
-    >
-        {getInitials(user)}
-    </span>
+    <Avatar user={user} className="h-9 w-9 text-xs" aria-hidden="true" />
 );
 
 /** One board's task count. Labelled for a pointer and for screen readers. */

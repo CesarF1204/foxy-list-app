@@ -14,6 +14,8 @@ export const authorization = async ({ admin, plain }) => {
         ['PUT', `/api/admin/users/${plain.id}/role`],
         ['PUT', `/api/admin/users/${plain.id}/status`],
         ['PUT', `/api/admin/users/${plain.id}/password`],
+        /** The multipart one: no body is sent, so the guard has to answer before the parser. */
+        ['POST', `/api/admin/users/${plain.id}/avatar`],
         ['DELETE', `/api/admin/users/${plain.id}`],
     ];
 

@@ -1,6 +1,7 @@
 import express from 'express';
 import { asyncHandler } from '../middleware/errorMiddleware.js';
 import authMiddleware from '../middleware/authMiddleware.js';
+import { parseAvatarUpload } from '../middleware/uploadMiddleware.js';
 import {
     register,
     signIn,
@@ -9,6 +10,7 @@ import {
     resetPassword,
     updateProfile,
     updatePassword,
+    uploadAvatar,
 } from '../controllers/authController.js';
 
 /**
@@ -37,5 +39,14 @@ router.use(authMiddleware);
 router.patch('/profile', asyncHandler(updateProfile));
 
 router.put('/password', asyncHandler(updatePassword));
+
+/**
+ * The profile picture.
+ *
+ * `parseAvatarUpload` sits between the guard and the controller: by the time the handler runs
+ * the file is read and checked, and an anonymous caller costs nothing because the session is
+ * read first. POST rather than PATCH because the avatar is a file, not a field.
+ */
+router.post('/avatar', parseAvatarUpload, asyncHandler(uploadAvatar));
 
 export default router;

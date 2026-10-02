@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { USER_ROLES, DEFAULT_ROLE, ACCOUNT_STATUSES, DEFAULT_ACCOUNT_STATUS } from '../constants/roles.js';
-import { NAME_MAX_LENGTH } from '../constants/validation.js';
+import { NAME_MAX_LENGTH, AVATAR_URL_MAX_LENGTH } from '../constants/validation.js';
 
 /**
  * DOCU: Defines the schema for a user <br>
@@ -15,6 +15,7 @@ import { NAME_MAX_LENGTH } from '../constants/validation.js';
  * @property {String} password - The user's password hash. Required, and excluded from every query unless one is explicitly requested.
  * @property {String} role - What the account may do. Must be one of USER_ROLES and defaults to DEFAULT_ROLE.
  * @property {String} status - Whether the account may still sign in. Must be one of ACCOUNT_STATUSES and defaults to DEFAULT_ACCOUNT_STATUS.
+ * @property {String} avatar - The Cloudinary secure URL of the profile picture, or an empty string when none has been uploaded.
  * @property {Date} createdAt - Timestamp of when the account was created (automatically added by Mongoose).
  * @property {Date} updatedAt - Timestamp of when the account was last updated (automatically added by Mongoose).
  * @author Kate, Updated by: Cesar
@@ -60,6 +61,13 @@ const userSchema = new mongoose.Schema(
                 message: `Status must be one of: ${ACCOUNT_STATUSES.join(', ')}`,
             },
             default: DEFAULT_ACCOUNT_STATUS,
+        },
+        /** The Cloudinary secure URL of the profile picture, `''` when none is set. */
+        avatar: {
+            type: String,
+            default: '',
+            trim: true,
+            maxlength: [AVATAR_URL_MAX_LENGTH, `Profile picture URL must be under ${AVATAR_URL_MAX_LENGTH} characters`],
         },
         passwordResetToken: {
             type: String,

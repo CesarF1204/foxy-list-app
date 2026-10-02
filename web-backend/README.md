@@ -150,6 +150,7 @@ carries `message` on failure, which is what `client.js` in the frontend reads.
 | PUT | `/api/admin/users/:id/role` | admin | Change role |
 | PUT | `/api/admin/users/:id/status` | admin | Block or unblock |
 | PUT | `/api/admin/users/:id/password` | admin | Set a new password |
+| POST | `/api/admin/users/:id/avatar` | admin | Replace the profile picture (multipart) |
 | DELETE | `/api/admin/users/:id` | admin | Delete the account and its tasks |
 
 Profile, role, status and password are separate endpoints on purpose, so a

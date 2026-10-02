@@ -89,4 +89,55 @@ const apiRequest = async (path, { method = "GET", body, signal } = {}) => {
     return data;
 };
 
-export { API_BASE_URL, apiRequest, toErrorMessage, ApiRequestError };
+/**
+ * Uploads a file to the API and reports how far along it is.
+ *
+ * Uses XMLHttpRequest because `fetch` cannot report upload progress - it fires only once the
+ * whole request has been sent. `Content-Type` is deliberately unset: the browser must add it
+ * with its own multipart boundary.
+ *
+ * @param {string} path - The endpoint path
+ * @param {FormData} body - The form to send; the file must already be appended
+ * @param {(percent: number) => void} [onProgress] - Called with 0-100 as bytes go out
+ * @returns {Promise<object>} The parsed response body
+ */
+const apiUpload = (path, body, onProgress) =>
+    new Promise((resolve, reject) => {
+        const request = new XMLHttpRequest();
+
+        request.open("POST", `${API_BASE_URL}${path}`, true);
+        request.withCredentials = true;
+        request.setRequestHeader("Accept", "application/json");
+
+        /** Only counts bytes actually sent, so the last tick reads 100% rather than stalling. */
+        request.upload.onprogress = (event) => {
+            if (!onProgress || !event.lengthComputable) return;
+
+            const percent = Math.min(100, Math.round((event.loaded / event.total) * 100));
+            onProgress(percent);
+        };
+
+        request.onload = () => {
+            const contentType = request.getResponseHeader("content-type") || "";
+            const isJson = contentType.includes("application/json");
+            const data = isJson ? JSON.parse(request.responseText) : request.responseText;
+
+            if (request.status >= 200 && request.status < 300) {
+                /** The body is spent, so the bar leaves its last value at 100. */
+                onProgress?.(100);
+                return resolve(data);
+            }
+
+            reject(new ApiRequestError(toErrorMessage(data, request.status), request.status));
+        };
+
+        /** A dropped connection mid-upload. */
+        request.onerror = () =>
+            reject(new ApiRequestError("Unable to reach the server. Please check your connection.", 0));
+
+        request.onabort = () => reject(new DOMException("Aborted", "AbortError"));
+
+        request.send(body);
+    });
+
+export { API_BASE_URL, apiRequest, apiUpload, toErrorMessage, ApiRequestError };

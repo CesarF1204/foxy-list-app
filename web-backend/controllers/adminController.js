@@ -7,6 +7,7 @@ import {
     updateUserPasswordSchema,
 } from '../utils/validationSchemas.js';
 import { HTTP_STATUS } from '../constants/http.js';
+import { AVATAR_UPDATED_MESSAGE } from '../constants/messages.js';
 
 /**
  * DOCU: Returns the user and task counts for the admin dashboard.
@@ -111,6 +112,33 @@ export const updateUserPassword = async (req, res) => {
     const data = parseBody(req.body, updateUserPasswordSchema);
 
     res.status(HTTP_STATUS.OK).json({ message: await adminService.updateUserPassword(req.user, userId, data) });
+};
+
+/**
+ * DOCU: Replaces a user's profile picture with an uploaded image.
+ *
+ * The file is already read and checked by `parseAvatarUpload`. Cloudinary runs before the
+ * database, so a failed upload leaves the stored picture untouched. The whole account comes
+ * back, so the open drawer and the table row both redraw from the answer rather than a
+ * refetch.
+ *
+ * Last Updated Date: October 2, 2026
+ * @function uploadUserAvatar
+ * @param {object} req - Request, carrying the file and the signed-in admin
+ * @param {object} res - Response
+ * @returns {Promise<void>} Responds with { message, avatar, user }
+ * @author Cesar
+ */
+export const uploadUserAvatar = async (req, res) => {
+    const userId = parseId('User id', req.params.id);
+
+    const user = await adminService.updateUserAvatar(req.user, userId, req.file);
+
+    res.status(HTTP_STATUS.OK).json({
+        message: AVATAR_UPDATED_MESSAGE,
+        avatar: user.avatar,
+        user,
+    });
 };
 
 /**

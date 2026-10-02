@@ -3,6 +3,7 @@ import {
     ArrowLeft,
     ArrowRight,
     Ban,
+    Camera,
     Check,
     CheckCircle,
     ChevronDown,
@@ -84,8 +85,9 @@ const ICONS = {
     check: { Component: Check },
 
     /**
-     * The marker on a closed dropdown. It replaces the browser's own select arrow, which is the
-     * one piece of chrome in the app no stylesheet could reach, and which differs on every
+     * The marker on a closed dropdown, wherever one is closed by hand: the navbar's account
+     * trigger and a closed select. On the select it replaces the browser's own arrow, which is
+     * the one piece of chrome in the app no stylesheet could reach, and which differs on every
      * operating system.
      */
     chevronDown: { Component: ChevronDown },
@@ -97,6 +99,13 @@ const ICONS = {
 
     /** Searching and filtering. */
     search: { Component: Search },
+
+    /**
+     * Replacing the profile picture: the badge on the camera overlay.
+     *
+     * A camera rather than a pencil, because what it opens is the picker for an image.
+     */
+    camera: { Component: Camera },
 };
 
 /**
